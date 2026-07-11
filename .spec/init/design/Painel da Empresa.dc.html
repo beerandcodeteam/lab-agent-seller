@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#eceef3;font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#3348d6;text-decoration:none}a:hover{color:#2f43c9;text-decoration:underline}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes slide{0%{left:-35%}100%{left:105%}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+</style>
+</helmet>
+
+<section style="padding:44px 52px 20px">
+  <div style="display:flex;align-items:baseline;gap:12px">
+    <div style="font:700 22px 'Space Grotesk';color:#12161f;letter-spacing:-0.02em">agent<span style="color:oklch(0.51 0.21 264)">seller</span></div>
+    <div style="font:600 13px 'Space Grotesk';color:#4a5468">Superfície A — Painel da Empresa · telas 1–7</div>
+  </div>
+  <p style="margin:10px 0 0;font:400 13px/1.6 'Space Grotesk';color:#717c92;max-width:640px">Autenticado, denso, operacional. Ver também: <a href="Cliente Final.dc.html">Cliente Final</a> · <a href="Tokens e Componentes.dc.html">Tokens e Componentes</a></p>
+</section>
+
+<!-- ======== TELAS 1 e 2 — AUTH ======== -->
+<section style="padding:24px 52px 44px;border-bottom:1px solid rgba(19,22,31,.08)">
+  <div style="display:flex;gap:36px;flex-wrap:wrap;align-items:flex-start">
+
+    <div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin:0 0 10px"><span style="font:600 10.5px 'IBM Plex Mono',monospace;background:#12161f;color:#fff;padding:3px 7px;border-radius:4px">01</span><span style="font:500 12px 'Space Grotesk';color:#4a5468">Registro</span></div>
+      <div data-screen-label="01 Registro" style="width:560px;height:720px;background:#f6f7fa;border:1px solid #e3e7ef;border-radius:12px;box-shadow:0 2px 8px rgba(19,22,31,.08);display:flex;align-items:center;justify-content:center">
+        <div style="width:380px;background:#fff;border:1px solid #e3e7ef;border-radius:14px;box-shadow:0 8px 24px rgba(19,22,31,.07);padding:34px 36px;box-sizing:border-box">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px"><div style="width:26px;height:26px;border-radius:7px;background:#12161f;display:flex;align-items:center;justify-content:center"><div style="width:9px;height:9px;border-radius:2px;background:oklch(0.55 0.21 264)"></div></div><span style="font:700 17px 'Space Grotesk';color:#12161f;letter-spacing:-0.02em">agent<span style="color:oklch(0.51 0.21 264)">seller</span></span></div>
+          <div style="font:600 19px 'Space Grotesk';color:#12161f;margin-bottom:4px">Criar conta da empresa</div>
+          <div style="font:400 13px/1.5 'Space Grotesk';color:#717c92;margin-bottom:22px">Uma conta, um operador. Sem times, sem convites.</div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div><label style="display:block;font:500 12px 'Space Grotesk';color:#4a5468;margin-bottom:6px">Nome da empresa</label><input style="width:100%;box-sizing:border-box;height:40px;padding:0 12px;border:1px solid #ccd3e0;border-radius:8px;font:400 14px 'Space Grotesk';color:#12161f" value="Café Aurora"></div>
+            <div><label style="display:block;font:500 12px 'Space Grotesk';color:#4a5468;margin-bottom:6px">Seu nome</label><input style="width:100%;box-sizing:border-box;height:40px;padding:0 12px;border:1px solid #ccd3e0;border-radius:8px;font:400 14px 'Space Grotesk';color:#12161f" value="Ana Ribeiro"></div>
+            <div><label style="display:block;font:500 12px 'Space Grotesk';color:#4a5468;margin-bottom:6px">E-mail</label><input style="width:100%;box-sizing:border-box;height:40px;padding:0 12px;border:1px solid #ccd3e0;border-radius:8px;font:400 14px 'Space Grotesk';color:#12161f" value="ana@cafeaurora.com.br"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div><label style="display:block;font:500 12px 'Space Grotesk';color:#4a5468;margin-bottom:6px">Senha</label><input type="password" style="width:100%;box-sizing:border-box;height:40px;padding:0 12px;border:1px solid #ccd3e0;border-radius:8px;font:400 14px 'Space Grotesk'" value="password1"><div style="font:400 11px 'Space Grotesk';color:#9aa3b5;margin-top:5px">Mínimo de 8 caracteres.</div></div>
+              <div><label style="display:block;font:500 12px 'Space Grotesk';color:#4a5468;margin-bottom:6px">Confirmar senha</label><input type="password" style="width:100%;box-sizing:border-box;height:40px;padding:0 12px;border:1px solid #ccd3e0;border-radius:8px;font:400 14px 'Space Grotesk'" value="password1"></div>
+            </div>
+            <button style="height:42px;border:none;border-radius:8px;background:oklch(0.51 0.21 264);color:#fff;font:500 14px 'Space Grotesk';cursor:pointer;margin-top:6px" style-hover="background:oklch(0.44 0.19 264)">Criar conta</button>
+            <div style="font:400 12.5px 'Space Grotesk';color:#717c92;text-align:center">Já tem conta? <a href="#p2">Entrar</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="p2">
+      <div style="display:flex;align-items:baseline;gap:8px;margin:0 0 10px"><span style="font:600 10.5px 'IBM Plex Mono',monospace;background:#12161f;color:#fff;padding:3px 7px;border-radius:4px">02</span><span style="font:500 12px 'Space Grotesk';color:#4a5468">Login — com erro genérico</span></div>
+      <div data-screen-label="02 Login" style="width:560px;height:720px;background:#f6f7fa;border:1px solid #e3e7ef;border-radius:12px;box-shadow:0 2px 8px rgba(19,22,31,.08);display:flex;align-items:center;justify-content:center">
+        <div style="width:380px;background:#fff;border:1px solid #e3e7ef;border-radius:14px;box-shadow:0 8px 24px rgba(19,22,31,.07);padding:34px 36px;box-sizing:border-box">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px"><div style="width:26px;height:26px;border-radius:7px;background:#12161f;display:flex;align-items:center;justify-content:center"><div style="width:9px;height:9px;border-radius:2px;background:oklch(0.55 0.21 264)"></div></div><span style="font:700 17px 'Space Grotesk';color:#12161f;letter-spacing:-0.02em">agent<span style="color:oklch(0.51 0.21 264)">seller</span></span></div>
+          <div style="font:600 19px 'Space Grotesk';color:#12161f;margin-bottom:22px">Entrar no painel</div>
+          <div style="display:flex;gap:11px;padding:12px 14px;border:1px solid oklch(0.85 0.07 25);border-radius:10px;background:oklch(0.97 0.02 25);margin-bottom:16px"><span style="flex:none;width:20px;height:20px;border-radius:6px;background:oklch(0.95 0.03 25);color:oklch(0.45 0.17 25);display:flex;align-items:center;justify-content:center;font:600 12px 'IBM Plex Mono',monospace">×</span><div style="font:400 13px/1.5 'Space Grotesk';color:#12161f">Credenciais inválidas.<div style="font:400 11.5px 'Space Grotesk';color:#717c92;margin-top:2px">A mensagem é sempre esta — nunca revela se o e-mail existe.</div></div></div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div><label style="display:block;font:500 12px 'Space Grotesk';color:#4a5468;margin-bottom:6px">E-mail</label><input style="width:100%;box-sizing:border-box;height:40px;padding:0 12px;border:1px solid #ccd3e0;border-radius:8px;font:400 14px 'Space Grotesk';color:#12161f" value="ana@cafeaurora.com.br"></div>
+            <div><label style="display:block;font:500 12px 'Space Grotesk';color:#4a5468;margin-bottom:6px">Senha</label><input type="password" style="width:100%;box-sizing:border-box;height:40px;padding:0 12px;border:1px solid #ccd3e0;border-radius:8px;font:400 14px 'Space Grotesk'" value="password"></div>
+            <button style="height:42px;border:none;border-radius:8px;background:oklch(0.51 0.21 264);color:#fff;font:500 14px 'Space Grotesk';cursor:pointer;margin-top:6px" style-hover="background:oklch(0.44 0.19 264)">Entrar</button>
+            <div style="font:400 12.5px 'Space Grotesk';color:#717c92;text-align:center">Não tem conta? <a href="#top">Registrar</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======== TELA 3 — CRM NÃO CONECTADO ======== -->
+<section style="padding:44px 52px;border-bottom:1px solid rgba(19,22,31,.08)">
+  <div style="display:flex;align-items:baseline;gap:8px;margin:0 0 10px"><span style="font:600 10.5px 'IBM Plex Mono',monospace;background:#12161f;color:#fff;padding:3px 7px;border-radius:4px">03</span><span style="font:500 12px 'Space Grotesk';color:#4a5468">Painel — CRM não conectado (primeira tela pós-registro)</span></div>
+  <div data-screen-label="03 CRM nao conectado" style="width:1200px;background:#f6f7fa;border:1px solid #e3e7ef;border-radius:12px;box-shadow:0 2px 8px rgba(19,22,31,.08);overflow:hidden">
+    <div style="height:56px;background:#fff;border-bottom:1px solid #e3e7ef;display:flex;align-items:center;justify-content:space-between;padding:0 24px">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="display:flex;align-items:center;gap:9px"><div style="width:24px;height:24px;border-radius:6px;background:#12161f;display:flex;align-items:center;justify-content:center"><div style="width:8px;height:8px;border-radius:2px;background:oklch(0.55 0.21 264)"></div></div><span style="font:700 15px 'Space Grotesk';color:#12161f;letter-spacing:-0.02em">agent<span style="color:oklch(0.51 0.21 264)">seller</span></span></div>
+        <div style="width:1px;height:20px;background:#e3e7ef"></div>
+        <span style="font:500 13px 'Space Grotesk';color:#4a5468">Café Aurora</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font:400 11.5px 'IBM Plex Mono',monospace;color:#9aa3b5">ana@cafeaurora.com.br</span>
+        <button style="height:32px;padding:0 12px;border:1px solid #ccd3e0;border-radius:8px;background:#fff;color:#4a5468;font:500 12.5px 'Space Grotesk';cursor:pointer" style-hover="background:#f6f7fa;color:#12161f">Sair</button>
+      </div>
+    </div>
+    <div style="min-height:520px;display:flex;align-items:center;justify-content:center;padding:60px 0">
+      <div style="width:460px;background:#fff;border:1px solid #e3e7ef;border-radius:14px;padding:48px 44px;display:flex;flex-direction:column;align-items:center;text-align:center;box-shadow:0 8px 24px rgba(19,22,31,.06)">
+        <div style="width:52px;height:52px;border-radius:14px;background:oklch(0.94 0.03 264);display:flex;align-items:center;justify-content:center;font:600 22px 'IBM Plex Mono',monospace;color:oklch(0.45 0.19 264);margin-bottom:18px">⇄</div>
+        <div style="font:600 20px 'Space Grotesk';color:#12161f;margin-bottom:8px">Conecte seu CRM para começar</div>
+        <div style="font:400 13.5px/1.6 'Space Grotesk';color:#717c92;max-width:340px;margin-bottom:24px">O agent responde seus clientes com base nos dados do seu CRM. Sem conexão, não há o que conversar.</div>
+        <button style="height:42px;padding:0 22px;border:none;border-radius:8px;background:oklch(0.51 0.21 264);color:#fff;font:500 14px 'Space Grotesk';cursor:pointer" style-hover="background:oklch(0.44 0.19 264)">Conectar Pipedrive</button>
+        <div style="font:400 11px 'IBM Plex Mono',monospace;color:#9aa3b5;margin-top:16px">leva ~1 minuto · só o API token</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======== TELA 4 — CONECTAR PIPEDRIVE ======== -->
+<section style="padding:44px 52px;border-bottom:1px solid rgba(19,22,31,.08)">
+  <div style="display:flex;align-items:baseline;gap:8px;margin:0 0 10px"><span style="font:600 10.5px 'IBM Plex Mono',monospace;background:#12161f;color:#fff;padding:3px 7px;border-radius:4px">04</span><span style="font:500 12px 'Space Grotesk';color:#4a5468">Conectar Pipedrive — formulário + 3 estados de erro visualmente distintos</span></div>
+  <div style="display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start">
+
+    <div data-screen-label="04 Conectar Pipedrive" style="width:520px;background:#f6f7fa;border:1px solid #e3e7ef;border-radius:12px;box-shadow:0 2px 8px rgba(19,22,31,.08);padding:40px;box-sizing:border-box">
+      <div style="background:#fff;border:1px solid #e3e7ef;border-radius:14px;padding:30px 32px;box-shadow:0 8px 24px rgba(19,22,31,.06)">
+        <div style="font:600 18px 'Space Grotesk';color:#12161f;margin-bottom:4px">Conectar CRM</div>
+        <div style="font:400 13px/1.5 'Space Grotesk';color:#717c92;margin-bottom:22px">O token é usado para uma varredura de leitura. Nunca escrevemos no seu CRM.</div>
+        <label style="display:block;font:500 12px 'Space Grotesk';color:#4a5468;margin-bottom:6px">Provider</label>
+        <div style="border:1px solid #ccd3e0;border-radius:8px;overflow:hidden;margin-bottom:16px">
+          <div style="height:42px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;background:oklch(0.97 0.015 264)"><span style="display:flex;align-items:center;gap:9px;font:500 14px 'Space Grotesk';color:#12161f"><span style="width:18px;height:18px;border-radius:5px;background:#12161f;color:#fff;display:flex;align-items:center;justify-content:center;font:600 10px 'IBM Plex Mono',monospace">P</span>Pipedrive</span><span style="font:600 11px 'IBM Plex Mono',monospace;color:oklch(0.45 0.19 264)">✓ selecionado</span></div>
+          <div style="height:38px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid #eef1f6;color:#9aa3b5"><span style="font:400 13.5px 'Space Grotesk'">HubSpot</span><span style="font:500 10.5px 'Space Grotesk';border:1px dashed #ccd3e0;border-radius:999px;padding:2px 9px">em breve</span></div>
+          <div style="height:38px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid #eef1f6;color:#9aa3b5"><span style="font:400 13.5px 'Space Grotesk'">RD Station</span><span style="font:500 10.5px 'Space Grotesk';border:1px dashed #ccd3e0;border-radius:999px;padding:2px 9px">em breve</span></div>
+        </div>
+        <label style="display:flex;justify-content:space-between;align-items:baseline;font:500 12px 'Space Grotesk';color:#4a5468;margin-bottom:6px">API Token <span style="font:500 10px 'IBM Plex Mono',monospace;color:oklch(0.5 0.13 75)">campo sensível</span></label>
+        <input type="password" style="width:100%;box-sizing:border-box;height:42px;padding:0 12px;border:1px solid #ccd3e0;border-radius:8px;font:400 14px 'IBM Plex Mono',monospace;color:#12161f;letter-spacing:2px" value="••••••••••••••••••••••••">
+        <div style="font:400 11.5px/1.5 'Space Grotesk';color:#717c92;margin-top:6px">Encontre em Pipedrive → Configurações pessoais → API. O token nunca é exibido novamente após salvar.</div>
+        <button style="width:100%;height:42px;border:none;border-radius:8px;background:oklch(0.51 0.21 264);color:#fff;font:500 14px 'Space Grotesk';cursor:pointer;margin-top:20px" style-hover="background:oklch(0.44 0.19 264)">Validar e conectar</button>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <div>
+        <div style="font:500 11px 'IBM Plex Mono',monospace;color:#717c92;margin:0 0 8px">4a · token inválido (401) — banner de erro, campo limpo (nunca reecoado)</div>
+        <div style="width:460px;background:#fff;border:1px solid #e3e7ef;border-radius:12px;padding:20px 22px;box-shadow:0 1px 2px rgba(19,22,31,.06)">
+          <div style="display:flex;gap:11px;padding:12px 14px;border:1px solid oklch(0.85 0.07 25);border-radius:10px;background:oklch(0.97 0.02 25);margin-bottom:14px"><span style="flex:none;width:20px;height:20px;border-radius:6px;background:oklch(0.95 0.03 25);color:oklch(0.45 0.17 25);display:flex;align-items:center;justify-content:center;font:600 12px 'IBM Plex Mono',monospace">×</span><div style="font:400 13px/1.5 'Space Grotesk';color:#12161f"><strong style="font-weight:600">Token inválido.</strong> A Pipedrive recusou a autenticação <span style="font:500 11px 'IBM Plex Mono',monospace;color:oklch(0.45 0.17 25)">(401)</span>. Confira o token e tente de novo.</div></div>
+          <input type="password" placeholder="Cole o API token" style="width:100%;box-sizing:border-box;height:42px;padding:0 12px;border:1px solid oklch(0.55 0.19 25);border-radius:8px;font:400 14px 'IBM Plex Mono',monospace">
+          <button style="width:100%;height:40px;border:none;border-radius:8px;background:oklch(0.51 0.21 264);color:#fff;font:500 13.5px 'Space Grotesk';cursor:pointer;margin-top:12px">Validar e conectar</button>
+        </div>
+      </div>
+      <div>
+        <div style="font:500 11px 'IBM Plex Mono',monospace;color:#717c92;margin:0 0 8px">4b · falha de rede — âmbar, retryable, token preservado (mascarado)</div>
+        <div style="width:460px;background:#fff;border:1px solid #e3e7ef;border-radius:12px;padding:20px 22px;box-shadow:0 1px 2px rgba(19,22,31,.06)">
+          <div style="display:flex;gap:11px;padding:12px 14px;border:1px solid oklch(0.85 0.06 75);border-radius:10px;background:oklch(0.97 0.02 75);margin-bottom:14px"><span style="flex:none;width:20px;height:20px;border-radius:6px;background:oklch(0.95 0.03 75);color:oklch(0.45 0.13 75);display:flex;align-items:center;justify-content:center;font:600 12px 'IBM Plex Mono',monospace">!</span><div style="font:400 13px/1.5 'Space Grotesk';color:#12161f"><strong style="font-weight:600">Não foi possível validar.</strong> Falha de rede ao falar com a Pipedrive — o token não foi verificado nem descartado.</div></div>
+          <input type="password" style="width:100%;box-sizing:border-box;height:42px;padding:0 12px;border:1px solid #ccd3e0;border-radius:8px;font:400 14px 'IBM Plex Mono',monospace;letter-spacing:2px" value="••••••••••••••••••••••••">
+          <button style="width:100%;height:40px;border:1px solid #ccd3e0;border-radius:8px;background:#fff;color:#12161f;font:500 13.5px 'Space Grotesk';cursor:pointer;margin-top:12px" style-hover="background:#f6f7fa">Tentar novamente</button>
+        </div>
+      </div>
+      <div>
+        <div style="font:500 11px 'IBM Plex Mono',monospace;color:#717c92;margin:0 0 8px">4c · validação — erro inline no campo, sem banner</div>
+        <div style="width:460px;background:#fff;border:1px solid #e3e7ef;border-radius:12px;padding:20px 22px;box-shadow:0 1px 2px rgba(19,22,31,.06)">
+          <label style="display:block;font:500 12px 'Space Grotesk';color:#4a5468;margin-bottom:6px">API Token</label>
+          <input type="password" placeholder="Cole o API token" style="width:100%;box-sizing:border-box;height:42px;padding:0 12px;border:1px solid oklch(0.55 0.19 25);border-radius:8px;font:400 14px 'IBM Plex Mono',monospace;outline:3px solid oklch(0.95 0.03 25)">
+          <div style="font:400 12px 'Space Grotesk';color:oklch(0.5 0.19 25);margin-top:6px">Informe o token da API.</div>
+          <button style="width:100%;height:40px;border:none;border-radius:8px;background:oklch(0.51 0.21 264);color:#fff;font:500 13.5px 'Space Grotesk';cursor:pointer;margin-top:12px">Validar e conectar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======== TELAS 5+6+7 — DASHBOARD ======== -->
+<section style="padding:44px 52px;border-bottom:1px solid rgba(19,22,31,.08)">
+  <div style="display:flex;align-items:baseline;gap:8px;margin:0 0 10px"><span style="font:600 10.5px 'IBM Plex Mono',monospace;background:#12161f;color:#fff;padding:3px 7px;border-radius:4px">05·06·07</span><span style="font:500 12px 'Space Grotesk';color:#4a5468">Painel completo — sync `completed` + volume de conversas + logout</span></div>
+  <div data-screen-label="05 Painel completo" style="width:1200px;background:#f6f7fa;border:1px solid #e3e7ef;border-radius:12px;box-shadow:0 2px 8px rgba(19,22,31,.08);overflow:hidden">
+    <div style="height:56px;background:#fff;border-bottom:1px solid #e3e7ef;display:flex;align-items:center;justify-content:space-between;padding:0 24px">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="display:flex;align-items:center;gap:9px"><div style="width:24px;height:24px;border-radius:6px;background:#12161f;display:flex;align-items:center;justify-content:center"><div style="width:8px;height:8px;border-radius:2px;background:oklch(0.55 0.21 264)"></div></div><span style="font:700 15px 'Space Grotesk';color:#12161f;letter-spacing:-0.02em">agent<span style="color:oklch(0.51 0.21 264)">seller</span></span></div>
+        <div style="width:1px;height:20px;background:#e3e7ef"></div>
+        <span style="font:500 13px 'Space Grotesk';color:#4a5468">Café Aurora</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font:400 11.5px 'IBM Plex Mono',monospace;color:#9aa3b5">ana@cafeaurora.com.br</span>
+        <button style="height:32px;padding:0 12px;border:1px solid #ccd3e0;border-radius:8px;background:#fff;color:#4a5468;font:500 12.5px 'Space Grotesk';cursor:pointer" style-hover="background:#f6f7fa;color:#12161f">Sair</button>
+      </div>
+    </div>
+    <div style="padding:28px 32px 36px;display:flex;flex-direction:column;gap:22px">
+      <div>
+        <div style="font:600 20px 'Space Grotesk';color:#12161f">Visão geral</div>
+        <div style="font:400 12.5px 'Space Grotesk';color:#717c92;margin-top:3px">CRM conectado: <span style="font:500 12px 'IBM Plex Mono',monospace;color:#4a5468">Pipedrive</span> · conectado em 02/07/2026</div>
+      </div>
+
+      <div style="background:#fff;border:1px solid #e3e7ef;border-radius:12px;box-shadow:0 1px 2px rgba(19,22,31,.06)">
+        <div style="padding:16px 22px;border-bottom:1px solid #eef1f6;display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="font:600 14.5px 'Space Grotesk';color:#12161f">Varredura do Pipedrive</span>
+            <span style="display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 10px;border-radius:999px;background:oklch(0.95 0.03 155);color:oklch(0.42 0.13 155);font:500 11px 'IBM Plex Mono',monospace"><span style="width:7px;height:7px;border-radius:50%;background:oklch(0.55 0.15 155)"></span>completed</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px">
+            <span style="font:400 11px 'IBM Plex Mono',monospace;color:#9aa3b5">concluída em 08/07/2026 · 14:12</span>
+            <button style="height:34px;padding:0 14px;border:1px solid #ccd3e0;border-radius:8px;background:#fff;color:#12161f;font:500 13px 'Space Grotesk';cursor:pointer" style-hover="background:#f6f7fa">Ressincronizar</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr)">
+          <div style="padding:18px 22px;border-right:1px solid #eef1f6"><div style="font:600 26px 'Space Grotesk';color:#12161f">2</div><div style="font:500 11px 'IBM Plex Mono',monospace;color:#717c92;margin-top:2px">pipelines</div></div>
+          <div style="padding:18px 22px;border-right:1px solid #eef1f6"><div style="font:600 26px 'Space Grotesk';color:#12161f">9</div><div style="font:500 11px 'IBM Plex Mono',monospace;color:#717c92;margin-top:2px">stages</div></div>
+          <div style="padding:18px 22px;border-right:1px solid #eef1f6"><div style="font:600 26px 'Space Grotesk';color:#12161f">4</div><div style="font:500 11px/1.4 'IBM Plex Mono',monospace;color:#717c92;margin-top:2px">custom fields<br>de person</div></div>
+          <div style="padding:18px 22px;border-right:1px solid #eef1f6"><div style="font:600 26px 'Space Grotesk';color:#12161f">6</div><div style="font:500 11px/1.4 'IBM Plex Mono',monospace;color:#717c92;margin-top:2px">custom fields<br>de deal</div></div>
+          <div style="padding:18px 22px;border-right:1px solid #eef1f6"><div style="font:600 26px 'Space Grotesk';color:#12161f">128</div><div style="font:500 11px 'IBM Plex Mono',monospace;color:#717c92;margin-top:2px">persons</div></div>
+          <div style="padding:18px 22px"><div style="font:600 26px 'Space Grotesk';color:#12161f">47</div><div style="font:500 11px 'IBM Plex Mono',monospace;color:#717c92;margin-top:2px">deals</div></div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;max-width:640px">
+        <div style="background:#fff;border:1px solid #e3e7ef;border-radius:12px;padding:20px 22px;box-shadow:0 1px 2px rgba(19,22,31,.06)">
+          <div style="font:500 12px 'Space Grotesk';color:#717c92">Conversas</div>
+          <div style="font:600 34px 'Space Grotesk';color:#12161f;margin-top:6px">12</div>
+        </div>
+        <div style="background:#fff;border:1px solid #e3e7ef;border-radius:12px;padding:20px 22px;box-shadow:0 1px 2px rgba(19,22,31,.06)">
+          <div style="font:500 12px 'Space Grotesk';color:#717c92">Mensagens</div>
+          <div style="font:600 34px 'Space Grotesk';color:#12161f;margin-top:6px">184</div>
+        </div>
+      </div>
+      <div style="font:400 11.5px/1.6 'IBM Plex Mono',monospace;color:#9aa3b5;max-width:640px">O conteúdo das conversas é privado entre seus clientes e o agent. O painel mostra apenas volumes.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======== TELA 5 — OS 4 ESTADOS DA VARREDURA ======== -->
+<section style="padding:44px 52px;border-bottom:1px solid rgba(19,22,31,.08)">
+  <div style="display:flex;align-items:baseline;gap:8px;margin:0 0 10px"><span style="font:600 10.5px 'IBM Plex Mono',monospace;background:#12161f;color:#fff;padding:3px 7px;border-radius:4px">05</span><span style="font:500 12px 'Space Grotesk';color:#4a5468">Card de varredura — os 4 estados da máquina</span></div>
+  <div style="display:grid;grid-template-columns:repeat(2, 560px);gap:24px">
+
+    <div>
+      <div style="font:500 11px 'IBM Plex Mono',monospace;color:#717c92;margin:0 0 8px">5a · pending — enfileirada, ainda não começou</div>
+      <div style="background:#fff;border:1px solid #e3e7ef;border-radius:12px;box-shadow:0 1px 2px rgba(19,22,31,.06)">
+        <div style="padding:16px 22px;display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:12px"><span style="font:600 14.5px 'Space Grotesk';color:#12161f">Varredura do Pipedrive</span><span style="display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 10px;border-radius:999px;background:oklch(0.95 0.03 75);color:oklch(0.45 0.13 75);font:500 11px 'IBM Plex Mono',monospace"><span style="width:7px;height:7px;border-radius:50%;background:oklch(0.55 0.15 75)"></span>pending</span></div>
+          <button style="height:34px;padding:0 14px;border:1px solid #e3e7ef;border-radius:8px;background:#f6f7fa;color:#9aa3b5;font:500 13px 'Space Grotesk';cursor:not-allowed">Ressincronizar</button>
+        </div>
+        <div style="padding:0 22px 18px;font:400 13px/1.6 'Space Grotesk';color:#4a5468">Na fila. A varredura começa automaticamente — nenhuma ação necessária.</div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font:500 11px 'IBM Plex Mono',monospace;color:#717c92;margin:0 0 8px">5b · syncing — indicador indeterminado, polling Livewire, botão desabilitado</div>
+      <div style="background:#fff;border:1px solid #e3e7ef;border-radius:12px;box-shadow:0 1px 2px rgba(19,22,31,.06);overflow:hidden">
+        <div style="height:3px;background:#e9edf5;position:relative;overflow:hidden"><div style="position:absolute;top:0;width:32%;height:100%;background:oklch(0.51 0.21 264);border-radius:3px;animation:slide 1.3s ease-in-out infinite"></div></div>
+        <div style="padding:14px 22px;display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:12px"><span style="font:600 14.5px 'Space Grotesk';color:#12161f">Varredura do Pipedrive</span><span style="display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 10px;border-radius:999px;background:oklch(0.94 0.03 264);color:oklch(0.42 0.17 264);font:500 11px 'IBM Plex Mono',monospace"><span style="width:7px;height:7px;border-radius:50%;background:oklch(0.51 0.21 264);animation:pulse 1.2s ease-in-out infinite"></span>syncing</span></div>
+          <button style="height:34px;padding:0 14px;border:1px solid #e3e7ef;border-radius:8px;background:#f6f7fa;color:#9aa3b5;font:500 13px 'Space Grotesk';cursor:not-allowed">Ressincronizar</button>
+        </div>
+        <div style="padding:0 22px 18px;display:flex;align-items:center;gap:10px;font:400 13px/1.6 'Space Grotesk';color:#4a5468"><span style="width:14px;height:14px;border:2px solid #e3e7ef;border-top-color:oklch(0.51 0.21 264);border-radius:50%;animation:spin .8s linear infinite;flex:none"></span>Importando pipelines, campos, persons e deals. Esta tela atualiza sozinha.</div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font:500 11px 'IBM Plex Mono',monospace;color:#717c92;margin:0 0 8px">5c · completed — timestamp + contagem por entidade</div>
+      <div style="background:#fff;border:1px solid #e3e7ef;border-radius:12px;box-shadow:0 1px 2px rgba(19,22,31,.06)">
+        <div style="padding:16px 22px;border-bottom:1px solid #eef1f6;display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:12px"><span style="font:600 14.5px 'Space Grotesk';color:#12161f">Varredura do Pipedrive</span><span style="display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 10px;border-radius:999px;background:oklch(0.95 0.03 155);color:oklch(0.42 0.13 155);font:500 11px 'IBM Plex Mono',monospace"><span style="width:7px;height:7px;border-radius:50%;background:oklch(0.55 0.15 155)"></span>completed</span></div>
+          <button style="height:34px;padding:0 14px;border:1px solid #ccd3e0;border-radius:8px;background:#fff;color:#12161f;font:500 13px 'Space Grotesk';cursor:pointer" style-hover="background:#f6f7fa">Ressincronizar</button>
+        </div>
+        <div style="padding:10px 22px;font:400 11px 'IBM Plex Mono',monospace;color:#9aa3b5;border-bottom:1px solid #eef1f6">concluída em 08/07/2026 · 14:12</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr)">
+          <div style="padding:14px 22px;border-right:1px solid #eef1f6;border-bottom:1px solid #eef1f6"><div style="font:600 22px 'Space Grotesk';color:#12161f">2</div><div style="font:500 10.5px 'IBM Plex Mono',monospace;color:#717c92">pipelines</div></div>
+          <div style="padding:14px 22px;border-right:1px solid #eef1f6;border-bottom:1px solid #eef1f6"><div style="font:600 22px 'Space Grotesk';color:#12161f">9</div><div style="font:500 10.5px 'IBM Plex Mono',monospace;color:#717c92">stages</div></div>
+          <div style="padding:14px 22px;border-bottom:1px solid #eef1f6"><div style="font:600 22px 'Space Grotesk';color:#12161f">128</div><div style="font:500 10.5px 'IBM Plex Mono',monospace;color:#717c92">persons</div></div>
+          <div style="padding:14px 22px;border-right:1px solid #eef1f6"><div style="font:600 22px 'Space Grotesk';color:#12161f">4</div><div style="font:500 10.5px/1.4 'IBM Plex Mono',monospace;color:#717c92">c. fields person</div></div>
+          <div style="padding:14px 22px;border-right:1px solid #eef1f6"><div style="font:600 22px 'Space Grotesk';color:#12161f">6</div><div style="font:500 10.5px/1.4 'IBM Plex Mono',monospace;color:#717c92">c. fields deal</div></div>
+          <div style="padding:14px 22px"><div style="font:600 22px 'Space Grotesk';color:#12161f">47</div><div style="font:500 10.5px 'IBM Plex Mono',monospace;color:#717c92">deals</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font:500 11px 'IBM Plex Mono',monospace;color:#717c92;margin:0 0 8px">5d · failed — erro legível e copiável; dados já importados permanecem</div>
+      <div style="background:#fff;border:1px solid oklch(0.85 0.07 25);border-radius:12px;box-shadow:0 1px 2px rgba(19,22,31,.06)">
+        <div style="padding:16px 22px;border-bottom:1px solid #eef1f6;display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:12px"><span style="font:600 14.5px 'Space Grotesk';color:#12161f">Varredura do Pipedrive</span><span style="display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 10px;border-radius:999px;background:oklch(0.95 0.03 25);color:oklch(0.45 0.17 25);font:500 11px 'IBM Plex Mono',monospace"><span style="width:7px;height:7px;border-radius:50%;background:oklch(0.55 0.19 25)"></span>failed</span></div>
+          <button style="height:34px;padding:0 14px;border:1px solid #ccd3e0;border-radius:8px;background:#fff;color:#12161f;font:500 13px 'Space Grotesk';cursor:pointer" style-hover="background:#f6f7fa">Ressincronizar</button>
+        </div>
+        <div style="padding:10px 22px 0;font:400 11px 'IBM Plex Mono',monospace;color:#9aa3b5">interrompida em 08/07/2026 · 14:09</div>
+        <div style="margin:10px 22px 0;display:flex;align-items:flex-start;gap:8px">
+          <pre style="flex:1;margin:0;background:#f2f4f9;border:1px solid #e3e7ef;border-radius:8px;padding:10px 12px;font:400 11px/1.6 'IBM Plex Mono',monospace;color:oklch(0.4 0.15 25);white-space:pre-wrap;user-select:all">Pipedrive API respondeu 429 (Too Many Requests) ao paginar /persons — página 3 de 7. Tente novamente em alguns minutos.</pre>
+          <button title="Copiar erro" style="flex:none;width:34px;height:34px;border:1px solid #ccd3e0;border-radius:8px;background:#fff;color:#4a5468;font:500 12px 'IBM Plex Mono',monospace;cursor:pointer" style-hover="background:#f6f7fa">⧉</button>
+        </div>
+        <div style="padding:12px 22px 18px;font:400 12.5px/1.6 'Space Grotesk';color:#717c92">Os registros já importados nas páginas anteriores continuam no banco — a varredura não os apaga.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======== TELA 6 — VOLUME ZERO ======== -->
+<section style="padding:44px 52px 60px">
+  <div style="display:flex;align-items:baseline;gap:8px;margin:0 0 10px"><span style="font:600 10.5px 'IBM Plex Mono',monospace;background:#12161f;color:#fff;padding:3px 7px;border-radius:4px">06</span><span style="font:500 12px 'Space Grotesk';color:#4a5468">Volume de conversas — zero honesto (não é erro)</span></div>
+  <div style="width:640px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px">
+      <div style="background:#fff;border:1px solid #e3e7ef;border-radius:12px;padding:20px 22px;box-shadow:0 1px 2px rgba(19,22,31,.06)">
+        <div style="font:500 12px 'Space Grotesk';color:#717c92">Conversas</div>
+        <div style="font:600 34px 'Space Grotesk';color:#12161f;margin-top:6px">0</div>
+      </div>
+      <div style="background:#fff;border:1px solid #e3e7ef;border-radius:12px;padding:20px 22px;box-shadow:0 1px 2px rgba(19,22,31,.06)">
+        <div style="font:500 12px 'Space Grotesk';color:#717c92">Mensagens</div>
+        <div style="font:600 34px 'Space Grotesk';color:#12161f;margin-top:6px">0</div>
+      </div>
+    </div>
+    <div style="font:400 12.5px/1.6 'Space Grotesk';color:#717c92;margin-top:12px">Nenhuma conversa ainda. Os números aparecem assim que seus clientes começarem a conversar com o agent — nada a configurar aqui.</div>
+  </div>
+</section>
+</x-dc>
+</body>
+</html>

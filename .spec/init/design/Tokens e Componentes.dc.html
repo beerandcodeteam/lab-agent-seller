@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#eceef3;font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#3348d6;text-decoration:none}a:hover{color:#2f43c9;text-decoration:underline}
+details>summary{list-style:none}details>summary::-webkit-details-marker{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes blink{50%{opacity:0}}
+@keyframes slide{0%{left:-35%}100%{left:105%}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+</style>
+</helmet>
+
+<section style="padding:48px 52px 40px;border-bottom:1px solid rgba(19,22,31,.08)">
+  <div style="display:flex;align-items:center;gap:14px">
+    <div style="width:34px;height:34px;border-radius:9px;background:#12161f;display:flex;align-items:center;justify-content:center"><div style="width:12px;height:12px;border-radius:3px;background:oklch(0.55 0.21 264)"></div></div>
+    <div style="font:700 26px 'Space Grotesk';color:#12161f;letter-spacing:-0.02em">agent<span style="color:oklch(0.51 0.21 264)">seller</span></div>
+    <div style="font:500 11px 'IBM Plex Mono',monospace;color:#717c92;border:1px solid #d7dce8;border-radius:999px;padding:4px 10px;margin-left:6px">design tokens · componentes · v1</div>
+  </div>
+  <p style="margin:14px 0 0;font:400 14px/1.6 'Space Grotesk';color:#4a5468;max-width:640px">Sistema visual do Agent Seller. Futurista minimalista: brancos frios, um accent elétrico, mono para tudo que é técnico. Ver também: <a href="Painel da Empresa.dc.html">Painel da Empresa</a> · <a href="Cliente Final.dc.html">Cliente Final</a></p>
+</section>
+
+<!-- ============ TOKENS ============ -->
+<section style="padding:40px 52px;border-bottom:1px solid rgba(19,22,31,.08)">
+  <div style="font:600 11px 'IBM Plex Mono',monospace;color:#717c92;letter-spacing:.08em;margin:0 0 18px">01 · PALETA — LIGHT</div>
+  <div style="display:flex;flex-wrap:wrap;gap:10px">
+    <div style="width:118px"><div style="height:64px;border-radius:8px;background:#f6f7fa;border:1px solid #e3e7ef"></div><div style="font:500 10.5px 'IBM Plex Mono',monospace;color:#4a5468;margin-top:6px">bg<br><span style="color:#9aa3b5">#F6F7FA</span></div></div>
+    <div style="width:118px"><div style="height:64px;border-radius:8px;background:#fff;border:1px solid #e3e7ef"></div><div style="font:500 10.5px 'IBM Plex Mono',monospace;color:#4a5468;margin-top:6px">surface<br><span style="color:#9aa3b5">#FFFFFF</span></div></div>
+    <div style="width:118px"><div style="height:64px;border-radius:8px;background:#12161f"></div><div style="font:500 10.5px 'IBM Plex Mono',monospace;color:#4a5468;margin-top:6px">ink<br><span style="color:#9aa3b5">#12161F</span></div></div>
+    <div style="width:118px"><div style="height:64px;border-radius:8px;background:#4a5468"></div><div style="font:500 10.5px 'IBM Plex Mono',monospace;color:#4a5468;margin-top:6px">ink-2<br><span style="color:#9aa3b5">#4A5468</span></div></div>
+    <div style="width:118px"><div style="height:64px;border-radius:8px;background:#9aa3b5"></div><div style="font:500 10.5px 'IBM Plex Mono',monospace;color:#4a5468;margin-top:6px">ink-3<br><span style="color:#9aa3b5">#9AA3B5</span></div></div>
+    <div style="width:118px"><div style="height:64px;border-radius:8px;background:#e3e7ef"></div><div style="font:500 10.5px 'IBM Plex Mono',monospace;color:#4a5468;margin-top:6px">border<br><span style="color:#9aa3b5">#E3E7EF</span></div></div>
+    <div style="width:118px"><div style="height:64px;border-radius:8px;background:oklch(0.51 0.21 264)"></div><div style="font:500 10.5px 'IBM Plex Mono',monospace;color:#4a5468;margin-top:6px">accent<br><span style="color:#9aa3b5">oklch(.51 .21 264)</span></div></div>
+    <div style="width:118px"><div style="height:64px;border-radius:8px;background:oklch(0.94 0.03 264)"></div><div style="font:500 10.5px 'IBM Plex Mono',monospace;color:#4a5468;margin-top:6px">accent-soft<br><span style="color:#9aa3b5">oklch(.94 .03 264)</span></div></div>
+    <div style="width:118px"><div style="height:64px;border-radius:8px;background:oklch(0.55 0.15 155)"></div><div style="font:500 10.5px 'IBM Plex Mono',monospace;color:#4a5468;margin-top:6px">success<br><span style="color:#9aa3b5">oklch(.55 .15 155)</span></div></div>
+    <div style="width:118px"><div style="height:64px;border-radius:8px;background:oklch(0.55 0.15 75)"></div><div style="font:500 10.5px 'IBM Plex Mono',monospace;color:#4a5468;margin-top:6px">warn<br><span style="color:#9aa3b5">oklch(.55 .15 75)</span></div></div>
+    <div style="width:118px"><div style="height:64px;border-radius:8px;background:oklch(0.55 0.19 25)"></div><div style="font:500 10.5px 'IBM Plex Mono',monospace;color:#4a5468;margin-top:6px">danger<br><span style="color:#9aa3b5">oklch(.55 .19 25)</span></div></div>
+    <div style="width:118px"><div style="height:64px;border-radius:8px;background:oklch(0.55 0.19 300)"></div><div style="font:500 10.5px 'IBM Plex Mono',monospace;color:#4a5468;margin-top:6px">tool (futuro)<br><span style="color:#9aa3b5">oklch(.55 .19 300)</span></div></div>
+  </div>
+
+  <div style="font:600 11px 'IBM Plex Mono',monospace;color:#717c92;letter-spacing:.08em;margin:30px 0 18px">01b · PALETA — DARK</div>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;background:#0e1118;border-radius:12px;padding:16px">
+    <div style="width:118px"><div style="height:56px;border-radius:8px;background:#0e1118;border:1px solid #232a3a"></div><div style="font:500 10.5px 'IBM Plex Mono',monospace;color:#8b93a7;margin-top:6px">bg #0E1118</div></div>
+    <div style="width:118px"><div style="height:56px;border-radius:8px;background:#151a26"></div><div style="font:500 10.5px 'IBM Plex Mono',monospace;color:#8b93a7;margin-top:6px">surface #151A26</div></div>
+    <div style="width:118px"><div style="height:56px;border-radius:8px;background:#e8ebf2"></div><div style="font:500 10.5px 'IBM Plex Mono',monospace;color:#8b93a7;margin-top:6px">ink #E8EBF2</div></div>
+    <div style="width:118px"><div style="height:56px;border-radius:8px;background:#232a3a"></div><div style="font:500 10.5px 'IBM Plex Mono',monospace;color:#8b93a7;margin-top:6px">border #232A3A</div></div>
+    <div style="width:118px"><div style="height:56px;border-radius:8px;background:oklch(0.68 0.17 264)"></div><div style="font:500 10.5px 'IBM Plex Mono',monospace;color:#8b93a7;margin-top:6px">accent oklch(.68 .17 264)</div></div>
+    <div style="width:118px"><div style="height:56px;border-radius:8px;background:oklch(0.25 0.05 264)"></div><div style="font:500 10.5px 'IBM Plex Mono',monospace;color:#8b93a7;margin-top:6px">accent-soft</div></div>
+  </div>
+
+  <div style="display:flex;gap:32px;flex-wrap:wrap;margin-top:34px;align-items:flex-start">
+    <div>
+      <div style="font:600 11px 'IBM Plex Mono',monospace;color:#717c92;letter-spacing:.08em;margin:0 0 16px">02 · TIPOGRAFIA</div>
+      <div style="background:#fff;border:1px solid #e3e7ef;border-radius:12px;padding:22px 26px;width:520px;display:flex;flex-direction:column;gap:14px">
+        <div><div style="font:700 30px/1.15 'Space Grotesk';color:#12161f;letter-spacing:-0.02em">Display · Space Grotesk 700</div><div style="font:400 10.5px 'IBM Plex Mono',monospace;color:#9aa3b5;margin-top:3px">text-3xl / 30px / -0.02em</div></div>
+        <div><div style="font:600 20px/1.25 'Space Grotesk';color:#12161f">Título de seção · 600</div><div style="font:400 10.5px 'IBM Plex Mono',monospace;color:#9aa3b5;margin-top:3px">text-xl / 20px</div></div>
+        <div><div style="font:400 14px/1.6 'Space Grotesk';color:#4a5468">Corpo — Space Grotesk 400. Interface em português do Brasil, frases curtas, uma coisa por tela.</div><div style="font:400 10.5px 'IBM Plex Mono',monospace;color:#9aa3b5;margin-top:3px">text-sm / 14px / 1.6</div></div>
+        <div><div style="font:500 12px 'Space Grotesk';color:#717c92">Rótulos e metadados · 500 / 12px</div></div>
+        <div><div style="font:400 12px 'IBM Plex Mono',monospace;color:#12161f">mono · IBM Plex Mono — eventos, tokens, timestamps, payloads</div><div style="font:400 10.5px 'IBM Plex Mono',monospace;color:#9aa3b5;margin-top:3px">font-mono / 12px</div></div>
+      </div>
+    </div>
+    <div>
+      <div style="font:600 11px 'IBM Plex Mono',monospace;color:#717c92;letter-spacing:.08em;margin:0 0 16px">03 · RADIUS · SOMBRA · ESPAÇO</div>
+      <div style="background:#fff;border:1px solid #e3e7ef;border-radius:12px;padding:22px 26px;width:380px;display:flex;flex-direction:column;gap:18px">
+        <div style="display:flex;gap:14px;align-items:flex-end">
+          <div style="width:64px;height:44px;background:#f6f7fa;border:1px solid #ccd3e0;border-radius:6px;display:flex;align-items:center;justify-content:center;font:500 10px 'IBM Plex Mono',monospace;color:#717c92">6</div>
+          <div style="width:64px;height:44px;background:#f6f7fa;border:1px solid #ccd3e0;border-radius:10px;display:flex;align-items:center;justify-content:center;font:500 10px 'IBM Plex Mono',monospace;color:#717c92">10</div>
+          <div style="width:64px;height:44px;background:#f6f7fa;border:1px solid #ccd3e0;border-radius:16px;display:flex;align-items:center;justify-content:center;font:500 10px 'IBM Plex Mono',monospace;color:#717c92">16</div>
+          <div style="width:64px;height:32px;background:#f6f7fa;border:1px solid #ccd3e0;border-radius:999px;display:flex;align-items:center;justify-content:center;font:500 10px 'IBM Plex Mono',monospace;color:#717c92">pill</div>
+        </div>
+        <div style="display:flex;gap:14px">
+          <div style="width:88px;height:52px;background:#fff;border-radius:10px;box-shadow:0 1px 2px rgba(19,22,31,.06);display:flex;align-items:center;justify-content:center;font:500 10px 'IBM Plex Mono',monospace;color:#717c92">sm</div>
+          <div style="width:88px;height:52px;background:#fff;border-radius:10px;box-shadow:0 2px 8px rgba(19,22,31,.09);display:flex;align-items:center;justify-content:center;font:500 10px 'IBM Plex Mono',monospace;color:#717c92">md</div>
+          <div style="width:88px;height:52px;background:#fff;border-radius:10px;box-shadow:0 8px 24px rgba(19,22,31,.12);display:flex;align-items:center;justify-content:center;font:500 10px 'IBM Plex Mono',monospace;color:#717c92">lg</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:flex-end">
+          <div style="width:4px;height:20px;background:oklch(0.51 0.21 264)"></div><div style="width:8px;height:20px;background:oklch(0.51 0.21 264)"></div><div style="width:12px;height:20px;background:oklch(0.51 0.21 264)"></div><div style="width:16px;height:20px;background:oklch(0.51 0.21 264)"></div><div style="width:24px;height:20px;background:oklch(0.51 0.21 264)"></div><div style="width:32px;height:20px;background:oklch(0.51 0.21 264)"></div><div style="width:48px;height:20px;background:oklch(0.51 0.21 264)"></div>
+          <div style="font:500 10px 'IBM Plex Mono',monospace;color:#717c92;margin-left:8px">4·8·12·16·24·32·48</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="font:600 11px 'IBM Plex Mono',monospace;color:#717c92;letter-spacing:.08em;margin:34px 0 16px">04 · @THEME (TAILWIND V4)</div>
+  <pre style="margin:0;background:#0e1118;color:#c7cddc;border-radius:12px;padding:22px 26px;font:400 12px/1.75 'IBM Plex Mono',monospace;overflow:auto;max-width:760px">@import "tailwindcss";
+
+@theme {
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --color-bg: #f6f7fa;          --color-surface: #ffffff;
+  --color-ink: #12161f;         --color-ink-2: #4a5468;
+  --color-ink-3: #9aa3b5;       --color-border: #e3e7ef;
+
+  --color-accent: oklch(0.51 0.21 264);
+  --color-accent-strong: oklch(0.44 0.19 264);
+  --color-accent-soft: oklch(0.94 0.03 264);
+
+  --color-success: oklch(0.55 0.15 155); --color-success-soft: oklch(0.95 0.03 155);
+  --color-warn:    oklch(0.55 0.15 75);  --color-warn-soft:    oklch(0.95 0.03 75);
+  --color-danger:  oklch(0.55 0.19 25);  --color-danger-soft:  oklch(0.95 0.03 25);
+  --color-tool:    oklch(0.55 0.19 300); --color-tool-soft:    oklch(0.95 0.03 300);
+
+  --radius-field: 8px; --radius-card: 12px;
+  --shadow-sm: 0 1px 2px rgb(19 22 31 / .06);
+  --shadow-md: 0 2px 8px rgb(19 22 31 / .09);
+  --shadow-lg: 0 8px 24px rgb(19 22 31 / .12);
+}
+
+/* dark mode: sobrescrever variáveis sob .dark, sem segunda paleta */
+.dark {
+  --color-bg: #0e1118; --color-surface: #151a26;
+  --color-ink: #e8ebf2; --color-ink-2: #aab2c4; --color-ink-3: #626c82;
+  --color-border: #232a3a;
+  --color-accent: oklch(0.68 0.17 264);
+  --color-accent-soft: oklch(0.25 0.05 264);
+}</pre>
+</section>
+
+<!-- ============ COMPONENTES ============ -->
+<section style="padding:40px 52px;border-bottom:1px solid rgba(19,22,31,.08)">
+  <div style="font:600 11px 'IBM Plex Mono',monospace;color:#717c92;letter-spacing:.08em;margin:0 0 18px">05 · &lt;x-button&gt;</div>
+  <div style="background:#fff;border:1px solid #e3e7ef;border-radius:12px;padding:24px 26px;display:flex;flex-direction:column;gap:18px;max-width:900px">
+    <div style="display:flex;gap:22px;flex-wrap:wrap;align-items:center">
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:center"><button style="height:38px;padding:0 18px;border:none;border-radius:8px;background:oklch(0.51 0.21 264);color:#fff;font:500 13.5px 'Space Grotesk';cursor:pointer" style-hover="background:oklch(0.44 0.19 264)">Conectar Pipedrive</button><span style="font:400 10px 'IBM Plex Mono',monospace;color:#9aa3b5">default</span></div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:center"><button style="height:38px;padding:0 18px;border:none;border-radius:8px;background:oklch(0.44 0.19 264);color:#fff;font:500 13.5px 'Space Grotesk';cursor:pointer">Conectar Pipedrive</button><span style="font:400 10px 'IBM Plex Mono',monospace;color:#9aa3b5">hover</span></div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:center"><button style="height:38px;padding:0 18px;border:none;border-radius:8px;background:oklch(0.51 0.21 264);color:#fff;font:500 13.5px 'Space Grotesk';cursor:pointer;outline:2px solid oklch(0.51 0.21 264);outline-offset:2px">Conectar Pipedrive</button><span style="font:400 10px 'IBM Plex Mono',monospace;color:#9aa3b5">focus</span></div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:center"><button style="height:38px;padding:0 18px;border:none;border-radius:8px;background:#e3e7ef;color:#9aa3b5;font:500 13.5px 'Space Grotesk';cursor:not-allowed">Conectar Pipedrive</button><span style="font:400 10px 'IBM Plex Mono',monospace;color:#9aa3b5">disabled</span></div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:center"><button style="height:38px;padding:0 18px;border:none;border-radius:8px;background:oklch(0.51 0.21 264);color:#fff;font:500 13.5px 'Space Grotesk';display:flex;align-items:center;gap:8px;cursor:wait"><span style="width:13px;height:13px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite"></span>Validando…</button><span style="font:400 10px 'IBM Plex Mono',monospace;color:#9aa3b5">loading</span></div>
+    </div>
+    <div style="display:flex;gap:22px;flex-wrap:wrap;align-items:center;border-top:1px dashed #e3e7ef;padding-top:18px">
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:center"><button style="height:38px;padding:0 18px;border:1px solid #ccd3e0;border-radius:8px;background:#fff;color:#12161f;font:500 13.5px 'Space Grotesk';cursor:pointer" style-hover="border-color:#9aa3b5;background:#f6f7fa">Ressincronizar</button><span style="font:400 10px 'IBM Plex Mono',monospace;color:#9aa3b5">secondary</span></div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:center"><button style="height:38px;padding:0 18px;border:1px solid #e3e7ef;border-radius:8px;background:#f6f7fa;color:#9aa3b5;font:500 13.5px 'Space Grotesk';cursor:not-allowed">Ressincronizar</button><span style="font:400 10px 'IBM Plex Mono',monospace;color:#9aa3b5">secondary · disabled</span></div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:center"><button style="height:34px;padding:0 12px;border:none;border-radius:8px;background:transparent;color:#4a5468;font:500 13px 'Space Grotesk';cursor:pointer" style-hover="background:#eef0f6;color:#12161f">Sair</button><span style="font:400 10px 'IBM Plex Mono',monospace;color:#9aa3b5">ghost</span></div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:center"><button style="height:38px;padding:0 18px;border:none;border-radius:8px;background:oklch(0.55 0.19 25);color:#fff;font:500 13.5px 'Space Grotesk';cursor:pointer" style-hover="background:oklch(0.48 0.18 25)">Reenviar</button><span style="font:400 10px 'IBM Plex Mono',monospace;color:#9aa3b5">danger</span></div>
+    </div>
+  </div>
+
+  <div style="font:600 11px 'IBM Plex Mono',monospace;color:#717c92;letter-spacing:.08em;margin:34px 0 18px">06 · &lt;x-input&gt;</div>
+  <div style="background:#fff;border:1px solid #e3e7ef;border-radius:12px;padding:24px 26px;display:grid;grid-template-columns:repeat(3,260px);gap:22px;max-width:900px">
+    <div><label style="display:block;font:500 12px 'Space Grotesk';color:#4a5468;margin-bottom:6px">E-mail</label><input style="width:100%;box-sizing:border-box;height:40px;padding:0 12px;border:1px solid #ccd3e0;border-radius:8px;background:#fff;font:400 14px 'Space Grotesk';color:#12161f" placeholder="voce@empresa.com.br"><div style="font:400 10px 'IBM Plex Mono',monospace;color:#9aa3b5;margin-top:5px">default</div></div>
+    <div><label style="display:block;font:500 12px 'Space Grotesk';color:#4a5468;margin-bottom:6px">E-mail</label><input style="width:100%;box-sizing:border-box;height:40px;padding:0 12px;border:1px solid oklch(0.51 0.21 264);border-radius:8px;background:#fff;font:400 14px 'Space Grotesk';color:#12161f;outline:3px solid oklch(0.94 0.03 264)" value="ana@cafeaurora.com.br"><div style="font:400 10px 'IBM Plex Mono',monospace;color:#9aa3b5;margin-top:5px">focus</div></div>
+    <div><label style="display:block;font:500 12px 'Space Grotesk';color:#4a5468;margin-bottom:6px">E-mail</label><input style="width:100%;box-sizing:border-box;height:40px;padding:0 12px;border:1px solid #e3e7ef;border-radius:8px;background:#f6f7fa;font:400 14px 'Space Grotesk';color:#9aa3b5" value="ana@cafeaurora.com.br" disabled><div style="font:400 10px 'IBM Plex Mono',monospace;color:#9aa3b5;margin-top:5px">disabled</div></div>
+    <div><label style="display:block;font:500 12px 'Space Grotesk';color:#4a5468;margin-bottom:6px">Senha</label><input type="password" style="width:100%;box-sizing:border-box;height:40px;padding:0 12px;border:1px solid oklch(0.55 0.19 25);border-radius:8px;background:#fff;font:400 14px 'Space Grotesk';color:#12161f" value="1234"><div style="font:400 11.5px 'Space Grotesk';color:oklch(0.5 0.19 25);margin-top:5px">Mínimo de 8 caracteres.</div><div style="font:400 10px 'IBM Plex Mono',monospace;color:#9aa3b5;margin-top:3px">error</div></div>
+    <div><label style="display:flex;justify-content:space-between;font:500 12px 'Space Grotesk';color:#4a5468;margin-bottom:6px">API Token <span style="font:500 10px 'IBM Plex Mono',monospace;color:oklch(0.55 0.15 75)">sensível</span></label><input type="password" style="width:100%;box-sizing:border-box;height:40px;padding:0 12px;border:1px solid #ccd3e0;border-radius:8px;background:#fff;font:400 14px 'IBM Plex Mono',monospace;color:#12161f;letter-spacing:2px" value="••••••••••••••••"><div style="font:400 11.5px 'Space Grotesk';color:#717c92;margin-top:5px">Nunca reexibido após salvar.</div><div style="font:400 10px 'IBM Plex Mono',monospace;color:#9aa3b5;margin-top:3px">sensitive / masked</div></div>
+    <div><label style="display:block;font:500 12px 'Space Grotesk';color:#4a5468;margin-bottom:6px">Provider de CRM</label><div style="width:100%;box-sizing:border-box;height:40px;padding:0 12px;border:1px solid #ccd3e0;border-radius:8px;background:#fff;font:400 14px 'Space Grotesk';color:#12161f;display:flex;align-items:center;justify-content:space-between">Pipedrive <span style="color:#9aa3b5;font-size:11px">▾</span></div><div style="font:400 10px 'IBM Plex Mono',monospace;color:#9aa3b5;margin-top:5px">select</div></div>
+  </div>
+
+  <div style="display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start;margin-top:34px">
+    <div>
+      <div style="font:600 11px 'IBM Plex Mono',monospace;color:#717c92;letter-spacing:.08em;margin:0 0 18px">07 · &lt;x-badge&gt; (estados da máquina)</div>
+      <div style="background:#fff;border:1px solid #e3e7ef;border-radius:12px;padding:24px 26px;display:flex;gap:14px;flex-wrap:wrap;width:520px;box-sizing:border-box">
+        <span style="display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 11px;border-radius:999px;background:oklch(0.95 0.03 75);color:oklch(0.45 0.13 75);font:500 11.5px 'IBM Plex Mono',monospace"><span style="width:7px;height:7px;border-radius:50%;background:oklch(0.55 0.15 75)"></span>pending</span>
+        <span style="display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 11px;border-radius:999px;background:oklch(0.94 0.03 264);color:oklch(0.42 0.17 264);font:500 11.5px 'IBM Plex Mono',monospace"><span style="width:7px;height:7px;border-radius:50%;background:oklch(0.51 0.21 264);animation:pulse 1.2s ease-in-out infinite"></span>syncing</span>
+        <span style="display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 11px;border-radius:999px;background:oklch(0.95 0.03 155);color:oklch(0.42 0.13 155);font:500 11.5px 'IBM Plex Mono',monospace"><span style="width:7px;height:7px;border-radius:50%;background:oklch(0.55 0.15 155)"></span>completed</span>
+        <span style="display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 11px;border-radius:999px;background:oklch(0.95 0.03 25);color:oklch(0.45 0.17 25);font:500 11.5px 'IBM Plex Mono',monospace"><span style="width:7px;height:7px;border-radius:50%;background:oklch(0.55 0.19 25)"></span>failed</span>
+        <span style="display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 11px;border-radius:999px;background:#eef0f6;color:#4a5468;font:500 11.5px 'IBM Plex Mono',monospace">neutro</span>
+        <span style="display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 11px;border-radius:999px;border:1px dashed #ccd3e0;color:#9aa3b5;font:500 11.5px 'Space Grotesk'">em breve</span>
+      </div>
+    </div>
+    <div>
+      <div style="font:600 11px 'IBM Plex Mono',monospace;color:#717c92;letter-spacing:.08em;margin:0 0 18px">08 · &lt;x-alert&gt;</div>
+      <div style="display:flex;flex-direction:column;gap:12px;width:480px">
+        <div style="display:flex;gap:11px;padding:13px 15px;border:1px solid oklch(0.85 0.05 264);border-radius:10px;background:oklch(0.97 0.015 264)"><span style="flex:none;width:20px;height:20px;border-radius:6px;background:oklch(0.94 0.03 264);color:oklch(0.45 0.19 264);display:flex;align-items:center;justify-content:center;font:600 12px 'IBM Plex Mono',monospace">i</span><div style="font:400 13px/1.5 'Space Grotesk';color:#12161f">A varredura roda em segundo plano. Você pode sair desta tela.</div></div>
+        <div style="display:flex;gap:11px;padding:13px 15px;border:1px solid oklch(0.85 0.06 155);border-radius:10px;background:oklch(0.97 0.02 155)"><span style="flex:none;width:20px;height:20px;border-radius:6px;background:oklch(0.95 0.03 155);color:oklch(0.42 0.13 155);display:flex;align-items:center;justify-content:center;font:600 12px 'IBM Plex Mono',monospace">✓</span><div style="font:400 13px/1.5 'Space Grotesk';color:#12161f">Pipedrive conectado. A primeira varredura foi enfileirada.</div></div>
+        <div style="display:flex;gap:11px;padding:13px 15px;border:1px solid oklch(0.85 0.06 75);border-radius:10px;background:oklch(0.97 0.02 75)"><span style="flex:none;width:20px;height:20px;border-radius:6px;background:oklch(0.95 0.03 75);color:oklch(0.45 0.13 75);display:flex;align-items:center;justify-content:center;font:600 12px 'IBM Plex Mono',monospace">!</span><div style="font:400 13px/1.5 'Space Grotesk';color:#12161f">Não foi possível validar o token — falha de rede. Tente novamente.</div></div>
+        <div style="display:flex;gap:11px;padding:13px 15px;border:1px solid oklch(0.85 0.07 25);border-radius:10px;background:oklch(0.97 0.02 25)"><span style="flex:none;width:20px;height:20px;border-radius:6px;background:oklch(0.95 0.03 25);color:oklch(0.45 0.17 25);display:flex;align-items:center;justify-content:center;font:600 12px 'IBM Plex Mono',monospace">×</span><div style="font:400 13px/1.5 'Space Grotesk';color:#12161f">Credenciais inválidas.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start;margin-top:34px">
+    <div>
+      <div style="font:600 11px 'IBM Plex Mono',monospace;color:#717c92;letter-spacing:.08em;margin:0 0 18px">09 · &lt;x-card&gt; + &lt;x-empty-state&gt;</div>
+      <div style="display:flex;gap:20px;align-items:flex-start">
+        <div style="width:300px;background:#fff;border:1px solid #e3e7ef;border-radius:12px;box-shadow:0 1px 2px rgba(19,22,31,.06)">
+          <div style="padding:14px 18px;border-bottom:1px solid #eef1f6;display:flex;justify-content:space-between;align-items:center"><span style="font:600 13.5px 'Space Grotesk';color:#12161f">Título do card</span><span style="font:500 10.5px 'IBM Plex Mono',monospace;color:#9aa3b5">meta</span></div>
+          <div style="padding:18px;font:400 13px/1.6 'Space Grotesk';color:#4a5468">Corpo do card. Header e footer são slots opcionais.</div>
+          <div style="padding:12px 18px;border-top:1px solid #eef1f6;display:flex;justify-content:flex-end"><button style="height:32px;padding:0 14px;border:1px solid #ccd3e0;border-radius:8px;background:#fff;color:#12161f;font:500 12.5px 'Space Grotesk';cursor:pointer">Ação</button></div>
+        </div>
+        <div style="width:340px;background:#fff;border:1px solid #e3e7ef;border-radius:12px;padding:40px 32px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px">
+          <div style="width:44px;height:44px;border-radius:12px;background:#f1f3f8;border:1px dashed #ccd3e0;display:flex;align-items:center;justify-content:center;font:500 18px 'IBM Plex Mono',monospace;color:#9aa3b5;margin-bottom:8px">∅</div>
+          <div style="font:600 15px 'Space Grotesk';color:#12161f">Nada por aqui ainda</div>
+          <div style="font:400 13px/1.55 'Space Grotesk';color:#717c92;max-width:260px">Slot de descrição explicando por que o vazio é esperado.</div>
+          <button style="height:36px;padding:0 16px;border:none;border-radius:8px;background:oklch(0.51 0.21 264);color:#fff;font:500 13px 'Space Grotesk';cursor:pointer;margin-top:10px">Call to action</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ EVENTO POLIMÓRFICO ============ -->
+<section style="padding:40px 52px 56px">
+  <div style="font:600 11px 'IBM Plex Mono',monospace;color:#717c92;letter-spacing:.08em;margin:0 0 6px">10 · &lt;x-agent-event&gt; — item polimórfico do painel de atividade</div>
+  <p style="margin:0 0 18px;font:400 13px/1.6 'Space Grotesk';color:#4a5468;max-width:640px">Anatomia fixa: ícone tipado + nome do evento em mono + timestamp + resumo humano + payload JSON colapsável. Os 4 tipos do MVP e os 2 futuros (<span style="font-family:'IBM Plex Mono',monospace;font-size:12px">tool.*</span>) usam o mesmo componente — nenhum layout hardcoded.</p>
+  <div style="width:420px;background:#fff;border:1px solid #e3e7ef;border-radius:12px;overflow:hidden">
+    <div style="padding:11px 14px;border-bottom:1px solid #eef1f6;display:flex;justify-content:space-between;align-items:center;background:#fafbfd"><span style="font:600 12px 'Space Grotesk';color:#12161f">Atividade do agent</span><span style="font:400 10px 'IBM Plex Mono',monospace;color:#9aa3b5">efêmero · some ao recarregar</span></div>
+
+    <div style="display:flex;gap:10px;padding:11px 14px;border-bottom:1px solid #eef1f6">
+      <div style="flex:none;width:22px;height:22px;border-radius:6px;background:oklch(0.94 0.03 264);color:oklch(0.45 0.19 264);display:flex;align-items:center;justify-content:center;font:600 12px 'IBM Plex Mono',monospace">→</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><span style="font:600 11px 'IBM Plex Mono',monospace;color:#12161f">request.started</span><span style="font:400 10px 'IBM Plex Mono',monospace;color:#9aa3b5">14:32:07.219</span></div>
+        <div style="font:400 12px 'Space Grotesk';color:#4a5468;margin-top:2px">claude-sonnet-4-5 · 6 mensagens enviadas</div>
+        <details style="margin-top:6px" open>
+          <summary style="cursor:pointer;font:500 10.5px 'IBM Plex Mono',monospace;color:#717c92">payload ▾</summary>
+          <pre style="margin:6px 0 0;background:#f2f4f9;border:1px solid #e3e7ef;border-radius:6px;padding:8px 10px;font:400 10.5px/1.6 'IBM Plex Mono',monospace;color:#4a5468;overflow:auto">{ "model": "claude-sonnet-4-5",
+  "messages": 6 }</pre>
+        </details>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;padding:11px 14px;border-bottom:1px solid #eef1f6">
+      <div style="flex:none;width:22px;height:22px;border-radius:6px;background:#eef0f6;color:#4a5468;display:flex;align-items:center;justify-content:center;font:600 12px 'IBM Plex Mono',monospace">≈</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><span style="font:600 11px 'IBM Plex Mono',monospace;color:#12161f">stream.delta</span><span style="font:400 10px 'IBM Plex Mono',monospace;color:#9aa3b5">14:32:09.480</span></div>
+        <div style="font:400 12px 'Space Grotesk';color:#4a5468;margin-top:2px">streaming · 1.204 caracteres agregados</div>
+        <details style="margin-top:6px"><summary style="cursor:pointer;font:500 10.5px 'IBM Plex Mono',monospace;color:#717c92">payload ▸</summary><pre style="margin:6px 0 0;background:#f2f4f9;border:1px solid #e3e7ef;border-radius:6px;padding:8px 10px;font:400 10.5px/1.6 'IBM Plex Mono',monospace;color:#4a5468;overflow:auto">{ "chars": 1204 }</pre></details>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;padding:11px 14px;border-bottom:1px solid #eef1f6">
+      <div style="flex:none;width:22px;height:22px;border-radius:6px;background:oklch(0.95 0.03 155);color:oklch(0.42 0.13 155);display:flex;align-items:center;justify-content:center;font:600 12px 'IBM Plex Mono',monospace">✓</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><span style="font:600 11px 'IBM Plex Mono',monospace;color:#12161f">response.completed</span><span style="font:400 10px 'IBM Plex Mono',monospace;color:#9aa3b5">14:32:11.032</span></div>
+        <div style="font:400 12px 'Space Grotesk';color:#4a5468;margin-top:2px">3,8&#8202;s · 812 tokens de saída</div>
+        <details style="margin-top:6px"><summary style="cursor:pointer;font:500 10.5px 'IBM Plex Mono',monospace;color:#717c92">payload ▸</summary><pre style="margin:6px 0 0;background:#f2f4f9;border:1px solid #e3e7ef;border-radius:6px;padding:8px 10px;font:400 10.5px/1.6 'IBM Plex Mono',monospace;color:#4a5468;overflow:auto">{ "duration_ms": 3813,
+  "output_tokens": 812 }</pre></details>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;padding:11px 14px;border-bottom:1px solid #eef1f6;background:oklch(0.985 0.008 25)">
+      <div style="flex:none;width:22px;height:22px;border-radius:6px;background:oklch(0.95 0.03 25);color:oklch(0.45 0.17 25);display:flex;align-items:center;justify-content:center;font:600 12px 'IBM Plex Mono',monospace">×</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><span style="font:600 11px 'IBM Plex Mono',monospace;color:oklch(0.45 0.17 25)">error</span><span style="font:400 10px 'IBM Plex Mono',monospace;color:#9aa3b5">14:35:02.114</span></div>
+        <div style="font:400 12px 'Space Grotesk';color:#4a5468;margin-top:2px">rate_limit_error · encerra a sequência desta resposta</div>
+        <details style="margin-top:6px"><summary style="cursor:pointer;font:500 10.5px 'IBM Plex Mono',monospace;color:#717c92">payload ▸</summary><pre style="margin:6px 0 0;background:#f2f4f9;border:1px solid #e3e7ef;border-radius:6px;padding:8px 10px;font:400 10.5px/1.6 'IBM Plex Mono',monospace;color:#4a5468;overflow:auto">{ "reason": "rate_limit_error" }</pre></details>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;padding:11px 14px;border-bottom:1px solid #eef1f6;position:relative">
+      <div style="position:absolute;top:8px;right:14px;font:600 9px 'IBM Plex Mono',monospace;color:oklch(0.5 0.19 300);background:oklch(0.95 0.03 300);border-radius:4px;padding:2px 6px">FUTURO</div>
+      <div style="flex:none;width:22px;height:22px;border-radius:6px;background:oklch(0.95 0.03 300);color:oklch(0.48 0.19 300);display:flex;align-items:center;justify-content:center;font:600 12px 'IBM Plex Mono',monospace">⚙</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><span style="font:600 11px 'IBM Plex Mono',monospace;color:#12161f">tool.called</span><span style="font:400 10px 'IBM Plex Mono',monospace;color:#9aa3b5">—</span></div>
+        <div style="font:400 12px 'Space Grotesk';color:#4a5468;margin-top:2px">buscar_deals · {"person": "Marina"}</div>
+        <details style="margin-top:6px"><summary style="cursor:pointer;font:500 10.5px 'IBM Plex Mono',monospace;color:#717c92">payload ▸</summary><pre style="margin:6px 0 0;background:#f2f4f9;border:1px solid #e3e7ef;border-radius:6px;padding:8px 10px;font:400 10.5px/1.6 'IBM Plex Mono',monospace;color:#4a5468;overflow:auto">{ "tool": "buscar_deals",
+  "input": { "person": "Marina" } }</pre></details>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;padding:11px 14px;position:relative">
+      <div style="position:absolute;top:8px;right:14px;font:600 9px 'IBM Plex Mono',monospace;color:oklch(0.5 0.19 300);background:oklch(0.95 0.03 300);border-radius:4px;padding:2px 6px">FUTURO</div>
+      <div style="flex:none;width:22px;height:22px;border-radius:6px;background:oklch(0.95 0.03 300);color:oklch(0.48 0.19 300);display:flex;align-items:center;justify-content:center;font:600 12px 'IBM Plex Mono',monospace">⤷</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><span style="font:600 11px 'IBM Plex Mono',monospace;color:#12161f">tool.result</span><span style="font:400 10px 'IBM Plex Mono',monospace;color:#9aa3b5">—</span></div>
+        <div style="font:400 12px 'Space Grotesk';color:#4a5468;margin-top:2px">buscar_deals · 2 resultados em 214&#8202;ms</div>
+        <details style="margin-top:6px"><summary style="cursor:pointer;font:500 10.5px 'IBM Plex Mono',monospace;color:#717c92">payload ▸</summary><pre style="margin:6px 0 0;background:#f2f4f9;border:1px solid #e3e7ef;border-radius:6px;padding:8px 10px;font:400 10.5px/1.6 'IBM Plex Mono',monospace;color:#4a5468;overflow:auto">{ "tool": "buscar_deals",
+  "count": 2, "ms": 214 }</pre></details>
+      </div>
+    </div>
+  </div>
+</section>
+</x-dc>
+</body>
+</html>
