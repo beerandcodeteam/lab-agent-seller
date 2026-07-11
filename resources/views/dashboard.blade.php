@@ -5,4 +5,8 @@
     </div>
 
     <livewire:crm.connection-status />
+
+    <div class="mt-6">
+        <livewire:crm.scan-card />
+    </div>
 </x-layouts.app>

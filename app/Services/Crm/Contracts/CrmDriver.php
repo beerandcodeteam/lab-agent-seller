@@ -3,10 +3,15 @@
 namespace App\Services\Crm\Contracts;
 
 use App\Services\Crm\CrmTokenStatus;
+use App\Services\Crm\Exceptions\CrmApiException;
 use App\Services\Crm\Exceptions\EmptyTokenException;
 
 /**
  * Provider-agnostic contract for a CRM integration driver.
+ *
+ * The `fetch*` methods stream the provider's data page by page (as generators)
+ * so a scan can persist partial results: if the provider fails mid-pagination
+ * (e.g. a 429), everything yielded before the failure has already been imported.
  */
 interface CrmDriver
 {
@@ -21,4 +26,50 @@ interface CrmDriver
      * @throws EmptyTokenException when the token is blank (no API call is made)
      */
     public function validateToken(string $token): CrmTokenStatus;
+
+    /**
+     * Stream the account's pipelines.
+     *
+     * @return iterable<array{external_id: string, name: string}>
+     *
+     * @throws CrmApiException on a provider API failure
+     */
+    public function fetchPipelines(string $token): iterable;
+
+    /**
+     * Stream the account's pipeline stages.
+     *
+     * @return iterable<array{external_id: string, pipeline_external_id: string, name: string, order_index: int}>
+     *
+     * @throws CrmApiException on a provider API failure
+     */
+    public function fetchStages(string $token): iterable;
+
+    /**
+     * Stream the account's custom fields for a given entity.
+     *
+     * @param  'person'|'deal'  $entity
+     * @return iterable<array{external_id: string, name: string, field_key: string|null, field_type: string|null}>
+     *
+     * @throws CrmApiException on a provider API failure
+     */
+    public function fetchCustomFields(string $token, string $entity): iterable;
+
+    /**
+     * Stream the account's persons/contacts.
+     *
+     * @return iterable<array{external_id: string, name: string|null, email: string|null, phone: string|null}>
+     *
+     * @throws CrmApiException on a provider API failure
+     */
+    public function fetchPersons(string $token): iterable;
+
+    /**
+     * Stream the account's deals.
+     *
+     * @return iterable<array{external_id: string, title: string, value: float|int|string|null, pipeline_external_id: string|null, stage_external_id: string|null, person_external_id: string|null, status: string|null}>
+     *
+     * @throws CrmApiException on a provider API failure
+     */
+    public function fetchDeals(string $token): iterable;
 }

@@ -66,7 +66,7 @@ class Connect extends Component
             ],
         );
 
-        ScanCrmConnection::dispatch($connection);
+        ScanCrmConnection::enqueue($connection);
 
         $this->reset('api_token');
 
