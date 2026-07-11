@@ -4,11 +4,5 @@
         <p class="mt-1 font-sans text-[13px] text-ink-3">Bem-vindo. Conecte seu CRM para ativar o agente.</p>
     </div>
 
-    <x-card title="CRM">
-        <x-slot:header>
-            <span class="font-sans text-[13.5px] font-semibold text-ink">Conexão do CRM</span>
-        </x-slot:header>
-
-        <p>Nenhum CRM conectado ainda.</p>
-    </x-card>
+    <livewire:crm.connection-status />
 </x-layouts.app>
