@@ -4,6 +4,7 @@ use App\Http\Controllers\Client\MagicLinkController;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
 use App\Livewire\Client\Access;
+use App\Livewire\Client\Chat;
 use App\Livewire\Client\CompanySelection;
 use App\Livewire\Crm\Connect;
 use Illuminate\Support\Facades\Auth;
@@ -16,7 +17,7 @@ Route::get('/acesso', Access::class)->name('client.access');
 Route::get('/acesso/{token}', [MagicLinkController::class, 'verify'])->name('client.magic-link.verify');
 
 Route::middleware('auth:client')->group(function () {
-    Route::view('/chat', 'client.chat')->name('client.chat');
+    Route::get('/chat', Chat::class)->name('client.chat');
     Route::get('/selecionar-empresa', CompanySelection::class)->name('client.company-selection');
 });
 

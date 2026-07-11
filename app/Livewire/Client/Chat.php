@@ -1,0 +1,237 @@
+<?php
+
+namespace App\Livewire\Client;
+
+use App\Ai\Agents\SellerAgent;
+use App\Models\Client;
+use App\Models\Conversation;
+use App\Models\MessageRole;
+use App\Models\User;
+use App\Services\ClientAccess\MagicLinkService;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
+use Laravel\Ai\Streaming\Events\Error as ErrorEvent;
+use Laravel\Ai\Streaming\Events\TextDelta;
+use Livewire\Attributes\Layout;
+use Livewire\Component;
+use Throwable;
+
+/**
+ * The final client's chat with a company's sales agent. On mount it
+ * materialises (or resumes) the single conversation for the client+company
+ * pair, then persists every turn — the client message first (so it survives a
+ * provider failure) and the streamed agent reply once it completes.
+ *
+ * The activity panel is populated with ephemeral, per-response events that live
+ * only in component state: they are grouped by "RESPOSTA #N" and vanish on a
+ * full page reload since they are never persisted.
+ */
+#[Layout('components.layouts.chat')]
+class Chat extends Component
+{
+    public Conversation $conversation;
+
+    /**
+     * The draft message currently being typed.
+     */
+    public string $body = '';
+
+    /**
+     * Whether an agent response is currently streaming (locks the composer).
+     */
+    public bool $streaming = false;
+
+    /**
+     * Ephemeral activity groups, one per response, oldest first. Not persisted.
+     *
+     * @var array<int, array{n: int, status: string, label: string, events: array<int, array<string, mixed>>}>
+     */
+    public array $activity = [];
+
+    /**
+     * Number of responses requested this session (drives "RESPOSTA #N").
+     */
+    public int $responseCount = 0;
+
+    /**
+     * Resolve the selected company, guard the client's access to it, and
+     * materialise/resume the conversation for the pair.
+     */
+    public function mount(MagicLinkService $magicLinks): ?RedirectResponse
+    {
+        $companyId = session('selected_company_id');
+
+        $companies = $magicLinks->matchedCompanies($this->client()->email);
+
+        // No company chosen yet, or the client no longer matches it: send them
+        // back through selection (which itself auto-picks a lone match).
+        if (! $companyId || ! $companies->contains('id', $companyId)) {
+            return redirect()->route('client.company-selection');
+        }
+
+        $this->conversation = Conversation::firstOrCreate([
+            'client_id' => $this->client()->id,
+            'user_id' => $companyId,
+        ]);
+
+        return null;
+    }
+
+    /**
+     * Send the typed message to the agent and stream back the reply.
+     *
+     * The client message is persisted before the AI call so a provider failure
+     * never loses it; the assistant reply is persisted only once the stream
+     * completes with its full text.
+     */
+    public function sendMessage(): void
+    {
+        $content = trim($this->body);
+
+        if ($content === '' || $this->streaming) {
+            return;
+        }
+
+        $this->body = '';
+        $this->streaming = true;
+
+        $userMessage = $this->conversation->messages()->create([
+            'message_role_id' => $this->roleId('user'),
+            'content' => $content,
+        ]);
+
+        $this->responseCount++;
+        $group = [
+            'n' => $this->responseCount,
+            'status' => 'running',
+            'label' => now()->format('H:i'),
+            'events' => [
+                $this->event('request.started', 'gpt · '.$this->conversation->messages()->count().' mensagens enviadas', [
+                    'provider' => 'openai',
+                    'messages' => $this->conversation->messages()->count(),
+                ]),
+            ],
+        ];
+        $this->activity[] = $group;
+        $groupIndex = array_key_last($this->activity);
+
+        try {
+            $agent = new SellerAgent($this->conversation, $userMessage->id);
+
+            $text = '';
+            $stream = $agent->stream($content);
+
+            foreach ($stream as $streamEvent) {
+                if ($streamEvent instanceof TextDelta) {
+                    $text .= $streamEvent->delta;
+                    $this->stream(to: 'agent-response', content: $streamEvent->delta);
+
+                    continue;
+                }
+
+                if ($streamEvent instanceof ErrorEvent) {
+                    throw new \RuntimeException($streamEvent->message);
+                }
+            }
+
+            $fullText = $stream->text ?? $text;
+
+            $this->conversation->messages()->create([
+                'message_role_id' => $this->roleId('assistant'),
+                'content' => $fullText,
+            ]);
+
+            $this->activity[$groupIndex]['events'][] = $this->event(
+                'stream.delta',
+                mb_strlen($fullText).' caracteres agregados',
+            );
+            $this->activity[$groupIndex]['events'][] = $this->event(
+                'response.completed',
+                'resposta concluída',
+                ['characters' => mb_strlen($fullText)],
+            );
+            $this->activity[$groupIndex]['status'] = 'completed';
+        } catch (Throwable $exception) {
+            $this->activity[$groupIndex]['events'][] = $this->event(
+                'error',
+                'Falha ao gerar a resposta do agente.',
+                ['message' => $exception->getMessage()],
+            );
+            $this->activity[$groupIndex]['status'] = 'error';
+
+            $this->addError(
+                'agent',
+                'O agente não conseguiu responder agora. Sua mensagem foi mantida — tente reenviar.',
+            );
+        } finally {
+            $this->streaming = false;
+        }
+    }
+
+    public function render(): View
+    {
+        return view('livewire.client.chat', [
+            'company' => $this->company(),
+            'messages' => $this->conversation->messages()->with('role')->orderBy('id')->get(),
+            'canSwitchCompany' => $this->canSwitchCompany(),
+        ]);
+    }
+
+    /**
+     * The company (tenant) this conversation belongs to.
+     */
+    private function company(): User
+    {
+        return $this->conversation->user;
+    }
+
+    /**
+     * The "Trocar empresa" affordance is only offered when the client's email
+     * matches more than one company.
+     */
+    private function canSwitchCompany(): bool
+    {
+        return app(MagicLinkService::class)
+            ->matchedCompanies($this->client()->email)
+            ->count() > 1;
+    }
+
+    private function client(): Client
+    {
+        /** @var Client $client */
+        $client = Auth::guard('client')->user();
+
+        return $client;
+    }
+
+    /**
+     * Build one ephemeral activity event for the panel.
+     *
+     * @param  array<string, mixed>|null  $payload
+     * @return array{type: string, timestamp: string, summary: string, payload: array<string, mixed>|null}
+     */
+    private function event(string $type, string $summary, ?array $payload = null): array
+    {
+        return [
+            'type' => $type,
+            'timestamp' => now()->format('H:i:s.v'),
+            'summary' => $summary,
+            'payload' => $payload,
+        ];
+    }
+
+    /**
+     * Resolve a message role id by slug, seeding the lookup if absent (mirrors
+     * the message factory so the component works with or without seeded data).
+     */
+    private function roleId(string $slug): int
+    {
+        $names = ['user' => 'Cliente', 'assistant' => 'Agente'];
+
+        return MessageRole::firstOrCreate(
+            ['slug' => $slug],
+            ['name' => $names[$slug] ?? ucfirst($slug)],
+        )->id;
+    }
+}
