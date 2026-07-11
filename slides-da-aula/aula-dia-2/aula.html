@@ -1,0 +1,2599 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Do Prompt ao Harness · Dia 2 — Beer and Code</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:         #0B0F0D;
+            --blue:       #00df81;
+            --blue-l:     #59EAAD;
+            --amber:      #59EAAD;
+            --white:      #F2FFF8;
+            --soft:       rgba(242,255,248,0.72);
+            --softer:     rgba(242,255,248,0.50);
+            --card:       rgba(255,255,255,0.04);
+            --card-b:     rgba(255,255,255,0.09);
+        }
+
+        html { scroll-behavior: smooth; height: 100%; }
+
+        body {
+            background: var(--bg);
+            font-family: 'Inter', sans-serif;
+            color: var(--white);
+            height: 100%;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            overscroll-behavior: none;
+        }
+
+        .slide {
+            height: 100vh;
+            width: 100%;
+            scroll-snap-align: start;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ── Utils ── */
+        .grad {
+            background: linear-gradient(90deg, var(--blue), var(--blue-l));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .glass {
+            background: var(--card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--card-b);
+            border-radius: 1rem;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.38rem 0.9rem;
+            border-radius: 9999px;
+            background: rgba(0,223,129,0.12);
+            border: 1px solid rgba(0,223,129,0.28);
+            font-size: 0.67rem;
+            font-weight: 700;
+            letter-spacing: 0.13em;
+            text-transform: uppercase;
+            color: var(--blue-l);
+        }
+
+        .badge-dot {
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            background: var(--amber);
+            animation: pd 2s ease-in-out infinite;
+        }
+
+        @keyframes pd {
+            0%,100% { opacity:1; transform:scale(1); }
+            50%      { opacity:0.3; transform:scale(0.6); }
+        }
+
+        /* ── Fade animations (triggered by JS) ── */
+        .fu { opacity:0; transform:translateY(22px); transition:opacity 0.6s ease, transform 0.6s ease; }
+        .fi { opacity:0; transition:opacity 0.6s ease; }
+        .fu.on, .fi.on { opacity:1; transform:translateY(0); }
+
+        /* ── HUD ── */
+        #prog {
+            position: fixed; top:0; left:0; height:2px;
+            background: linear-gradient(90deg, var(--blue), var(--amber));
+            z-index: 9999; transition: width 0.12s linear;
+            box-shadow: 0 0 8px rgba(0,223,129,0.4);
+        }
+
+        #ctr {
+            position: fixed; bottom:1.4rem; left:50%;
+            transform: translateX(-50%);
+            font-size:0.68rem; color:var(--softer);
+            letter-spacing:0.1em; z-index:9998;
+        }
+
+        #nb {
+            position: fixed; bottom:1.8rem; right:1.8rem;
+            width:42px; height:42px; border-radius:50%;
+            background: rgba(0,223,129,0.85);
+            border: 1px solid rgba(89,234,173,0.4);
+            color: white; display:flex; align-items:center;
+            justify-content:center; cursor:pointer;
+            opacity:0; transform:translateY(8px);
+            transition: all 0.25s; z-index:9998;
+        }
+        #nb.on { opacity:1; transform:translateY(0); }
+        #nb:hover { background:var(--blue); }
+
+        /* ── Slide 0 ── */
+        .c-badge {
+            display:inline-flex; align-items:center; gap:0.5rem;
+            padding:0.42rem 1.1rem; border-radius:9999px;
+            background:rgba(0,223,129,0.12);
+            border:1px solid rgba(0,223,129,0.32);
+            font-size:0.68rem; font-weight:700;
+            letter-spacing:0.14em; text-transform:uppercase;
+            color:var(--blue-l); margin-bottom:2rem;
+            opacity:0; transform:translateY(-10px);
+            animation: slideDown 0.6s ease 0.25s forwards;
+        }
+
+        .c-h1 {
+            font-size: clamp(3rem,7vw,5.5rem);
+            font-weight:900; line-height:1.05;
+            letter-spacing:-0.03em; margin-bottom:1.4rem;
+            opacity:0; transform:translateY(22px);
+            animation: slideUp 0.7s ease 0.5s forwards;
+        }
+
+        .c-div {
+            width:48px; height:2px;
+            background:linear-gradient(90deg,var(--blue),var(--amber));
+            border-radius:2px; margin:0 auto 2.2rem;
+            opacity:0; animation: fadeA 0.5s ease 0.85s forwards;
+        }
+
+        .c-sub {
+            font-size:clamp(1rem,2vw,1.15rem);
+            color:var(--soft); max-width:540px;
+            line-height:1.65; margin:0 auto 2.2rem;
+            opacity:0; transform:translateY(16px);
+            animation: slideUp 0.7s ease 0.75s forwards;
+        }
+
+        .c-meta {
+            display:flex; align-items:center;
+            justify-content:center; gap:1.2rem;
+            font-size:0.83rem; color:var(--softer);
+            opacity:0; animation:fadeA 0.6s ease 1.1s forwards;
+        }
+
+        @keyframes slideUp   { to { opacity:1; transform:translateY(0); } }
+        @keyframes slideDown { to { opacity:1; transform:translateY(0); } }
+        @keyframes fadeA     { to { opacity:1; } }
+
+        /* ── Slide A ── */
+        .p-card {
+            background:var(--card); border:1px solid var(--card-b);
+            border-radius:1rem; padding:1.4rem;
+            text-align:center;
+            transition:border-color 0.3s, box-shadow 0.3s;
+        }
+        .p-card:hover {
+            border-color:rgba(0,223,129,0.35);
+            box-shadow:0 0 28px rgba(0,223,129,0.09);
+        }
+
+        /* ── Slide B ── */
+        .mq { display:flex; gap:1.4rem; animation:mq 22s linear infinite; white-space:nowrap; }
+        .mq-r { animation-direction:reverse; animation-duration:28s; }
+        @keyframes mq { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+        .ftag {
+            display:inline-block; padding:0.32rem 0.8rem;
+            border-radius:0.45rem; font-size:0.78rem; font-weight:500;
+            background:rgba(255,255,255,0.04);
+            border:1px solid rgba(255,255,255,0.07);
+            color:var(--softer); flex-shrink:0;
+        }
+
+        /* ── Slide D: layer pulse ── */
+        .lyr {
+            display:flex; align-items:flex-start; gap:0.9rem;
+            padding:0.9rem 1.2rem; border-radius:0.75rem;
+            background:rgba(255,255,255,0.03);
+            border:1px solid rgba(255,255,255,0.07);
+            transition:background 0.4s, border-color 0.4s, box-shadow 0.4s;
+        }
+        .lyr.hi {
+            background:rgba(0,223,129,0.07);
+            border-color:rgba(0,223,129,0.22);
+            box-shadow:0 0 22px rgba(0,223,129,0.07);
+        }
+
+        /* ── Slide L: funcionário novo (metáfora-mãe) ── */
+        .trow {
+            display:grid; grid-template-columns:34px 1.05fr 18px 1.25fr;
+            align-items:center; gap:0.7rem;
+            padding:0.52rem 0.9rem; border-radius:0.6rem;
+            background:rgba(255,255,255,0.03);
+            border:1px solid rgba(255,255,255,0.07);
+            transition:background 0.4s, border-color 0.4s, box-shadow 0.4s, transform 0.4s;
+        }
+        .trow.hi {
+            background:rgba(0,223,129,0.08);
+            border-color:rgba(0,223,129,0.28);
+            box-shadow:0 0 22px rgba(0,223,129,0.08);
+            transform:translateX(4px);
+        }
+        .trow[data-kind="gate"] {
+            background:rgba(89,234,173,0.05);
+            border:1px dashed rgba(89,234,173,0.30);
+        }
+        .trow[data-kind="gate"].hi {
+            background:rgba(89,234,173,0.11);
+            border-color:rgba(89,234,173,0.5);
+            box-shadow:0 0 22px rgba(89,234,173,0.10);
+            transform:translateX(4px);
+        }
+        .trow-ico {
+            width:34px; height:34px; border-radius:0.5rem;
+            background:rgba(255,255,255,0.05);
+            display:flex; align-items:center; justify-content:center; flex-shrink:0;
+        }
+        .trow[data-kind="gate"] .trow-ico { background:rgba(89,234,173,0.1); }
+        .trow-tech { font-weight:700; font-size:0.88rem; line-height:1.2; }
+        .trow-kick { font-size:0.6rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--amber); margin-bottom:0.1rem; }
+        .trow-arr { width:15px; height:15px; color:var(--softer); }
+        .trow-meta { font-size:0.8rem; color:var(--softer); line-height:1.35; }
+
+        /* ── Slide E: timeline ── */
+        .td {
+            width:9px; height:9px; border-radius:50%;
+            background:var(--blue-l); margin-top:0.35rem;
+            flex-shrink:0; position:relative;
+        }
+        .td::before {
+            content:''; position:absolute; inset:-4px;
+            border-radius:50%;
+            background:rgba(89,234,173,0.22);
+            animation:pr 2.2s ease-in-out infinite;
+        }
+        @keyframes pr {
+            0%,100%{transform:scale(1);opacity:0.6}
+            50%{transform:scale(1.7);opacity:0}
+        }
+
+        .glow {
+            position:absolute; width:580px; height:580px;
+            border-radius:50%; pointer-events:none;
+            top:50%; left:50%; transform:translate(-50%,-50%);
+        }
+
+        /* ── Slide M: guardrail / porteiro ── */
+        #sm-svg { width:100%; height:auto; display:block; }
+        .gpill {
+            display:flex; align-items:center; gap:0.5rem;
+            padding:0.5rem 0.75rem; border-radius:0.6rem;
+            background:rgba(255,255,255,0.03);
+            border:1px solid rgba(89,234,173,0.16);
+            font-size:0.82rem; font-weight:600; color:var(--soft);
+            transition:border-color 0.3s, background 0.3s;
+        }
+        .gpill:hover { border-color:rgba(89,234,173,0.4); background:rgba(89,234,173,0.06); }
+        .gpill i { color:var(--amber); width:15px; height:15px; flex-shrink:0; }
+
+        /* ── Slide N: trade-off latência × segurança ── */
+        #sn-svg { width:100%; height:auto; display:block; }
+        .tbox {
+            padding:0.8rem 1rem; border-radius:0.7rem;
+            background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);
+        }
+        .tbox.ok { border-color:rgba(242,255,248,0.22); }
+        .tbox.up { border-color:rgba(89,234,173,0.24); }
+        .tbox h4 {
+            font-size:0.82rem; font-weight:800; letter-spacing:0.02em;
+            margin-bottom:0.45rem; display:flex; align-items:center; gap:0.4rem;
+        }
+        .tbox h4 i { width:15px; height:15px; }
+        .tbox ul { list-style:none; display:flex; flex-direction:column; gap:0.18rem; }
+        .tbox li {
+            font-size:0.77rem; color:var(--soft); line-height:1.45;
+            padding-left:0.85rem; position:relative;
+        }
+        .tbox li::before { content:'·'; position:absolute; left:0.1rem; color:var(--softer); }
+
+        /* ── Slide P: hierarquia de prompt ── */
+        .hrow {
+            display:flex; align-items:flex-start; gap:0.7rem;
+            padding:0.6rem 0.9rem; border-radius:0.65rem;
+            background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
+            transition:background 0.4s, border-color 0.4s, box-shadow 0.4s, transform 0.4s;
+        }
+        .hrow.hhi {
+            background:rgba(0,223,129,0.10); border-color:rgba(0,223,129,0.30);
+            box-shadow:0 0 18px rgba(0,223,129,0.08); transform:translateX(3px);
+        }
+        .hbar { height:6px; border-radius:3px; background:linear-gradient(90deg,var(--blue),var(--amber)); }
+
+        /* ── Slide Q: cards por modelo ── */
+        .mcard {
+            border-radius:0.9rem; border:1px solid rgba(255,255,255,0.08);
+            background:rgba(255,255,255,0.03); overflow:hidden;
+            display:flex; flex-direction:column;
+            transition:background 0.4s, border-color 0.4s, box-shadow 0.4s, transform 0.4s;
+        }
+        .mcard.mhi {
+            border-color:rgba(0,223,129,0.32); background:rgba(0,223,129,0.05);
+            box-shadow:0 0 26px rgba(0,223,129,0.08); transform:translateY(-3px);
+        }
+        .mcard-h {
+            display:flex; align-items:center; gap:0.55rem;
+            padding:0.85rem 1rem; border-bottom:1px solid rgba(255,255,255,0.06);
+        }
+        .mcard ul { list-style:none; display:flex; flex-direction:column; gap:0.5rem; padding:0.9rem 1rem 1rem; }
+        .mcard li { font-size:0.77rem; color:var(--soft); line-height:1.42; padding-left:0.95rem; position:relative; }
+        .mcard li::before { content:'›'; position:absolute; left:0; color:var(--blue-l); font-weight:800; }
+        .mcard code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:0.72rem; color:var(--amber); }
+    </style>
+</head>
+<body>
+
+<div id="prog" style="width:0%"></div>
+<div id="ctr">1 / 15</div>
+<button id="nb" aria-label="Próximo slide">
+    <i data-lucide="chevron-down" style="width:17px;height:17px;"></i>
+</button>
+
+<!-- ══════════════════════════════════════════
+     SLIDE 0 — Capa
+══════════════════════════════════════════ -->
+<section class="slide" id="s0">
+    <div class="glow" style="background:radial-gradient(circle,rgba(0,223,129,0.12) 0%,transparent 70%);"></div>
+    <svg id="ptc" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;"></svg>
+
+    <div style="position:relative;z-index:10;text-align:center;padding:2rem;">
+        <div class="c-badge">
+            <div class="badge-dot"></div>
+            Workshop · Beer and Code · Dia 2
+        </div>
+
+        <h1 class="c-h1">
+            <span>Do Prompt ao<br></span>
+            <span class="grad">Harness</span>
+        </h1>
+
+        <div class="c-div"></div>
+
+        <p class="c-sub">
+            Guardrails, prompt, camada de contexto, evals e observabilidade — o cinto de segurança da IA em produção
+        </p>
+
+        <div class="c-meta">
+            <span style="display:flex;align-items:center;gap:0.4rem;">
+                <i data-lucide="user" style="width:13px;height:13px;color:var(--blue-l);"></i> Lucas
+            </span>
+            <span style="opacity:0.25;">|</span>
+            <span style="display:flex;align-items:center;gap:0.4rem;">
+                <i data-lucide="calendar" style="width:13px;height:13px;color:var(--blue-l);"></i> 11 de Julho de 2026
+            </span>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SLIDE L — Metáfora-mãe: o funcionário novo (abre parte técnica)
+══════════════════════════════════════════ -->
+<section class="slide" id="sl">
+    <div class="glow" style="background:radial-gradient(circle,rgba(0,223,129,0.08) 0%,transparent 65%);"></div>
+
+    <div style="max-width:920px;width:100%;padding:1.8rem 2rem;position:relative;z-index:10;">
+
+        <div class="fi" style="margin-bottom:0.9rem;">
+            <span class="badge">Parte técnica · Arquitetando a pipeline</span>
+        </div>
+
+        <h2 class="fu" style="font-size:clamp(1.9rem,4.5vw,3rem);font-weight:900;letter-spacing:-0.03em;line-height:1.1;margin-bottom:0.5rem;">
+            Um agente de IA é um<br><span class="grad">funcionário novo</span>
+        </h2>
+
+        <p class="fu" style="color:var(--soft);font-size:0.92rem;line-height:1.55;max-width:620px;margin-bottom:1.4rem;">
+            Talentoso, porém recém-chegado — não conhece a sua empresa. Toda a engenharia responde a uma pergunta:
+            <strong style="color:var(--white);">o que ele precisa para fazer um bom trabalho?</strong>
+        </p>
+
+        <div id="emp-rows" style="display:flex;flex-direction:column;gap:0.45rem;margin-bottom:1.2rem;">
+
+            <div class="trow fu" data-kind="gate">
+                <div class="trow-ico"><i data-lucide="shield-check" style="width:16px;height:16px;color:var(--amber);"></i></div>
+                <div><div class="trow-kick">Guardrail · entrada</div><div class="trow-tech">Quem e o quê pode entrar</div></div>
+                <i data-lucide="arrow-right" class="trow-arr"></i>
+                <div class="trow-meta">A segurança na portaria — confere o crachá antes de deixar passar</div>
+            </div>
+
+            <div class="trow fu" data-kind="work">
+                <div class="trow-ico"><i data-lucide="square-terminal" style="width:16px;height:16px;color:var(--blue-l);"></i></div>
+                <div class="trow-tech">Prompt + janela de contexto</div>
+                <i data-lucide="arrow-right" class="trow-arr"></i>
+                <div class="trow-meta">A descrição do cargo + a mesa de trabalho (espaço finito)</div>
+            </div>
+
+            <div class="trow fu" data-kind="work">
+                <div class="trow-ico"><i data-lucide="wrench" style="width:16px;height:16px;color:var(--blue-l);"></i></div>
+                <div class="trow-tech">Tools / MCP</div>
+                <i data-lucide="arrow-right" class="trow-arr"></i>
+                <div class="trow-meta">As ferramentas e sistemas que ele opera — a tomada padrão (USB-C)</div>
+            </div>
+
+            <div class="trow fu" data-kind="work">
+                <div class="trow-ico"><i data-lucide="library" style="width:16px;height:16px;color:var(--blue-l);"></i></div>
+                <div class="trow-tech">RAG</div>
+                <i data-lucide="arrow-right" class="trow-arr"></i>
+                <div class="trow-meta">A wiki / arquivo da empresa que ele consulta antes de responder</div>
+            </div>
+
+            <div class="trow fu" data-kind="work">
+                <div class="trow-ico"><i data-lucide="book-open" style="width:16px;height:16px;color:var(--blue-l);"></i></div>
+                <div class="trow-tech">Skills</div>
+                <i data-lucide="arrow-right" class="trow-arr"></i>
+                <div class="trow-meta">Os manuais e procedimentos-padrão que ele puxa quando precisa</div>
+            </div>
+
+            <div class="trow fu" data-kind="work">
+                <div class="trow-ico"><i data-lucide="notebook-pen" style="width:16px;height:16px;color:var(--blue-l);"></i></div>
+                <div class="trow-tech">Memória</div>
+                <i data-lucide="arrow-right" class="trow-arr"></i>
+                <div class="trow-meta">O caderno onde ele anota o que já aconteceu</div>
+            </div>
+
+            <div class="trow fu" data-kind="gate">
+                <div class="trow-ico"><i data-lucide="badge-check" style="width:16px;height:16px;color:var(--amber);"></i></div>
+                <div><div class="trow-kick">Guardrail · saída</div><div class="trow-tech">O que pode sair pela porta</div></div>
+                <i data-lucide="arrow-right" class="trow-arr"></i>
+                <div class="trow-meta">O controle de qualidade — inspeciona a entrega antes do cliente ver</div>
+            </div>
+
+        </div>
+
+        <div class="fu glass" style="padding:0.95rem 1.3rem;border-color:rgba(89,234,173,0.18);">
+            <div style="display:flex;align-items:center;gap:0.7rem;">
+                <i data-lucide="layers" style="width:16px;height:16px;color:var(--amber);flex-shrink:0;"></i>
+                <span style="font-size:0.88rem;color:var(--soft);">
+                    Guardrail na entrada → o trabalho no meio → guardrail na saída.
+                    <strong style="color:var(--white);">No fundo, um sanduíche.</strong>
+                </span>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SLIDE M — Guardrail de entrada (o porteiro)
+══════════════════════════════════════════ -->
+<section class="slide" id="sm">
+    <div class="glow" style="background:radial-gradient(circle,rgba(89,234,173,0.07) 0%,transparent 65%);"></div>
+
+    <div style="max-width:1040px;width:100%;padding:1.6rem 2rem;position:relative;z-index:10;">
+
+        <div class="fi" style="text-align:center;margin-bottom:0.7rem;">
+            <span class="badge" style="background:rgba(89,234,173,0.12);border-color:rgba(89,234,173,0.28);color:var(--amber);">
+                <span class="badge-dot"></span> Parte técnica · Guardrail de entrada
+            </span>
+        </div>
+
+        <h2 class="fu" style="text-align:center;font-size:clamp(1.9rem,4.5vw,3rem);font-weight:900;letter-spacing:-0.03em;line-height:1.1;margin-bottom:0.4rem;">
+            O porteiro da <span class="grad">entrada</span>
+        </h2>
+
+        <p class="fu" style="text-align:center;color:var(--soft);font-size:0.92rem;line-height:1.55;max-width:660px;margin:0 auto 1.1rem;">
+            Antes do pedido chegar no modelo, o guardrail confere o crachá e revista a mochila.
+            <strong style="color:var(--white);">Entrada ruim não passa da portaria.</strong>
+        </p>
+
+        <div class="fu glass" style="padding:0.7rem 0.8rem;margin-bottom:1rem;">
+            <svg id="sm-svg"></svg>
+        </div>
+
+        <div class="fu" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.55rem;">
+            <div class="gpill"><i data-lucide="scan-search"></i> Classificação de intenção</div>
+            <div class="gpill"><i data-lucide="id-card"></i> PII</div>
+            <div class="gpill"><i data-lucide="syringe"></i> Prompt injection</div>
+            <div class="gpill"><i data-lucide="ban"></i> Moderação</div>
+            <div class="gpill"><i data-lucide="lock-open"></i> Jailbreak</div>
+            <div class="gpill"><i data-lucide="pen-tool"></i> Estilo de escrita</div>
+        </div>
+
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SLIDE N — Trade-off: latência × segurança
+══════════════════════════════════════════ -->
+<section class="slide" id="sn">
+    <div class="glow" style="background:radial-gradient(circle,rgba(89,234,173,0.06) 0%,transparent 65%);"></div>
+
+    <div style="max-width:1060px;width:100%;padding:1.4rem 2rem;position:relative;z-index:10;">
+
+        <div class="fi" style="text-align:center;margin-bottom:0.6rem;">
+            <span class="badge"><span class="badge-dot"></span> Parte técnica · Como implementar</span>
+        </div>
+
+        <h2 class="fu" style="text-align:center;font-size:clamp(1.9rem,4.5vw,3rem);font-weight:900;letter-spacing:-0.03em;line-height:1.1;margin-bottom:0.35rem;">
+            Segurança custa <span class="grad">latência</span>
+        </h2>
+
+        <p class="fu" style="text-align:center;color:var(--soft);font-size:0.9rem;line-height:1.5;max-width:680px;margin:0 auto 0.9rem;">
+            Quanto mais blinda a portaria, mais lento o pedido entra.
+            <strong style="color:var(--white);">O nível certo depende do risco do produto.</strong>
+        </p>
+
+        <div class="fu glass" style="padding:0.6rem 0.7rem;margin-bottom:0.9rem;">
+            <svg id="sn-svg"></svg>
+        </div>
+
+        <div class="fu" style="display:grid;grid-template-columns:1fr 1fr;gap:0.7rem;">
+            <div class="tbox ok">
+                <h4 style="color:var(--blue-l);"><i data-lucide="zap"></i> 1 prompt (4 em 1) basta</h4>
+                <ul>
+                    <li>Produto interno ou de baixo risco</li>
+                    <li>MVP, prova de conceito, validação rápida</li>
+                    <li>Latência é prioridade, fluxo simples</li>
+                    <li>Sem PII pesada, sem regulação</li>
+                </ul>
+            </div>
+            <div class="tbox up">
+                <h4 style="color:var(--amber);"><i data-lucide="shield-check"></i> Suba pra camadas quando</h4>
+                <ul>
+                    <li>Público, exposto a ataque e abuso</li>
+                    <li>PII, saúde, financeiro, dado regulado</li>
+                    <li>Custo de erro alto, marca em risco</li>
+                    <li>Escala grande, vale otimizar por camada barata</li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     (SLIDE removido — animação fundida no SLIDE K)
+══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════
+     SLIDE PR — Introdução ao prompt (denso, sem analogia)
+══════════════════════════════════════════ -->
+<section class="slide" id="spr">
+    <div class="glow" style="background:radial-gradient(circle,rgba(0,223,129,0.08) 0%,transparent 65%);"></div>
+
+    <div style="max-width:1140px;width:100%;padding:1.3rem 2rem;position:relative;z-index:10;">
+
+        <div class="fi" style="text-align:center;margin-bottom:0.55rem;">
+            <span class="badge"><span class="badge-dot"></span> Parte técnica · Introdução ao prompt</span>
+        </div>
+
+        <h2 class="fu" style="text-align:center;font-size:clamp(1.8rem,4.2vw,2.8rem);font-weight:900;letter-spacing:-0.03em;line-height:1.1;margin-bottom:0.4rem;">
+            O prompt é a <span class="grad">interface de controle</span>
+        </h2>
+
+        <p class="fu" style="text-align:center;color:var(--soft);font-size:0.9rem;line-height:1.5;max-width:820px;margin:0 auto 0.9rem;">
+            Tudo que o modelo sabe da tarefa, naquela chamada, está no prompt. Ele é <strong style="color:var(--white);">stateless</strong>:
+            não lembra de nada fora dali. Prompt bem-estruturado é a diferença entre demo e produto.
+        </p>
+
+        <div class="fu glass" style="padding:0.5rem 0.7rem;margin-bottom:0.85rem;">
+            <svg id="spr-svg"></svg>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:0.85rem;">
+
+            <!-- Termos técnicos -->
+            <div class="fu">
+                <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--softer);margin-bottom:0.5rem;">Termos que você precisa nomear</div>
+                <div style="display:flex;flex-direction:column;gap:0.4rem;">
+                    <div class="lyr" style="padding:0.55rem 0.85rem;">
+                        <div style="width:30px;height:30px;border-radius:0.5rem;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="file-text" style="width:14px;height:14px;color:var(--blue-l);"></i></div>
+                        <div><div style="font-weight:700;font-size:0.84rem;">Prompt</div><div style="font-size:0.74rem;color:var(--softer);line-height:1.35;">Todo o texto enviado ao modelo a cada chamada. É o programa, em linguagem natural.</div></div>
+                    </div>
+                    <div class="lyr" style="padding:0.55rem 0.85rem;">
+                        <div style="width:30px;height:30px;border-radius:0.5rem;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="ticket" style="width:14px;height:14px;color:var(--blue-l);"></i></div>
+                        <div><div style="font-weight:700;font-size:0.84rem;">Token</div><div style="font-size:0.74rem;color:var(--softer);line-height:1.35;">A unidade que o modelo lê e escreve. Entrada e saída são medidas (e cobradas) em tokens.</div></div>
+                    </div>
+                    <div class="lyr" style="padding:0.55rem 0.85rem;">
+                        <div style="width:30px;height:30px;border-radius:0.5rem;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="tags" style="width:14px;height:14px;color:var(--blue-l);"></i></div>
+                        <div><div style="font-weight:700;font-size:0.84rem;">Roles</div><div style="font-size:0.74rem;color:var(--softer);line-height:1.35;"><code style="color:var(--amber);">system</code>, <code style="color:var(--amber);">developer</code>, <code style="color:var(--amber);">user</code>, <code style="color:var(--amber);">assistant</code> — origem e autoridade de cada trecho.</div></div>
+                    </div>
+                    <div class="lyr" style="padding:0.55rem 0.85rem;">
+                        <div style="width:30px;height:30px;border-radius:0.5rem;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="cpu" style="width:14px;height:14px;color:var(--blue-l);"></i></div>
+                        <div><div style="font-weight:700;font-size:0.84rem;">Inferência</div><div style="font-size:0.74rem;color:var(--softer);line-height:1.35;">Uma chamada: o prompt entra, a distribuição dos próximos tokens sai.</div></div>
+                    </div>
+                    <div class="lyr" style="padding:0.55rem 0.85rem;">
+                        <div style="width:30px;height:30px;border-radius:0.5rem;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="battery-low" style="width:14px;height:14px;color:var(--blue-l);"></i></div>
+                        <div><div style="font-weight:700;font-size:0.84rem;">Stateless</div><div style="font-size:0.74rem;color:var(--softer);line-height:1.35;">Sem memória entre chamadas. Todo turno reenvia o histórico inteiro.</div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System prompt: o que entra -->
+            <div class="fu">
+                <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--amber);margin-bottom:0.5rem;">O system prompt · o que entra nele</div>
+                <div id="spr-in" style="display:flex;flex-direction:column;gap:0.4rem;">
+                    <div class="lyr" style="padding:0.55rem 0.85rem;">
+                        <div style="width:30px;height:30px;border-radius:0.5rem;background:rgba(89,234,173,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="id-card" style="width:14px;height:14px;color:var(--amber);"></i></div>
+                        <div><div style="font-weight:700;font-size:0.84rem;">Identidade e persona</div><div style="font-size:0.74rem;color:var(--softer);line-height:1.35;">Quem o modelo é, o tom e o idioma que adota.</div></div>
+                    </div>
+                    <div class="lyr" style="padding:0.55rem 0.85rem;">
+                        <div style="width:30px;height:30px;border-radius:0.5rem;background:rgba(89,234,173,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="target" style="width:14px;height:14px;color:var(--amber);"></i></div>
+                        <div><div style="font-weight:700;font-size:0.84rem;">Objetivo e escopo</div><div style="font-size:0.74rem;color:var(--softer);line-height:1.35;">O que deve fazer — e o que nunca deve fazer.</div></div>
+                    </div>
+                    <div class="lyr" style="padding:0.55rem 0.85rem;">
+                        <div style="width:30px;height:30px;border-radius:0.5rem;background:rgba(89,234,173,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="shield-check" style="width:14px;height:14px;color:var(--amber);"></i></div>
+                        <div><div style="font-weight:700;font-size:0.84rem;">Regras, limites e segurança</div><div style="font-size:0.74rem;color:var(--softer);line-height:1.35;">Políticas que o usuário não pode sobrescrever.</div></div>
+                    </div>
+                    <div class="lyr" style="padding:0.55rem 0.85rem;">
+                        <div style="width:30px;height:30px;border-radius:0.5rem;background:rgba(89,234,173,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="braces" style="width:14px;height:14px;color:var(--amber);"></i></div>
+                        <div><div style="font-weight:700;font-size:0.84rem;">Formato de saída</div><div style="font-size:0.74rem;color:var(--softer);line-height:1.35;">JSON, markdown, estrutura esperada da resposta.</div></div>
+                    </div>
+                    <div class="lyr" style="padding:0.55rem 0.85rem;">
+                        <div style="width:30px;height:30px;border-radius:0.5rem;background:rgba(89,234,173,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="wrench" style="width:14px;height:14px;color:var(--amber);"></i></div>
+                        <div><div style="font-weight:700;font-size:0.84rem;">Contexto fixo + ferramentas</div><div style="font-size:0.74rem;color:var(--softer);line-height:1.35;">Conhecimento estável e as tools / MCP disponíveis.</div></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="fu glass" style="padding:0.85rem 1.3rem;border-color:rgba(89,234,173,0.18);">
+            <div style="display:flex;align-items:flex-start;gap:0.7rem;">
+                <i data-lucide="key-round" style="width:16px;height:16px;color:var(--amber);flex-shrink:0;margin-top:0.1rem;"></i>
+                <span style="font-size:0.85rem;color:var(--soft);line-height:1.45;">
+                    <strong style="color:var(--white);">Por que existe o system prompt:</strong>
+                    é definido pelo desenvolvedor (não pelo usuário), precede tudo e vence na hierarquia;
+                    é reinjetado a cada turno; e separa <strong style="color:var(--white);">instrução de dado</strong> — a 1ª defesa contra prompt injection.
+                </span>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SLIDE Q — Especificidade de prompt por modelo
+══════════════════════════════════════════ -->
+<section class="slide" id="sq">
+    <div class="glow" style="background:radial-gradient(circle,rgba(0,223,129,0.08) 0%,transparent 65%);"></div>
+
+    <div style="max-width:1160px;width:100%;padding:1.5rem 2rem;position:relative;z-index:10;">
+
+        <div class="fi" style="text-align:center;margin-bottom:0.6rem;">
+            <span class="badge"><span class="badge-dot"></span> Parte técnica · Prompt por modelo</span>
+        </div>
+
+        <h2 class="fu" style="text-align:center;font-size:clamp(1.8rem,4.2vw,2.8rem);font-weight:900;letter-spacing:-0.03em;line-height:1.1;margin-bottom:0.4rem;">
+            Cada modelo tem seu <span class="grad">sotaque</span>
+        </h2>
+
+        <p class="fu" style="text-align:center;color:var(--soft);font-size:0.9rem;line-height:1.5;max-width:740px;margin:0 auto 1.1rem;">
+            O mesmo pedido, três línguas. Quem conhece o sotaque de cada um extrai o melhor com menos tentativa.
+        </p>
+
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.9rem;margin-bottom:1rem;">
+
+            <div class="mcard fu">
+                <div class="mcard-h">
+                    <i data-lucide="square-asterisk" style="width:18px;height:18px;color:var(--blue-l);"></i>
+                    <div><div style="font-weight:800;font-size:0.92rem;">GPT</div><div style="font-size:0.68rem;color:var(--softer);">OpenAI</div></div>
+                </div>
+                <ul>
+                    <li>Estrutura explícita: papéis e passos numerados</li>
+                    <li>Delimitadores Markdown: <code>###</code>, <code>```</code>, persona "você é..."</li>
+                    <li>Modelos de raciocínio (o-series / GPT-5): diga o objetivo, não microgerencie</li>
+                </ul>
+            </div>
+
+            <div class="mcard fu">
+                <div class="mcard-h">
+                    <i data-lucide="code-xml" style="width:18px;height:18px;color:var(--blue-l);"></i>
+                    <div><div style="font-weight:800;font-size:0.92rem;">Claude</div><div style="font-size:0.68rem;color:var(--softer);">Anthropic</div></div>
+                </div>
+                <ul>
+                    <li>Tags XML: <code>&lt;contexto&gt;</code>, <code>&lt;instrucoes&gt;</code>, <code>&lt;exemplo&gt;</code></li>
+                    <li>Documento antes da pergunta; peça "pense passo a passo"</li>
+                    <li>Muito dirigível pelo system prompt e por extended thinking</li>
+                </ul>
+            </div>
+
+            <div class="mcard fu">
+                <div class="mcard-h">
+                    <i data-lucide="sparkles" style="width:18px;height:18px;color:var(--blue-l);"></i>
+                    <div><div style="font-weight:800;font-size:0.92rem;">Gemini</div><div style="font-size:0.68rem;color:var(--softer);">Google</div></div>
+                </div>
+                <ul>
+                    <li>Contexto gigante (1M+ tokens): cabe o documento inteiro</li>
+                    <li>Instrução depois do contexto longo (ou repetida nas pontas)</li>
+                    <li>Forte em multimodal; tarefa direta + exemplos claros</li>
+                </ul>
+            </div>
+
+        </div>
+
+        <div class="fu glass" style="padding:0.9rem 1.3rem;border-color:rgba(0,223,129,0.2);">
+            <div style="display:flex;align-items:center;gap:0.7rem;">
+                <i data-lucide="check-check" style="width:16px;height:16px;color:var(--blue-l);flex-shrink:0;"></i>
+                <span style="font-size:0.88rem;color:var(--soft);">
+                    Comum aos três: <strong style="color:var(--white);">seja explícito, exemplos &gt; instrução pura</strong>,
+                    e o <em>lost in the middle</em> vale igual — instrução crítica nas pontas.
+                </span>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SLIDE CX — Camada de contexto / onboarding (mapa: 4 fontes + guardrail)
+══════════════════════════════════════════ -->
+<section class="slide" id="scx">
+    <div class="glow" style="background:radial-gradient(circle,rgba(0,223,129,0.09) 0%,transparent 65%);"></div>
+
+    <div style="max-width:1120px;width:100%;padding:1.4rem 2rem;position:relative;z-index:10;">
+
+        <div class="fi" style="text-align:center;margin-bottom:0.55rem;">
+            <span class="badge"><span class="badge-dot"></span> Parte técnica · A camada de contexto</span>
+        </div>
+
+        <h2 class="fu" style="text-align:center;font-size:clamp(1.8rem,4.2vw,2.8rem);font-weight:900;letter-spacing:-0.03em;line-height:1.1;margin-bottom:0.4rem;">
+            O <span class="grad">onboarding</span> do agente
+        </h2>
+
+        <p class="fu" style="text-align:center;color:var(--soft);font-size:0.9rem;line-height:1.5;max-width:820px;margin:0 auto 0.9rem;">
+            Talento o modelo já tem. Mas ele não conhece os <strong style="color:var(--white);">seus</strong> dados, os <strong style="color:var(--white);">seus</strong> sistemas, o <strong style="color:var(--white);">seu</strong> histórico.
+            Primeiro dia de trabalho: dar acesso, manuais, histórico e ferramentas.
+        </p>
+
+        <div class="fu glass" style="padding:0.6rem 0.7rem;margin-bottom:0.85rem;">
+            <svg id="scx-svg"></svg>
+        </div>
+
+        <div class="fu" style="display:grid;grid-template-columns:repeat(5,1fr);gap:0.6rem;margin-bottom:0.85rem;">
+            <div style="padding:0.7rem 0.8rem;border-radius:0.7rem;background:rgba(0,223,129,0.05);border:1px solid rgba(0,223,129,0.2);">
+                <i data-lucide="wrench" style="width:16px;height:16px;color:var(--blue-l);"></i>
+                <div style="font-weight:700;font-size:0.82rem;margin-top:0.35rem;">Tools / MCP</div>
+                <div style="font-size:0.7rem;color:var(--softer);line-height:1.35;">Acesso aos sistemas</div>
+            </div>
+            <div style="padding:0.7rem 0.8rem;border-radius:0.7rem;background:rgba(0,223,129,0.05);border:1px solid rgba(0,223,129,0.2);">
+                <i data-lucide="library" style="width:16px;height:16px;color:var(--blue-l);"></i>
+                <div style="font-weight:700;font-size:0.82rem;margin-top:0.35rem;">RAG</div>
+                <div style="font-size:0.7rem;color:var(--softer);line-height:1.35;">Base de conhecimento</div>
+            </div>
+            <div style="padding:0.7rem 0.8rem;border-radius:0.7rem;background:rgba(0,223,129,0.05);border:1px solid rgba(0,223,129,0.2);">
+                <i data-lucide="book-open" style="width:16px;height:16px;color:var(--blue-l);"></i>
+                <div style="font-weight:700;font-size:0.82rem;margin-top:0.35rem;">Skills</div>
+                <div style="font-size:0.7rem;color:var(--softer);line-height:1.35;">Manuais e procedimentos</div>
+            </div>
+            <div style="padding:0.7rem 0.8rem;border-radius:0.7rem;background:rgba(0,223,129,0.05);border:1px solid rgba(0,223,129,0.2);">
+                <i data-lucide="notebook-pen" style="width:16px;height:16px;color:var(--blue-l);"></i>
+                <div style="font-weight:700;font-size:0.82rem;margin-top:0.35rem;">Memória</div>
+                <div style="font-size:0.7rem;color:var(--softer);line-height:1.35;">O histórico</div>
+            </div>
+            <div style="padding:0.7rem 0.8rem;border-radius:0.7rem;background:rgba(89,234,173,0.06);border:1px solid rgba(89,234,173,0.22);">
+                <i data-lucide="badge-check" style="width:16px;height:16px;color:var(--amber);"></i>
+                <div style="font-weight:700;font-size:0.82rem;margin-top:0.35rem;">Guardrail</div>
+                <div style="font-size:0.7rem;color:var(--softer);line-height:1.35;">Controle na saída</div>
+            </div>
+        </div>
+
+        <div class="fu glass" style="padding:0.85rem 1.3rem;border-color:rgba(0,223,129,0.2);">
+            <div style="display:flex;align-items:flex-start;gap:0.7rem;">
+                <i data-lucide="map" style="width:16px;height:16px;color:var(--blue-l);flex-shrink:0;margin-top:0.1rem;"></i>
+                <span style="font-size:0.85rem;color:var(--soft);line-height:1.45;">
+                    A <strong style="color:var(--white);">camada de contexto</strong> é tudo que você injeta em volta do modelo para ele virar capaz e específico na <strong style="color:var(--white);">sua</strong> empresa — não na internet genérica. É o mapa do que vem a seguir.
+                </span>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SLIDE TL — Tools + loop do agente + MCP
+══════════════════════════════════════════ -->
+<section class="slide" id="stl">
+    <div class="glow" style="background:radial-gradient(circle,rgba(0,223,129,0.08) 0%,transparent 65%);"></div>
+
+    <div style="max-width:1140px;width:100%;padding:1.4rem 2rem;position:relative;z-index:10;">
+
+        <div class="fi" style="text-align:center;margin-bottom:0.55rem;">
+            <span class="badge"><span class="badge-dot"></span> Camada de contexto · Tools &amp; MCP</span>
+        </div>
+
+        <h2 class="fu" style="text-align:center;font-size:clamp(1.8rem,4.2vw,2.8rem);font-weight:900;letter-spacing:-0.03em;line-height:1.1;margin-bottom:0.4rem;">
+            Dar <span class="grad">mãos</span> ao modelo
+        </h2>
+
+        <p class="fu" style="text-align:center;color:var(--soft);font-size:0.9rem;line-height:1.5;max-width:840px;margin:0 auto 0.9rem;">
+            Sozinho, o modelo só fala. <strong style="color:var(--white);">Tools</strong> dão a ele a capacidade de <strong style="color:var(--white);">agir</strong>:
+            chamar API, consultar banco, mandar e-mail. O loop do agente faz o resto.
+        </p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:0.85rem;">
+
+            <div class="fu glass" style="padding:0.6rem 0.8rem 0.8rem;">
+                <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--blue-l);margin:0.2rem 0 0.1rem 0.3rem;">O loop do agente</div>
+                <svg id="stl-loop"></svg>
+                <div style="text-align:center;font-size:0.76rem;color:var(--softer);margin-top:0.1rem;">
+                    decide <span style="color:var(--blue-l);">→</span> chama <span style="color:var(--blue-l);">→</span> lê o resultado <span style="color:var(--blue-l);">→</span> repete
+                </div>
+            </div>
+
+            <div class="fu glass" style="padding:0.6rem 0.8rem 0.8rem;border-color:rgba(89,234,173,0.18);">
+                <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--amber);margin:0.2rem 0 0.1rem 0.3rem;">MCP · a tomada padrão</div>
+                <svg id="stl-mcp"></svg>
+                <div style="text-align:center;font-size:0.76rem;color:var(--softer);margin-top:0.1rem;">
+                    1 protocolo <span style="color:var(--amber);">·</span> N sistemas <span style="color:var(--amber);">·</span> sem adaptador por aparelho
+                </div>
+            </div>
+
+        </div>
+
+        <div class="fu glass" style="padding:0.85rem 1.3rem;border-color:rgba(89,234,173,0.18);">
+            <div style="display:flex;align-items:flex-start;gap:0.7rem;">
+                <i data-lucide="usb" style="width:16px;height:16px;color:var(--amber);flex-shrink:0;margin-top:0.1rem;"></i>
+                <span style="font-size:0.85rem;color:var(--soft);line-height:1.45;">
+                    <strong style="color:var(--white);">MCP (Model Context Protocol):</strong> o padrão aberto que liga o agente a ferramentas e sistemas
+                    <strong style="color:var(--white);">sem integração customizada para cada um</strong>. Como o USB-C: uma porta universal no lugar de um adaptador por aparelho.
+                </span>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SLIDE RG — RAG (buscar na base + injetar antes de responder)
+══════════════════════════════════════════ -->
+<section class="slide" id="srg">
+    <div class="glow" style="background:radial-gradient(circle,rgba(0,223,129,0.08) 0%,transparent 65%);"></div>
+
+    <div style="max-width:1140px;width:100%;padding:1.3rem 2rem;position:relative;z-index:10;">
+
+        <div class="fi" style="text-align:center;margin-bottom:0.5rem;">
+            <span class="badge"><span class="badge-dot"></span> Camada de contexto · RAG</span>
+        </div>
+
+        <h2 class="fu" style="text-align:center;font-size:clamp(1.8rem,4.2vw,2.8rem);font-weight:900;letter-spacing:-0.03em;line-height:1.1;margin-bottom:0.4rem;">
+            Consultar o <span class="grad">arquivo</span> antes de responder
+        </h2>
+
+        <p class="fu" style="text-align:center;color:var(--soft);font-size:0.89rem;line-height:1.5;max-width:840px;margin:0 auto 0.85rem;">
+            O modelo não conhece os <strong style="color:var(--white);">seus</strong> documentos e tem conhecimento congelado.
+            RAG busca o trecho certo na sua base e <strong style="color:var(--white);">injeta no contexto</strong> — o funcionário puxa a pasta no arquivo, não responde de cabeça.
+        </p>
+
+        <div class="fu glass" style="padding:0.5rem 0.7rem;margin-bottom:0.8rem;">
+            <svg id="srg-svg"></svg>
+        </div>
+
+        <div class="fu" style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.8rem;">
+            <span style="padding:0.38rem 0.7rem;border-radius:0.55rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);font-size:0.74rem;font-weight:600;">Indexar</span>
+            <i data-lucide="chevron-right" style="width:13px;height:13px;color:var(--softer);"></i>
+            <span style="padding:0.38rem 0.7rem;border-radius:0.55rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);font-size:0.74rem;font-weight:600;">Embeddings</span>
+            <i data-lucide="chevron-right" style="width:13px;height:13px;color:var(--softer);"></i>
+            <span style="padding:0.38rem 0.7rem;border-radius:0.55rem;background:rgba(0,223,129,0.1);border:1px solid rgba(0,223,129,0.28);font-size:0.74rem;font-weight:600;color:var(--blue-l);">Busca semântica</span>
+            <i data-lucide="chevron-right" style="width:13px;height:13px;color:var(--softer);"></i>
+            <span style="padding:0.38rem 0.7rem;border-radius:0.55rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);font-size:0.74rem;font-weight:600;">Injeta</span>
+            <i data-lucide="chevron-right" style="width:13px;height:13px;color:var(--softer);"></i>
+            <span style="padding:0.38rem 0.7rem;border-radius:0.55rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);font-size:0.74rem;font-weight:600;">Responde</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;">
+            <div class="fu glass" style="padding:0.8rem 1.1rem;border-color:rgba(0,223,129,0.2);">
+                <div style="display:flex;align-items:flex-start;gap:0.6rem;">
+                    <i data-lucide="quote" style="width:15px;height:15px;color:var(--blue-l);flex-shrink:0;margin-top:0.15rem;"></i>
+                    <span style="font-size:0.82rem;color:var(--soft);line-height:1.45;">
+                        <strong style="color:var(--white);">Citar a fonte combate alucinação:</strong> a resposta vem do documento, com referência verificável.
+                    </span>
+                </div>
+            </div>
+            <div class="fu glass" style="padding:0.8rem 1.1rem;border-color:rgba(89,234,173,0.2);">
+                <div style="display:flex;align-items:flex-start;gap:0.6rem;">
+                    <i data-lucide="alert-triangle" style="width:15px;height:15px;color:var(--amber);flex-shrink:0;margin-top:0.15rem;"></i>
+                    <span style="font-size:0.82rem;color:var(--soft);line-height:1.45;">
+                        Todo dado recuperado é um <strong style="color:var(--white);">vetor de prompt injection</strong> — por isso ele também passa pelo guardrail de saída.
+                    </span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SLIDE MM — Memória (caderno: persistir entre sessões)
+══════════════════════════════════════════ -->
+<section class="slide" id="smm">
+    <div class="glow" style="background:radial-gradient(circle,rgba(0,223,129,0.08) 0%,transparent 65%);"></div>
+
+    <div style="max-width:1140px;width:100%;padding:1.3rem 2rem;position:relative;z-index:10;">
+
+        <div class="fi" style="text-align:center;margin-bottom:0.5rem;">
+            <span class="badge"><span class="badge-dot"></span> Camada de contexto · Memória</span>
+        </div>
+
+        <h2 class="fu" style="text-align:center;font-size:clamp(1.8rem,4.2vw,2.8rem);font-weight:900;letter-spacing:-0.03em;line-height:1.1;margin-bottom:0.4rem;">
+            O <span class="grad">caderno</span> de anotações
+        </h2>
+
+        <p class="fu" style="text-align:center;color:var(--soft);font-size:0.89rem;line-height:1.5;max-width:860px;margin:0 auto 0.85rem;">
+            A janela de contexto é volátil: acabou a conversa, esqueceu tudo. <strong style="color:var(--white);">Memória</strong> persiste o que importa entre sessões —
+            preferências, fatos do cliente, decisões passadas. O funcionário abre o caderno e continua de onde parou.
+        </p>
+
+        <div class="fu glass" style="padding:0.55rem 0.7rem;margin-bottom:0.8rem;">
+            <svg id="smm-svg"></svg>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;">
+            <div class="fu glass" style="padding:0.8rem 1.1rem;border-color:rgba(255,255,255,0.1);">
+                <div style="display:flex;align-items:flex-start;gap:0.6rem;">
+                    <i data-lucide="hourglass" style="width:15px;height:15px;color:var(--softer);flex-shrink:0;margin-top:0.15rem;"></i>
+                    <span style="font-size:0.82rem;color:var(--soft);line-height:1.45;">
+                        <strong style="color:var(--white);">Curto prazo · a janela:</strong> vale só durante a conversa. Acabou, zerou.
+                    </span>
+                </div>
+            </div>
+            <div class="fu glass" style="padding:0.8rem 1.1rem;border-color:rgba(0,223,129,0.2);">
+                <div style="display:flex;align-items:flex-start;gap:0.6rem;">
+                    <i data-lucide="notebook-pen" style="width:15px;height:15px;color:var(--blue-l);flex-shrink:0;margin-top:0.15rem;"></i>
+                    <span style="font-size:0.82rem;color:var(--soft);line-height:1.45;">
+                        <strong style="color:var(--white);">Longo prazo · memória externa:</strong> sobrevive entre sessões e é recuperada quando relevante — parente do RAG.
+                    </span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SLIDE MO — O caminho até aqui: prompt gigante + multi-agent/orquestrador não escalou
+══════════════════════════════════════════ -->
+<section class="slide" id="smo">
+    <div class="glow" style="background:radial-gradient(circle,rgba(255,90,90,0.05) 0%,transparent 65%);"></div>
+
+    <div style="max-width:1140px;width:100%;padding:1.4rem 2rem;position:relative;z-index:10;">
+
+        <div class="fi" style="text-align:center;margin-bottom:0.5rem;">
+            <span class="badge"><span class="badge-dot"></span> Camada de contexto · Skills · o caminho até aqui</span>
+        </div>
+
+        <h2 class="fu" style="text-align:center;font-size:clamp(1.8rem,4.2vw,2.8rem);font-weight:900;letter-spacing:-0.03em;line-height:1.1;margin-bottom:0.4rem;">
+            Empilhar regras <span class="grad">não escala</span>
+        </h2>
+
+        <p class="fu" style="text-align:center;color:var(--soft);font-size:0.89rem;line-height:1.5;max-width:860px;margin:0 auto 0.85rem;">
+            Um fluxo comercial grande incha o prompt: regras demais reativam <strong style="color:var(--white);">lost in the middle</strong> e <strong style="color:var(--white);">context rot</strong>.
+            A primeira convenção foi quebrar em vários agentes com um orquestrador roteando.
+        </p>
+
+        <div class="fu glass" style="padding:0.55rem 0.7rem;margin-bottom:0.8rem;">
+            <svg id="smo-svg"></svg>
+        </div>
+
+        <div class="fu" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem;">
+            <div style="padding:0.75rem 0.9rem;border-radius:0.7rem;background:rgba(255,90,90,0.05);border:1px solid rgba(255,90,90,0.2);">
+                <i data-lucide="git-fork" style="width:16px;height:16px;color:rgba(255,120,120,0.9);"></i>
+                <div style="font-weight:700;font-size:0.83rem;margin-top:0.3rem;">Roteamento complexo</div>
+                <div style="font-size:0.72rem;color:var(--softer);line-height:1.35;">Manter as rotas vira um projeto à parte</div>
+            </div>
+            <div style="padding:0.75rem 0.9rem;border-radius:0.7rem;background:rgba(255,90,90,0.05);border:1px solid rgba(255,90,90,0.2);">
+                <i data-lucide="split" style="width:16px;height:16px;color:rgba(255,120,120,0.9);"></i>
+                <div style="font-weight:700;font-size:0.83rem;margin-top:0.3rem;">Intent ambíguo</div>
+                <div style="font-size:0.72rem;color:var(--softer);line-height:1.35;">No meio do processo, nem o humano sabe a rota</div>
+            </div>
+            <div style="padding:0.75rem 0.9rem;border-radius:0.7rem;background:rgba(255,90,90,0.05);border:1px solid rgba(255,90,90,0.2);">
+                <i data-lucide="trending-down" style="width:16px;height:16px;color:rgba(255,120,120,0.9);"></i>
+                <div style="font-weight:700;font-size:0.83rem;margin-top:0.3rem;">Chamada errada degrada tudo</div>
+                <div style="font-size:0.72rem;color:var(--softer);line-height:1.35;">Um agente errado arruína a resposta inteira</div>
+            </div>
+        </div>
+
+        <p class="fu" style="text-align:center;font-size:0.82rem;color:var(--softer);margin-top:0.8rem;">
+            Havia um padrão melhor <span style="color:var(--amber);">→ progressive disclosure</span>
+        </p>
+
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SLIDE SK — Skills sob demanda / progressive disclosure
+══════════════════════════════════════════ -->
+<section class="slide" id="ssk">
+    <div class="glow" style="background:radial-gradient(circle,rgba(0,223,129,0.08) 0%,transparent 65%);"></div>
+
+    <div style="max-width:1140px;width:100%;padding:1.3rem 2rem;position:relative;z-index:10;">
+
+        <div class="fi" style="text-align:center;margin-bottom:0.5rem;">
+            <span class="badge"><span class="badge-dot"></span> Camada de contexto · Skills</span>
+        </div>
+
+        <h2 class="fu" style="text-align:center;font-size:clamp(1.8rem,4.2vw,2.8rem);font-weight:900;letter-spacing:-0.03em;line-height:1.1;margin-bottom:0.4rem;">
+            Puxar o <span class="grad">manual</span> certo na hora certa
+        </h2>
+
+        <p class="fu" style="text-align:center;color:var(--soft);font-size:0.89rem;line-height:1.5;max-width:860px;margin:0 auto 0.85rem;">
+            <strong style="color:var(--white);">Progressive disclosure:</strong> modelos bons em usar ferramentas descobrem habilidades sozinhos.
+            Skills bem descritas ficam na estante; a skill só entra na mesa quando a tarefa pede — prompt enxuto.
+        </p>
+
+        <div class="fu glass" style="padding:0.55rem 0.7rem;margin-bottom:0.8rem;">
+            <svg id="ssk-svg"></svg>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;">
+            <div class="fu glass" style="padding:0.8rem 1.1rem;border-color:rgba(0,223,129,0.2);">
+                <div style="display:flex;align-items:flex-start;gap:0.6rem;">
+                    <i data-lucide="library" style="width:15px;height:15px;color:var(--blue-l);flex-shrink:0;margin-top:0.15rem;"></i>
+                    <span style="font-size:0.82rem;color:var(--soft);line-height:1.45;">
+                        <strong style="color:var(--white);">RAG traz o quê:</strong> dados e fatos da sua base — o conteúdo para responder.
+                    </span>
+                </div>
+            </div>
+            <div class="fu glass" style="padding:0.8rem 1.1rem;border-color:rgba(89,234,173,0.2);">
+                <div style="display:flex;align-items:flex-start;gap:0.6rem;">
+                    <i data-lucide="book-open" style="width:15px;height:15px;color:var(--amber);flex-shrink:0;margin-top:0.15rem;"></i>
+                    <span style="font-size:0.82rem;color:var(--soft);line-height:1.45;">
+                        <strong style="color:var(--white);">Skill traz o como:</strong> o procedimento, o passo a passo — instruções, exemplos, às vezes código.
+                    </span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SLIDE GO — Guardrail de saída (controle de qualidade na expedição)
+══════════════════════════════════════════ -->
+<section class="slide" id="sgo">
+    <div class="glow" style="background:radial-gradient(circle,rgba(89,234,173,0.07) 0%,transparent 65%);"></div>
+
+    <div style="max-width:1040px;width:100%;padding:1.5rem 2rem;position:relative;z-index:10;">
+
+        <div class="fi" style="text-align:center;margin-bottom:0.6rem;">
+            <span class="badge" style="background:rgba(89,234,173,0.12);border-color:rgba(89,234,173,0.28);color:var(--amber);">
+                <span class="badge-dot"></span> Parte técnica · Guardrail de saída
+            </span>
+        </div>
+
+        <h2 class="fu" style="text-align:center;font-size:clamp(1.9rem,4.5vw,3rem);font-weight:900;letter-spacing:-0.03em;line-height:1.1;margin-bottom:0.4rem;">
+            Controle de qualidade na <span class="grad">expedição</span>
+        </h2>
+
+        <p class="fu" style="text-align:center;color:var(--soft);font-size:0.92rem;line-height:1.55;max-width:680px;margin:0 auto 1.1rem;">
+            Espelho do porteiro: roda <strong style="color:var(--white);">depois</strong> do modelo, antes de chegar ao cliente.
+            O produto não sai pela porta sem o inspetor conferir.
+        </p>
+
+        <div class="fu glass" style="padding:0.7rem 0.8rem;margin-bottom:1rem;">
+            <svg id="sgo-svg"></svg>
+        </div>
+
+        <div class="fu" style="display:grid;grid-template-columns:repeat(5,1fr);gap:0.55rem;">
+            <div class="gpill"><i data-lucide="ghost"></i> Alucinação</div>
+            <div class="gpill"><i data-lucide="id-card"></i> Vazamento / PII</div>
+            <div class="gpill"><i data-lucide="braces"></i> Formato inválido</div>
+            <div class="gpill"><i data-lucide="megaphone"></i> Tom / política</div>
+            <div class="gpill"><i data-lucide="syringe"></i> Injeção que passou</div>
+        </div>
+
+        <p class="fu" style="margin-top:0.9rem;text-align:center;font-size:0.84rem;color:var(--softer);">
+            Guardrail na entrada <span style="color:var(--amber);">+</span> guardrail na saída = <strong style="color:var(--soft);">o sanduíche fechado</strong>. Confia na entrada <strong style="color:var(--soft);">e</strong> na saída.
+        </p>
+
+    </div>
+</section>
+<!-- ══════════════════════════════════════════
+     SLIDE EV — Evals (o maior buraco)
+══════════════════════════════════════════ -->
+<section class="slide" id="sev">
+    <div class="glow" style="background:radial-gradient(circle,rgba(89,234,173,0.07) 0%,transparent 65%);"></div>
+    <div style="max-width:1080px;width:100%;padding:1.4rem 2rem;position:relative;z-index:10;">
+        <div class="fi" style="text-align:center;margin-bottom:0.55rem;">
+            <span class="badge" style="background:rgba(89,234,173,0.12);border-color:rgba(89,234,173,0.28);color:var(--amber);"><span class="badge-dot"></span> Ao redor da pipeline · Evals · o maior buraco</span>
+        </div>
+        <h2 class="fu" style="text-align:center;font-size:clamp(1.8rem,4.2vw,2.8rem);font-weight:900;letter-spacing:-0.03em;line-height:1.1;margin-bottom:0.4rem;">
+            Como você <span class="grad">sabe</span> que funciona?
+        </h2>
+        <p class="fu" style="text-align:center;color:var(--soft);font-size:0.9rem;line-height:1.5;max-width:840px;margin:0 auto 0.9rem;">
+            Sem medição, arquitetura é fé. Evals rodam um conjunto de casos, dão uma <strong style="color:var(--white);">nota objetiva</strong>
+            e avisam quando um build novo <strong style="color:var(--white);">regrediu</strong>. É o período de experiência do funcionário.
+        </p>
+        <div class="fu glass" style="padding:0.6rem 0.8rem;margin-bottom:0.85rem;"><svg id="sev-svg"></svg></div>
+        <div class="fu" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.55rem;">
+            <div class="gpill"><i data-lucide="database"></i> Conjunto de casos</div>
+            <div class="gpill"><i data-lucide="gauge"></i> Nota objetiva</div>
+            <div class="gpill"><i data-lucide="trending-down"></i> Detecta regressão</div>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SLIDE OB — Observabilidade
+══════════════════════════════════════════ -->
+<section class="slide" id="sob">
+    <div class="glow" style="background:radial-gradient(circle,rgba(0,223,129,0.08) 0%,transparent 65%);"></div>
+    <div style="max-width:1080px;width:100%;padding:1.4rem 2rem;position:relative;z-index:10;">
+        <div class="fi" style="text-align:center;margin-bottom:0.55rem;">
+            <span class="badge"><span class="badge-dot"></span> Ao redor da pipeline · Observabilidade</span>
+        </div>
+        <h2 class="fu" style="text-align:center;font-size:clamp(1.8rem,4.2vw,2.8rem);font-weight:900;letter-spacing:-0.03em;line-height:1.1;margin-bottom:0.4rem;">
+            <span class="grad">Câmeras</span> e relatórios da operação
+        </h2>
+        <p class="fu" style="text-align:center;color:var(--soft);font-size:0.9rem;line-height:1.5;max-width:840px;margin:0 auto 0.9rem;">
+            Em produção: <strong style="color:var(--white);">traces</strong> de cada requisição, logs e custo por req.
+            Quando dá errado, você vê exatamente onde — e age.
+        </p>
+        <div class="fu glass" style="padding:0.6rem 0.8rem;margin-bottom:0.85rem;"><svg id="sob-svg"></svg></div>
+        <div class="fu" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.55rem;">
+            <div class="gpill"><i data-lucide="git-commit-horizontal"></i> Traces</div>
+            <div class="gpill"><i data-lucide="scroll-text"></i> Logs</div>
+            <div class="gpill"><i data-lucide="circle-dollar-sign"></i> Custo / req</div>
+            <div class="gpill"><i data-lucide="bell-ring"></i> Alertas</div>
+        </div>
+    </div>
+</section>
+<script>
+lucide.createIcons();
+
+const SLIDES = ['s0','sl','sm','sn','spr','sq','scx','stl','srg','smm','smo','ssk','sgo','sev','sob'];
+const N = SLIDES.length;
+
+// ── HUD ──
+function hud() {
+    const st = window.scrollY;
+    const dh = document.documentElement.scrollHeight - window.innerHeight;
+    document.getElementById('prog').style.width = (dh > 0 ? st/dh*100 : 0) + '%';
+
+    let cur = 0;
+    SLIDES.forEach((id,i) => {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top <= window.innerHeight * 0.5) cur = i;
+    });
+    document.getElementById('ctr').textContent = (cur+1) + ' / ' + N;
+
+    const nb = document.getElementById('nb');
+    st > 80 ? nb.classList.add('on') : nb.classList.remove('on');
+}
+window.addEventListener('scroll', hud, { passive: true });
+
+// ── Nav button ──
+document.getElementById('nb').addEventListener('click', () => {
+    let cur = 0;
+    SLIDES.forEach((id,i) => {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top <= window.innerHeight * 0.5) cur = i;
+    });
+    const next = cur >= N-1 ? 0 : cur+1;
+    document.getElementById(SLIDES[next]).scrollIntoView({ behavior:'smooth', block:'start' });
+});
+
+// ── Keyboard ──
+document.addEventListener('keydown', e => {
+    const fwd = ['ArrowRight','ArrowDown','PageDown'];
+    const bwd = ['ArrowLeft','ArrowUp','PageUp'];
+    if (!fwd.includes(e.key) && !bwd.includes(e.key)) return;
+    e.preventDefault();
+    let cur = 0;
+    SLIDES.forEach((id,i) => {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top <= window.innerHeight * 0.5) cur = i;
+    });
+    const next = Math.max(0, Math.min(N-1, cur + (fwd.includes(e.key) ? 1 : -1)));
+    document.getElementById(SLIDES[next]).scrollIntoView({ behavior:'smooth', block:'start' });
+});
+
+// ── Entrance animations ──
+const io = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        const els = entry.target.querySelectorAll('.fu, .fi');
+        els.forEach((el, i) => setTimeout(() => el.classList.add('on'), i * 80));
+    });
+}, { threshold: 0.2 });
+
+SLIDES.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) io.observe(el);
+});
+
+// ── Slide 0: partículas ──
+(function() {
+    const svg = d3.select('#ptc');
+    const W = window.innerWidth, H = window.innerHeight;
+    svg.attr('width', W).attr('height', H);
+    const cx = W/2, cy = H/2;
+    const pts = d3.range(42).map((i,_,a) => ({
+        r: 140 + Math.random() * Math.min(W,H) * 0.28,
+        angle: (i/a.length) * Math.PI*2 + Math.random()*0.6,
+        speed: (0.0012 + Math.random()*0.0028) * (Math.random()>0.5?1:-1),
+        size: 1+Math.random()*2.4,
+        color: Math.random()>0.72 ? '#59EAAD' : '#00df81',
+        top: 0.15+Math.random()*0.35,
+    }));
+    const dots = svg.selectAll('circle').data(pts).join('circle')
+        .attr('r', d=>d.size).attr('fill', d=>d.color).attr('opacity', 0);
+    const FD = 1400;
+    d3.timer(el => {
+        const t = Math.min(el/FD, 1);
+        const e2 = 1-Math.pow(1-t,2);
+        dots
+            .attr('cx', d => { d.angle+=d.speed; return cx+Math.cos(d.angle)*d.r; })
+            .attr('cy', d => cy+Math.sin(d.angle)*d.r*0.55)
+            .attr('opacity', d => d.top*e2);
+    });
+    window.addEventListener('resize', () => {
+        svg.attr('width', window.innerWidth).attr('height', window.innerHeight);
+    });
+})();
+// ── Helpers de mapa/carro (metáforas K e L) ──
+function drawMapGrid(svg, VW, VH) {
+    const g = svg.append('g');
+    for (let x = 40; x < VW; x += 40)
+        g.append('line').attr('x1',x).attr('y1',0).attr('x2',x).attr('y2',VH)
+            .attr('stroke','rgba(255,255,255,0.035)').attr('stroke-width',1);
+    for (let y = 40; y < VH; y += 40)
+        g.append('line').attr('x1',0).attr('y1',y).attr('x2',VW).attr('y2',y)
+            .attr('stroke','rgba(255,255,255,0.035)').attr('stroke-width',1);
+}
+function makeCar(svg, color) {
+    const g = svg.append('g');
+    g.append('rect').attr('x',-9).attr('y',-5.5).attr('width',18).attr('height',11)
+        .attr('rx',3.5).attr('fill',color);
+    g.append('rect').attr('x',1).attr('y',-5.5).attr('width',6).attr('height',11)
+        .attr('rx',2).attr('fill','rgba(255,255,255,0.3)');
+    g.append('circle').attr('cx',9).attr('cy',0).attr('r',2).attr('fill','rgba(255,255,255,0.85)');
+    return { move(x,y,a){ g.attr('transform',`translate(${x.toFixed(2)},${y.toFixed(2)}) rotate(${a.toFixed(1)})`); } };
+}
+// ── Slide L: varredura do pedido pelo funcionário (entrada → saída, loop perpétuo) ──
+(function() {
+    const rows = document.querySelectorAll('#emp-rows .trow');
+    let cur = 0, started = false;
+    const ioL = new IntersectionObserver(entries => {
+        if (!entries[0].isIntersecting || started) return;
+        started = true;
+        setInterval(() => {
+            rows.forEach((r,i) => i===cur ? r.classList.add('hi') : r.classList.remove('hi'));
+            cur = (cur+1) % rows.length;
+        }, 1300);
+    }, { threshold: 0.3 });
+    const sl = document.getElementById('sl');
+    if (sl) ioL.observe(sl);
+})();
+
+// ── Slide M: guardrail / porteiro (fluxo perpétuo de pedidos na portaria) ──
+(function() {
+    if (window.__sm_done) return;
+    const io = new IntersectionObserver(entries => {
+        if (!entries[0].isIntersecting) return;
+        window.__sm_done = true; io.disconnect();
+        runPorteiro();
+    }, { threshold: 0.25 });
+    const el = document.getElementById('sm');
+    if (el) io.observe(el);
+
+    function runPorteiro() {
+        const VW = 960, VH = 360;
+        const svg = d3.select('#sm-svg').attr('viewBox', `0 0 ${VW} ${VH}`).attr('height','auto');
+        svg.selectAll('*').remove();
+        drawMapGrid(svg, VW, VH);
+
+        const laneY = 196, gateX = 520, gateStop = gateX - 32;
+
+        // trilho do pedido
+        svg.append('line').attr('x1',0).attr('y1',laneY).attr('x2',VW).attr('y2',laneY)
+            .attr('stroke','rgba(255,255,255,0.06)').attr('stroke-width',1).attr('stroke-dasharray','2 6');
+
+        // rótulos das zonas
+        svg.append('text').attr('x',26).attr('y',42).attr('font-size',12).attr('font-weight',800)
+            .attr('letter-spacing','2').attr('font-family','Inter,sans-serif')
+            .attr('fill','rgba(255,255,255,0.42)').text('ENTRADA');
+        svg.append('text').attr('x',26).attr('y',60).attr('font-size',10)
+            .attr('font-family','Inter,sans-serif').attr('fill','rgba(255,255,255,0.3)').text('pedidos chegando');
+        svg.append('text').attr('x',gateX-138).attr('y',300).attr('text-anchor','middle')
+            .attr('font-size',11).attr('font-weight',700).attr('font-family','Inter,sans-serif')
+            .attr('fill','rgba(255,90,90,0.6)').text('barrado');
+
+        // ── Portaria ──
+        const gate = svg.append('g');
+        [-24,24].forEach(dx => {
+            gate.append('rect').attr('x',gateX+dx-4).attr('y',98).attr('width',8).attr('height',192)
+                .attr('rx',3).attr('fill','rgba(89,234,173,0.16)')
+                .attr('stroke','rgba(89,234,173,0.45)').attr('stroke-width',1);
+        });
+        gate.append('rect').attr('x',gateX-28).attr('y',88).attr('width',56).attr('height',12)
+            .attr('rx',4).attr('fill','rgba(89,234,173,0.22)')
+            .attr('stroke','rgba(89,234,173,0.5)').attr('stroke-width',1);
+        gate.append('text').attr('x',gateX).attr('y',76).attr('text-anchor','middle')
+            .attr('font-size',12).attr('font-weight',800).attr('letter-spacing','2')
+            .attr('font-family','Inter,sans-serif').attr('fill','var(--amber)').text('GUARDRAIL');
+        gate.append('text').attr('x',gateX).attr('y',312).attr('text-anchor','middle')
+            .attr('font-size',10).attr('font-family','Inter,sans-serif')
+            .attr('fill','rgba(89,234,173,0.6)').text('o porteiro');
+        // barra de varredura (revista) — sobe e desce perpetuamente
+        const scanSeg = gate.append('line').attr('x1',gateX-21).attr('x2',gateX+21)
+            .attr('stroke','rgba(89,234,173,0.9)').attr('stroke-width',2.5).attr('stroke-linecap','round');
+
+        // ── Modelo (destino) ──
+        const modelX = 862, modelY = laneY;
+        svg.append('circle').attr('cx',modelX).attr('cy',modelY).attr('r',30)
+            .attr('fill','rgba(0,223,129,0.10)').attr('stroke','rgba(89,234,173,0.4)').attr('stroke-width',1.5);
+        const modelPulse = svg.append('circle').attr('cx',modelX).attr('cy',modelY).attr('r',30)
+            .attr('fill','none').attr('stroke','rgba(89,234,173,0.7)').attr('stroke-width',2).attr('opacity',0);
+        svg.append('circle').attr('cx',modelX).attr('cy',modelY).attr('r',6).attr('fill','rgba(89,234,173,0.85)');
+        svg.append('text').attr('x',modelX).attr('y',modelY-42).attr('text-anchor','middle')
+            .attr('font-size',10).attr('font-family','Inter,sans-serif')
+            .attr('fill','rgba(100,210,130,0.7)').text('só o que passou');
+        svg.append('text').attr('x',modelX).attr('y',modelY+50).attr('text-anchor','middle')
+            .attr('font-size',12).attr('font-weight',700).attr('font-family','Inter,sans-serif')
+            .attr('fill','rgba(89,234,173,0.85)').text('modelo');
+
+        // sequência de pedidos: limpos passam, ameaças barram
+        const seq = [
+            { ok:true },
+            { ok:false, tag:'prompt injection' },
+            { ok:true },
+            { ok:false, tag:'PII' },
+            { ok:true },
+            { ok:false, tag:'jailbreak' },
+            { ok:true },
+            { ok:false, tag:'fora de escopo' },
+        ];
+
+        const packets = [];
+        let seqIdx = 0, lastSpawn = -1e9, modelHit = -1e9;
+        const SPAWN = 1150, AP = 1750, SCAN = 360, EXIT = 1500, REJ = 1250, startX = -50;
+        const smooth = t => t<0 ? 0 : t>1 ? 1 : t*t*(3-2*t);
+
+        function spawn(elapsed) {
+            const spec = seq[seqIdx % seq.length]; seqIdx++;
+            const g = svg.append('g').attr('opacity',0);
+            const body = g.append('rect').attr('x',-26).attr('y',-13).attr('width',52).attr('height',26)
+                .attr('rx',7).attr('fill','rgba(89,234,173,0.14)')
+                .attr('stroke','rgba(89,234,173,0.5)').attr('stroke-width',1.4);
+            g.append('rect').attr('x',-19).attr('y',-13).attr('width',7).attr('height',26)
+                .attr('rx',3).attr('fill','rgba(255,255,255,0.22)');
+            const icon = g.append('text').attr('x',4).attr('y',5).attr('text-anchor','middle')
+                .attr('font-size',13).attr('font-weight',800).attr('font-family','Inter,sans-serif')
+                .attr('fill','rgba(255,255,255,0.7)').text('?');
+            const tag = g.append('text').attr('x',0).attr('y',-22).attr('text-anchor','middle')
+                .attr('font-size',10).attr('font-weight',700).attr('font-family','Inter,sans-serif')
+                .attr('fill','rgba(255,90,90,0.95)').attr('opacity',0).text(spec.tag || '');
+            packets.push({ spec, g, body, icon, tag, t0: elapsed });
+        }
+
+        d3.timer(elapsed => {
+            // spawn contínuo
+            if (elapsed - lastSpawn >= SPAWN) { lastSpawn = elapsed; spawn(elapsed); }
+
+            // barra de varredura desce/sobe sempre (porteiro nunca para)
+            const sy = 104 + ((elapsed % 1300) / 1300) * 180;
+            scanSeg.attr('y1',sy).attr('y2',sy).attr('opacity', 0.45 + 0.4 * Math.abs(Math.sin(elapsed/220)));
+
+            // pulso do modelo ao receber pedido aprovado
+            const mp = (elapsed - modelHit) / 700;
+            modelPulse.attr('opacity', mp >= 0 && mp <= 1 ? 0.7*(1-mp) : 0)
+                      .attr('r', 30 + (mp >= 0 && mp <= 1 ? mp*22 : 0));
+
+            for (let i = packets.length-1; i >= 0; i--) {
+                const p = packets[i];
+                const lt = elapsed - p.t0;
+                let x, y = laneY;
+
+                if (lt < AP) {
+                    x = startX + (gateStop - startX) * smooth(lt/AP);
+                    p.g.attr('opacity', Math.min(1, lt/300));
+                } else if (lt < AP + SCAN) {
+                    x = gateStop;
+                    p.body.attr('stroke','rgba(89,234,173,0.9)').attr('fill','rgba(89,234,173,0.16)');
+                    p.icon.attr('fill','rgba(89,234,173,0.95)');
+                } else {
+                    const after = lt - (AP + SCAN);
+                    if (p.spec.ok) {
+                        const b = smooth(after / EXIT);
+                        x = gateStop + (modelX - gateStop) * b;
+                        p.body.attr('stroke','rgba(100,210,130,0.7)').attr('fill','rgba(100,210,130,0.12)');
+                        p.icon.text('✓').attr('fill','rgba(100,210,130,0.95)');
+                        p.g.attr('opacity', after > EXIT-300 ? Math.max(0,(EXIT-after)/300) : 1);
+                        if (b >= 0.98 && elapsed - modelHit > 400) modelHit = elapsed;
+                        if (after >= EXIT) { p.g.remove(); packets.splice(i,1); continue; }
+                    } else {
+                        const b = smooth(after / REJ);
+                        x = gateStop - b*150;     // quica de volta
+                        y = laneY - b*92;         // sobe
+                        p.body.attr('stroke','rgba(255,90,90,0.85)').attr('fill','rgba(255,90,90,0.14)');
+                        p.icon.text('✕').attr('fill','rgba(255,90,90,0.95)');
+                        p.tag.attr('opacity', Math.min(1, b*2));
+                        p.g.attr('opacity', 1 - smooth(Math.max(0,(after - REJ*0.4)/(REJ*0.6))));
+                        if (after >= REJ) { p.g.remove(); packets.splice(i,1); continue; }
+                    }
+                }
+                p.g.attr('transform', `translate(${x.toFixed(2)},${y.toFixed(2)})`);
+            }
+        });
+    }
+})();
+
+// ── Slide N: trade-off latência × segurança (orbe varre a curva, loop perpétuo) ──
+(function() {
+    if (window.__sn_done) return;
+    const io = new IntersectionObserver(entries => {
+        if (!entries[0].isIntersecting) return;
+        window.__sn_done = true; io.disconnect();
+        runTradeoff();
+    }, { threshold: 0.25 });
+    const el = document.getElementById('sn');
+    if (el) io.observe(el);
+
+    function runTradeoff() {
+        const VW = 960, VH = 320;
+        const svg = d3.select('#sn-svg').attr('viewBox', `0 0 ${VW} ${VH}`).attr('height','auto');
+        svg.selectAll('*').remove();
+
+        const x0 = 120, y0 = 280, xMax = 890, yTop = 40;
+
+        // eixos
+        svg.append('line').attr('x1',x0).attr('y1',y0).attr('x2',xMax).attr('y2',y0)
+            .attr('stroke','rgba(255,255,255,0.22)').attr('stroke-width',1.5);
+        svg.append('line').attr('x1',x0).attr('y1',y0).attr('x2',x0).attr('y2',yTop)
+            .attr('stroke','rgba(255,255,255,0.22)').attr('stroke-width',1.5);
+        svg.append('path').attr('d',`M${xMax},${y0} l-9,-4.5 l0,9 z`).attr('fill','rgba(255,255,255,0.3)');
+        svg.append('path').attr('d',`M${x0},${yTop} l-4.5,9 l9,0 z`).attr('fill','rgba(255,255,255,0.3)');
+        svg.append('text').attr('x',xMax).attr('y',y0+22).attr('text-anchor','end').attr('font-size',11)
+            .attr('font-weight',600).attr('font-family','Inter,sans-serif')
+            .attr('fill','rgba(255,255,255,0.5)').text('latência / custo  →');
+        svg.append('text').attr('x',x0+10).attr('y',yTop+2).attr('text-anchor','start').attr('font-size',11)
+            .attr('font-weight',600).attr('font-family','Inter,sans-serif')
+            .attr('fill','rgba(255,255,255,0.5)').text('↑ segurança');
+
+        const nodes = [
+            { x:230, y:236, name:'Determinístico', sub:'regex · blocklist · PII', lat:'~5 ms',
+              tone:'rgba(242,255,248,0.92)', lx:18, anchor:'start' },
+            { x:500, y:158, name:'1 prompt LLM (4 em 1)', sub:'um classificador multi-label', lat:'~150 ms',
+              tone:'rgba(89,234,173,0.95)', lx:30, anchor:'start', you:true },
+            { x:800, y:84,  name:'Camadas dedicadas', sub:'classifier + judge + regex', lat:'~400 ms',
+              tone:'rgba(100,210,130,0.95)', lx:-18, anchor:'end' },
+        ];
+
+        // curva do trade-off
+        const line = d3.line().x(d=>d.x).y(d=>d.y).curve(d3.curveCatmullRom.alpha(0.6));
+        const dPath = line(nodes);
+        svg.append('path').attr('d',dPath).attr('fill','none')
+            .attr('stroke','rgba(255,255,255,0.13)').attr('stroke-width',2).attr('stroke-dasharray','4 5');
+        const ph = svg.append('path').attr('d',dPath).attr('fill','none').node();
+        const TL = ph.getTotalLength();
+
+        // posição (0..1) de cada nó na curva
+        const SAMP = 500;
+        nodes.forEach(s => {
+            let best=1e9, bestL=0;
+            for (let i=0;i<=SAMP;i++){ const l=TL*i/SAMP, pt=ph.getPointAtLength(l); const d=(pt.x-s.x)**2+(pt.y-s.y)**2; if(d<best){best=d;bestL=l;} }
+            s.pos = bestL/TL;
+        });
+
+        // nós + rótulos laterais
+        nodes.forEach(s => {
+            s.ring = svg.append('circle').attr('cx',s.x).attr('cy',s.y).attr('r',s.you?12:9)
+                .attr('fill','rgba(11,15,13,0.92)').attr('stroke',s.tone).attr('stroke-width',1.6).attr('opacity',0.55);
+            s.core = svg.append('circle').attr('cx',s.x).attr('cy',s.y).attr('r',s.you?5:3.5).attr('fill',s.tone).attr('opacity',0.7);
+            svg.append('text').attr('x',s.x+s.lx).attr('y',s.y-6).attr('text-anchor',s.anchor)
+                .attr('font-size',12.5).attr('font-weight',700).attr('font-family','Inter,sans-serif')
+                .attr('fill','rgba(255,255,255,0.92)').text(s.name);
+            svg.append('text').attr('x',s.x+s.lx).attr('y',s.y+9).attr('text-anchor',s.anchor)
+                .attr('font-size',10).attr('font-family','Inter,sans-serif')
+                .attr('fill','rgba(255,255,255,0.45)').text(s.sub);
+            svg.append('text').attr('x',s.x+s.lx).attr('y',s.y+23).attr('text-anchor',s.anchor)
+                .attr('font-size',10.5).attr('font-weight',700).attr('font-family','Inter,sans-serif')
+                .attr('fill',s.tone).text(s.lat);
+            if (s.you) {
+                svg.append('circle').attr('cx',s.x).attr('cy',s.y).attr('r',18).attr('fill','none')
+                    .attr('stroke','rgba(89,234,173,0.5)').attr('stroke-width',1.2).attr('stroke-dasharray','3 3');
+                svg.append('text').attr('x',s.x).attr('y',s.y-28).attr('text-anchor','middle').attr('font-size',9.5)
+                    .attr('font-weight',800).attr('letter-spacing','1').attr('font-family','Inter,sans-serif')
+                    .attr('fill','rgba(89,234,173,0.85)').text('VITRINE-LOCAL · VOCÊ');
+            }
+        });
+
+        // orbe que percorre a curva
+        const orb = svg.append('g');
+        const halo = orb.append('circle').attr('r',10).attr('fill','none')
+            .attr('stroke','rgba(89,234,173,0.5)').attr('stroke-width',1.5);
+        orb.append('circle').attr('r',5).attr('fill','rgba(89,234,173,0.98)');
+        orb.append('circle').attr('r',2).attr('fill','rgba(255,255,255,0.9)');
+
+        const P = 7000;
+        d3.timer(elapsed => {
+            const phs = (elapsed % P) / P;
+            const tri = phs < 0.5 ? phs*2 : (1-phs)*2;   // vai e volta: rápido ↔ seguro
+            const pt = ph.getPointAtLength(TL * tri);
+            orb.attr('transform', `translate(${pt.x.toFixed(2)},${pt.y.toFixed(2)})`);
+
+            const hp = (elapsed % 1400) / 1400;
+            halo.attr('r', 9 + hp*9).attr('opacity', 0.55*(1-hp));
+
+            nodes.forEach(s => {
+                const near = Math.abs(tri - s.pos) < 0.07;
+                s.ring.attr('opacity', near?1:0.5).attr('stroke-width', near?2.6:1.6);
+                s.core.attr('opacity', near?1:0.7).attr('r', near ? (s.you?6.5:5) : (s.you?5:3.5));
+            });
+        });
+    }
+})();
+// ── Slide MO: multi-agent — orquestrador roteia pedidos; às vezes erra a rota e degrada (loop) ──
+(function() {
+    if (window.__smo_done) return;
+    const io = new IntersectionObserver(entries => {
+        if (!entries[0].isIntersecting) return;
+        window.__smo_done = true; io.disconnect();
+        runOrch();
+    }, { threshold: 0.25 });
+    const el = document.getElementById('smo');
+    if (el) io.observe(el);
+
+    function runOrch() {
+        const VW = 960, VH = 284;
+        const svg = d3.select('#smo-svg').attr('viewBox', `0 0 ${VW} ${VH}`).attr('height', 'auto');
+        svg.selectAll('*').remove();
+        const smooth = t => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
+        const lerp = (a, b, t) => a + (b - a) * t;
+
+        const sx = 64, ox = 320, oy = 142, ax = 720;
+        const agents = [
+            { y: 46, l: 'Descoberta' }, { y: 108, l: 'Recomendação' },
+            { y: 178, l: 'Carrinho' }, { y: 240, l: 'Pós-venda' },
+        ];
+
+        agents.forEach(a => {
+            a.line = svg.append('line').attr('x1', ox).attr('y1', oy).attr('x2', ax - 58).attr('y2', a.y)
+                .attr('stroke', 'rgba(255,255,255,0.1)').attr('stroke-width', 1.4);
+            svg.append('rect').attr('x', ax - 58).attr('y', a.y - 15).attr('width', 116).attr('height', 30).attr('rx', 7)
+                .attr('fill', 'rgba(255,255,255,0.04)').attr('stroke', 'rgba(89,234,173,0.28)').attr('stroke-width', 1.2);
+            a.txt = svg.append('text').attr('x', ax).attr('y', a.y + 4).attr('text-anchor', 'middle').attr('font-size', 10.5)
+                .attr('font-weight', 700).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,255,255,0.78)').text(a.l);
+            a.deg = svg.append('text').attr('x', ax).attr('y', a.y - 20).attr('text-anchor', 'middle').attr('font-size', 9.5)
+                .attr('font-weight', 700).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,90,90,0.95)').attr('opacity', 0).text('degradado');
+        });
+        // realce de borda dos agentes via overlay (evita seletor frágil)
+        agents.forEach(a => {
+            a.ring = svg.append('rect').attr('x', ax - 58).attr('y', a.y - 15).attr('width', 116).attr('height', 30).attr('rx', 7)
+                .attr('fill', 'none').attr('stroke', 'rgba(0,0,0,0)').attr('stroke-width', 1.6);
+        });
+
+        // fonte de pedidos
+        svg.append('line').attr('x1', sx + 14).attr('y1', oy).attr('x2', ox - 28).attr('y2', oy)
+            .attr('stroke', 'rgba(255,255,255,0.08)').attr('stroke-width', 1.3).attr('stroke-dasharray', '2 6');
+        svg.append('circle').attr('cx', sx).attr('cy', oy).attr('r', 15)
+            .attr('fill', 'rgba(255,255,255,0.05)').attr('stroke', 'rgba(255,255,255,0.32)').attr('stroke-width', 1.4);
+        svg.append('text').attr('x', sx).attr('y', oy + 36).attr('text-anchor', 'middle').attr('font-size', 10)
+            .attr('font-weight', 700).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,255,255,0.5)').text('pedidos');
+
+        // orquestrador
+        svg.append('circle').attr('cx', ox).attr('cy', oy).attr('r', 26)
+            .attr('fill', 'rgba(89,234,173,0.10)').attr('stroke', 'rgba(89,234,173,0.55)').attr('stroke-width', 1.8);
+        const oPulse = svg.append('circle').attr('cx', ox).attr('cy', oy).attr('r', 26)
+            .attr('fill', 'none').attr('stroke', 'rgba(89,234,173,0.7)').attr('stroke-width', 2).attr('opacity', 0);
+        svg.append('circle').attr('cx', ox).attr('cy', oy).attr('r', 5).attr('fill', 'rgba(89,234,173,0.9)');
+        svg.append('text').attr('x', ox).attr('y', oy + 44).attr('text-anchor', 'middle').attr('font-size', 11)
+            .attr('font-weight', 800).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(89,234,173,0.9)').text('orquestrador');
+
+        const seq = [
+            { t: 0, ok: 1 }, { t: 1, ok: 1 }, { t: 2, ok: 0, w: 0 },
+            { t: 3, ok: 1 }, { t: 1, ok: 1 }, { t: 0, ok: 0, w: 3 },
+        ];
+        const pk = svg.append('circle').attr('r', 4.2).attr('opacity', 0);
+        const T = 2700;
+        let oHit = -1e9;
+
+        d3.timer(elapsed => {
+            const ci = Math.floor(elapsed / T) % seq.length, m = elapsed % T, s = seq[ci];
+            const chosen = s.ok ? s.t : s.w, ag = agents[chosen];
+
+            agents.forEach(a => { a.deg.attr('opacity', 0); a.ring.attr('stroke', 'rgba(0,0,0,0)'); a.line.attr('stroke', 'rgba(255,255,255,0.1)'); });
+
+            let x, y = oy, col = 'rgba(89,234,173,0.95)', show = 1;
+            if (m < 820) { x = lerp(sx, ox, smooth(m / 820)); }
+            else if (m < 1080) { x = ox; if (elapsed - oHit > 400) oHit = elapsed; }
+            else if (m < 2080) {
+                const b = smooth((m - 1080) / 1000);
+                x = lerp(ox, ax - 58, b); y = lerp(oy, ag.y, b);
+                col = s.ok ? 'rgba(100,210,130,0.95)' : 'rgba(255,90,90,0.95)';
+                ag.line.attr('stroke', s.ok ? 'rgba(100,210,130,0.4)' : 'rgba(255,90,90,0.5)');
+            } else {
+                x = ax - 58; y = ag.y; show = m < 2400 ? 1 : 0;
+                ag.ring.attr('stroke', s.ok ? 'rgba(100,210,130,0.9)' : 'rgba(255,90,90,0.9)');
+                if (!s.ok) ag.deg.attr('opacity', 1);
+            }
+            pk.attr('cx', x).attr('cy', y).attr('fill', col).attr('opacity', show);
+
+            const op = (elapsed - oHit) / 550;
+            oPulse.attr('opacity', op >= 0 && op <= 1 ? 0.7 * (1 - op) : 0).attr('r', 26 + (op >= 0 && op <= 1 ? op * 14 : 0));
+        });
+    }
+})();
+
+// ── Slide EV: evals — casos avaliados, nota, comparação com baseline (passou / regrediu) (loop) ──
+(function() {
+    if (window.__sev_done) return;
+    const io = new IntersectionObserver(es => { if (!es[0].isIntersecting) return; window.__sev_done = true; io.disconnect(); run(); }, { threshold: 0.25 });
+    const el = document.getElementById('sev'); if (el) io.observe(el);
+    function run() {
+        const VW = 960, VH = 286;
+        const svg = d3.select('#sev-svg').attr('viewBox', `0 0 ${VW} ${VH}`).attr('height', 'auto');
+        svg.selectAll('*').remove();
+        const smooth = t => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
+
+        // casos (grid)
+        svg.append('text').attr('x', 60).attr('y', 40).attr('font-size', 10).attr('font-weight', 700).attr('letter-spacing', '1').attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,255,255,0.45)').text('CASOS');
+        const cells = [];
+        for (let r = 0; r < 4; r++) for (let c = 0; c < 5; c++) cells.push(svg.append('circle').attr('cx', 70 + c * 32).attr('cy', 70 + r * 38).attr('r', 6).attr('fill', 'rgba(255,255,255,0.12)'));
+        const redIdx = [2, 6, 9, 13, 16, 18];
+
+        // score central
+        const scTxt = svg.append('text').attr('x', 500).attr('y', 132).attr('text-anchor', 'middle').attr('font-size', 56).attr('font-weight', 900).attr('letter-spacing', '-0.03em').attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(89,234,173,0.95)').text('—');
+        svg.append('text').attr('x', 500).attr('y', 156).attr('text-anchor', 'middle').attr('font-size', 11).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,255,255,0.45)').text('score do build');
+
+        // barras baseline vs build
+        const bx = 660, bw = 240, bbY = 200, buY = 236;
+        const base = 0.86;
+        svg.append('text').attr('x', bx).attr('y', bbY - 8).attr('font-size', 10).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,255,255,0.5)').text('baseline');
+        svg.append('rect').attr('x', bx).attr('y', bbY).attr('width', bw).attr('height', 12).attr('rx', 6).attr('fill', 'rgba(255,255,255,0.06)');
+        svg.append('rect').attr('x', bx).attr('y', bbY).attr('width', bw * base).attr('height', 12).attr('rx', 6).attr('fill', 'rgba(255,255,255,0.3)');
+        svg.append('text').attr('x', bx).attr('y', buY - 8).attr('font-size', 10).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,255,255,0.5)').text('novo build');
+        svg.append('rect').attr('x', bx).attr('y', buY).attr('width', bw).attr('height', 12).attr('rx', 6).attr('fill', 'rgba(255,255,255,0.06)');
+        const buildBar = svg.append('rect').attr('x', bx).attr('y', buY).attr('width', 0).attr('height', 12).attr('rx', 6).attr('fill', 'rgba(100,210,130,0.9)');
+        // marca da baseline na barra do build
+        svg.append('line').attr('x1', bx + bw * base).attr('y1', buY - 3).attr('x2', bx + bw * base).attr('y2', buY + 15).attr('stroke', 'rgba(255,255,255,0.5)').attr('stroke-width', 1.4).attr('stroke-dasharray', '2 2');
+        const verdict = svg.append('text').attr('x', bx + bw).attr('y', buY + 34).attr('text-anchor', 'end').attr('font-size', 12).attr('font-weight', 800).attr('font-family', 'Inter,sans-serif').attr('opacity', 0);
+
+        const builds = [{ s: 0.94 }, { s: 0.79 }, { s: 0.91 }, { s: 0.72 }];
+        const T = 4800;
+        d3.timer(e => {
+            const ci = Math.floor(e / T) % builds.length, m = e % T, b = builds[ci], reg = b.s < base;
+            const nRed = reg ? 6 : 1;
+            cells.forEach((d, i) => {
+                const shown = m > 200 + i * 60 && m < 4500;
+                const isRed = redIdx.slice(0, nRed).includes(i);
+                d.attr('fill', !shown ? 'rgba(255,255,255,0.12)' : isRed ? 'rgba(255,90,90,0.9)' : 'rgba(100,210,130,0.9)');
+            });
+            let sc = 0;
+            if (m > 1500) sc = b.s * smooth(Math.min((m - 1500) / 1100, 1));
+            scTxt.text(m > 1500 ? Math.round(sc * 100) + '%' : '—')
+                .attr('fill', m < 2600 ? 'rgba(89,234,173,0.95)' : reg ? 'rgba(255,90,90,0.95)' : 'rgba(100,210,130,0.95)');
+            const bp = m > 2700 ? smooth(Math.min((m - 2700) / 1100, 1)) : 0;
+            buildBar.attr('width', bw * b.s * bp).attr('fill', reg ? 'rgba(255,90,90,0.9)' : 'rgba(100,210,130,0.9)');
+            verdict.attr('opacity', m > 3900 ? 1 : 0).text(reg ? '✕ regrediu' : '✓ passou').attr('fill', reg ? 'rgba(255,90,90,0.95)' : 'rgba(100,210,130,0.95)');
+        });
+    }
+})();
+
+// ── Slide OB: observabilidade — requisições em stream, trace waterfall e tiles de métrica (loop) ──
+(function() {
+    if (window.__sob_done) return;
+    const io = new IntersectionObserver(es => { if (!es[0].isIntersecting) return; window.__sob_done = true; io.disconnect(); run(); }, { threshold: 0.25 });
+    const el = document.getElementById('sob'); if (el) io.observe(el);
+    function run() {
+        const VW = 960, VH = 286;
+        const svg = d3.select('#sob-svg').attr('viewBox', `0 0 ${VW} ${VH}`).attr('height', 'auto');
+        svg.selectAll('*').remove();
+        const smooth = t => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
+
+        // stream de requisições
+        const svX = 300, svY = 44;
+        svg.append('line').attr('x1', 10).attr('y1', svY).attr('x2', svX - 26).attr('y2', svY).attr('stroke', 'rgba(255,255,255,0.07)').attr('stroke-width', 1.2).attr('stroke-dasharray', '2 6');
+        svg.append('text').attr('x', 10).attr('y', svY - 12).attr('font-size', 9).attr('font-weight', 700).attr('letter-spacing', '1').attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,255,255,0.4)').text('REQUISIÇÕES');
+        svg.append('circle').attr('cx', svX).attr('cy', svY).attr('r', 16).attr('fill', 'rgba(0,223,129,0.12)').attr('stroke', 'rgba(89,234,173,0.45)').attr('stroke-width', 1.4);
+        svg.append('text').attr('x', svX + 26).attr('y', svY + 4).attr('font-size', 10).attr('font-weight', 700).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(89,234,173,0.8)').text('serviço');
+
+        // trace waterfall
+        const spans = [
+            { l: 'guardrail in', w: 0.12, c: 'rgba(89,234,173,0.7)' },
+            { l: 'LLM', w: 0.5, c: 'rgba(89,234,173,0.8)' },
+            { l: 'RAG', w: 0.28, c: 'rgba(89,234,173,0.6)' },
+            { l: 'tool', w: 0.34, c: 'rgba(89,234,173,0.6)' },
+            { l: 'guardrail out', w: 0.12, c: 'rgba(89,234,173,0.7)' },
+        ];
+        const tx = 70, twY = 96, maxW = 300, off = [0, 0.12, 0.62, 0.62, 0.96];
+        svg.append('text').attr('x', tx).attr('y', twY - 12).attr('font-size', 9).attr('font-weight', 700).attr('letter-spacing', '1').attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,255,255,0.4)').text('TRACE');
+        spans.forEach((s, i) => {
+            s.y = twY + i * 28;
+            svg.append('text').attr('x', tx).attr('y', s.y + 10).attr('font-size', 9.5).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,255,255,0.5)').text(s.l);
+            svg.append('rect').attr('x', tx + 96).attr('y', s.y).attr('width', maxW).attr('height', 13).attr('rx', 3).attr('fill', 'rgba(255,255,255,0.04)');
+            s.bar = svg.append('rect').attr('x', tx + 96 + off[i] * maxW).attr('y', s.y).attr('width', 0).attr('height', 13).attr('rx', 3).attr('fill', s.c);
+        });
+
+        // tiles
+        const tlx = 660, tw = 240;
+        const tiles = [
+            { l: 'latência p95', v: '320 ms' }, { l: 'custo / req', v: 'R$ 0,012' }, { l: 'erros', v: '0,4%' },
+        ];
+        tiles.forEach((t, i) => {
+            t.y = 70 + i * 64;
+            t.box = svg.append('rect').attr('x', tlx).attr('y', t.y).attr('width', tw).attr('height', 52).attr('rx', 8).attr('fill', 'rgba(255,255,255,0.03)').attr('stroke', 'rgba(255,255,255,0.1)').attr('stroke-width', 1.2);
+            svg.append('text').attr('x', tlx + 14).attr('y', t.y + 20).attr('font-size', 10).attr('font-weight', 700).attr('letter-spacing', '0.5').attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,255,255,0.5)').text(t.l.toUpperCase());
+            t.val = svg.append('text').attr('x', tlx + 14).attr('y', t.y + 42).attr('font-size', 16).attr('font-weight', 800).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,255,255,0.85)').text(t.v);
+        });
+
+        // stream contínuo
+        const pk = [];
+        let lastSpawn = -1e9;
+        const SPAWN = 700;
+        // ciclo do trace
+        const T = 2400;
+        const lats = ['290 ms', '340 ms', '410 ms', '305 ms'], custos = ['R$ 0,010', 'R$ 0,013', 'R$ 0,011', 'R$ 0,014'];
+
+        d3.timer(e => {
+            if (e - lastSpawn >= SPAWN) { lastSpawn = e; pk.push({ t0: e }); }
+            for (let i = pk.length - 1; i >= 0; i--) {
+                const p = pk[i], lt = e - p.t0, b = smooth(lt / 1400);
+                if (!p.g) p.g = svg.append('circle').attr('r', 3).attr('cy', svY).attr('fill', 'rgba(89,234,173,0.9)');
+                p.g.attr('cx', 10 + (svX - 26 - 10) * b).attr('opacity', b > 0.9 ? (1 - b) / 0.1 : 1);
+                if (lt >= 1400) { p.g.remove(); pk.splice(i, 1); }
+            }
+            const ci = Math.floor(e / T), m = e % T, err = ci % 4 === 3;
+            spans.forEach((s, i) => {
+                const gw = smooth(Math.min(Math.max((m - i * 180) / 700, 0), 1));
+                const isErr = err && i === 3;
+                s.bar.attr('width', s.w * maxW * gw).attr('fill', isErr ? 'rgba(255,90,90,0.85)' : s.c);
+            });
+            tiles[0].val.text(lats[ci % lats.length]);
+            tiles[1].val.text(custos[ci % custos.length]);
+            tiles[2].val.text(err ? '2,1%' : '0,4%').attr('fill', err ? 'rgba(255,90,90,0.95)' : 'rgba(255,255,255,0.85)');
+            tiles[2].box.attr('stroke', err ? 'rgba(255,90,90,0.6)' : 'rgba(255,255,255,0.1)');
+        });
+    }
+})();
+
+// ── Slide GO: guardrail de saída — respostas do modelo passam pela expedição; defeito é barrado (loop) ──
+(function() {
+    if (window.__sgo_done) return;
+    const io = new IntersectionObserver(entries => {
+        if (!entries[0].isIntersecting) return;
+        window.__sgo_done = true; io.disconnect();
+        runExpedicao();
+    }, { threshold: 0.25 });
+    const el = document.getElementById('sgo');
+    if (el) io.observe(el);
+
+    function runExpedicao() {
+        const VW = 960, VH = 360;
+        const svg = d3.select('#sgo-svg').attr('viewBox', `0 0 ${VW} ${VH}`).attr('height', 'auto');
+        svg.selectAll('*').remove();
+        drawMapGrid(svg, VW, VH);
+
+        const laneY = 196, gateX = 540, gateStop = gateX - 32, srcX = 70, cliX = 884;
+
+        // trilho
+        svg.append('line').attr('x1', 0).attr('y1', laneY).attr('x2', VW).attr('y2', laneY)
+            .attr('stroke', 'rgba(255,255,255,0.06)').attr('stroke-width', 1).attr('stroke-dasharray', '2 6');
+
+        // ── Modelo (origem das respostas)
+        svg.append('circle').attr('cx', srcX).attr('cy', laneY).attr('r', 28)
+            .attr('fill', 'rgba(0,223,129,0.10)').attr('stroke', 'rgba(89,234,173,0.45)').attr('stroke-width', 1.5);
+        svg.append('circle').attr('cx', srcX).attr('cy', laneY).attr('r', 6).attr('fill', 'rgba(89,234,173,0.85)');
+        svg.append('text').attr('x', srcX).attr('y', laneY + 46).attr('text-anchor', 'middle').attr('font-size', 12)
+            .attr('font-weight', 700).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(89,234,173,0.85)').text('modelo');
+        svg.append('text').attr('x', srcX).attr('y', laneY - 40).attr('text-anchor', 'middle').attr('font-size', 10)
+            .attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,255,255,0.35)').text('respostas saindo');
+        svg.append('text').attr('x', gateX - 138).attr('y', 300).attr('text-anchor', 'middle')
+            .attr('font-size', 11).attr('font-weight', 700).attr('font-family', 'Inter,sans-serif')
+            .attr('fill', 'rgba(255,90,90,0.6)').text('barrado · refaz');
+
+        // ── Guardrail (expedição)
+        const gate = svg.append('g');
+        [-24, 24].forEach(dx => gate.append('rect').attr('x', gateX + dx - 4).attr('y', 98).attr('width', 8).attr('height', 192)
+            .attr('rx', 3).attr('fill', 'rgba(89,234,173,0.16)').attr('stroke', 'rgba(89,234,173,0.45)').attr('stroke-width', 1));
+        gate.append('rect').attr('x', gateX - 28).attr('y', 88).attr('width', 56).attr('height', 12).attr('rx', 4)
+            .attr('fill', 'rgba(89,234,173,0.22)').attr('stroke', 'rgba(89,234,173,0.5)').attr('stroke-width', 1);
+        gate.append('text').attr('x', gateX).attr('y', 76).attr('text-anchor', 'middle').attr('font-size', 12)
+            .attr('font-weight', 800).attr('letter-spacing', '2').attr('font-family', 'Inter,sans-serif')
+            .attr('fill', 'var(--amber)').text('GUARDRAIL');
+        gate.append('text').attr('x', gateX).attr('y', 312).attr('text-anchor', 'middle').attr('font-size', 10)
+            .attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(89,234,173,0.6)').text('a expedição');
+        const scanSeg = gate.append('line').attr('x1', gateX - 21).attr('x2', gateX + 21)
+            .attr('stroke', 'rgba(89,234,173,0.9)').attr('stroke-width', 2.5).attr('stroke-linecap', 'round');
+
+        // ── Cliente (destino)
+        const cliPulse = svg.append('circle').attr('cx', cliX).attr('cy', laneY).attr('r', 30)
+            .attr('fill', 'none').attr('stroke', 'rgba(100,210,130,0.7)').attr('stroke-width', 2).attr('opacity', 0);
+        svg.append('circle').attr('cx', cliX).attr('cy', laneY).attr('r', 28)
+            .attr('fill', 'rgba(100,210,130,0.10)').attr('stroke', 'rgba(100,210,130,0.45)').attr('stroke-width', 1.5);
+        svg.append('circle').attr('cx', cliX).attr('cy', laneY).attr('r', 6).attr('fill', 'rgba(100,210,130,0.85)');
+        svg.append('text').attr('x', cliX).attr('y', laneY - 40).attr('text-anchor', 'middle').attr('font-size', 10)
+            .attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(100,210,130,0.7)').text('só o que passou');
+        svg.append('text').attr('x', cliX).attr('y', laneY + 46).attr('text-anchor', 'middle').attr('font-size', 12)
+            .attr('font-weight', 700).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(100,210,130,0.85)').text('cliente');
+
+        const seq = [
+            { ok: true }, { ok: false, tag: 'alucinação' },
+            { ok: true }, { ok: false, tag: 'vazou PII' },
+            { ok: true }, { ok: false, tag: 'formato inválido' },
+            { ok: true }, { ok: false, tag: 'tom / política' },
+            { ok: true }, { ok: false, tag: 'injeção que passou' },
+        ];
+
+        const packets = [];
+        let seqIdx = 0, lastSpawn = -1e9, cliHit = -1e9;
+        const SPAWN = 1150, AP = 1750, SCAN = 360, EXIT = 1500, REJ = 1250, startX = srcX + 26;
+        const smooth = t => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
+
+        function spawn(elapsed) {
+            const spec = seq[seqIdx % seq.length]; seqIdx++;
+            const g = svg.append('g').attr('opacity', 0);
+            const body = g.append('rect').attr('x', -26).attr('y', -13).attr('width', 52).attr('height', 26)
+                .attr('rx', 7).attr('fill', 'rgba(89,234,173,0.14)').attr('stroke', 'rgba(89,234,173,0.5)').attr('stroke-width', 1.4);
+            g.append('rect').attr('x', -19).attr('y', -13).attr('width', 7).attr('height', 26).attr('rx', 3).attr('fill', 'rgba(255,255,255,0.22)');
+            const icon = g.append('text').attr('x', 4).attr('y', 5).attr('text-anchor', 'middle').attr('font-size', 13)
+                .attr('font-weight', 800).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,255,255,0.7)').text('R');
+            const tag = g.append('text').attr('x', 0).attr('y', -22).attr('text-anchor', 'middle').attr('font-size', 10)
+                .attr('font-weight', 700).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,90,90,0.95)').attr('opacity', 0).text(spec.tag || '');
+            packets.push({ spec, g, body, icon, tag, t0: elapsed });
+        }
+
+        d3.timer(elapsed => {
+            if (elapsed - lastSpawn >= SPAWN) { lastSpawn = elapsed; spawn(elapsed); }
+
+            const sy = 104 + ((elapsed % 1300) / 1300) * 180;
+            scanSeg.attr('y1', sy).attr('y2', sy).attr('opacity', 0.45 + 0.4 * Math.abs(Math.sin(elapsed / 220)));
+
+            const cp = (elapsed - cliHit) / 700;
+            cliPulse.attr('opacity', cp >= 0 && cp <= 1 ? 0.7 * (1 - cp) : 0).attr('r', 30 + (cp >= 0 && cp <= 1 ? cp * 22 : 0));
+
+            for (let i = packets.length - 1; i >= 0; i--) {
+                const p = packets[i], lt = elapsed - p.t0;
+                let x, y = laneY;
+                if (lt < AP) {
+                    x = startX + (gateStop - startX) * smooth(lt / AP);
+                    p.g.attr('opacity', Math.min(1, lt / 300));
+                } else if (lt < AP + SCAN) {
+                    x = gateStop;
+                    p.body.attr('stroke', 'rgba(89,234,173,0.9)').attr('fill', 'rgba(89,234,173,0.16)');
+                    p.icon.attr('fill', 'rgba(89,234,173,0.95)');
+                } else {
+                    const after = lt - (AP + SCAN);
+                    if (p.spec.ok) {
+                        const b = smooth(after / EXIT);
+                        x = gateStop + (cliX - gateStop) * b;
+                        p.body.attr('stroke', 'rgba(100,210,130,0.7)').attr('fill', 'rgba(100,210,130,0.12)');
+                        p.icon.text('✓').attr('fill', 'rgba(100,210,130,0.95)');
+                        p.g.attr('opacity', after > EXIT - 300 ? Math.max(0, (EXIT - after) / 300) : 1);
+                        if (b >= 0.98 && elapsed - cliHit > 400) cliHit = elapsed;
+                        if (after >= EXIT) { p.g.remove(); packets.splice(i, 1); continue; }
+                    } else {
+                        const b = smooth(after / REJ);
+                        x = gateStop - b * 150;
+                        y = laneY - b * 92;
+                        p.body.attr('stroke', 'rgba(255,90,90,0.85)').attr('fill', 'rgba(255,90,90,0.14)');
+                        p.icon.text('✕').attr('fill', 'rgba(255,90,90,0.95)');
+                        p.tag.attr('opacity', Math.min(1, b * 2));
+                        p.g.attr('opacity', 1 - smooth(Math.max(0, (after - REJ * 0.4) / (REJ * 0.6))));
+                        if (after >= REJ) { p.g.remove(); packets.splice(i, 1); continue; }
+                    }
+                }
+                p.g.attr('transform', `translate(${x.toFixed(2)},${y.toFixed(2)})`);
+            }
+        });
+    }
+})();
+
+// ── Slide MM: memória — janela zera entre sessões; fato persiste no caderno; recall na sessão seguinte (loop) ──
+(function() {
+    if (window.__smm_done) return;
+    const io = new IntersectionObserver(entries => {
+        if (!entries[0].isIntersecting) return;
+        window.__smm_done = true; io.disconnect();
+        runMem();
+    }, { threshold: 0.25 });
+    const el = document.getElementById('smm');
+    if (el) io.observe(el);
+
+    function runMem() {
+        const VW = 960, VH = 296;
+        const svg = d3.select('#smm-svg').attr('viewBox', `0 0 ${VW} ${VH}`).attr('height', 'auto');
+        svg.selectAll('*').remove();
+        const smooth = t => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
+        const lerp = (a, b, t) => a + (b - a) * t;
+
+        // ── caixa JANELA (curto prazo)
+        const jx0 = 58, jx1 = 430, by0 = 52, by1 = 252;
+        svg.append('rect').attr('x', jx0).attr('y', by0).attr('width', jx1 - jx0).attr('height', by1 - by0).attr('rx', 10)
+            .attr('fill', 'rgba(255,255,255,0.02)').attr('stroke', 'rgba(255,255,255,0.14)').attr('stroke-width', 1.3);
+        svg.append('text').attr('x', jx0 + 14).attr('y', by0 + 22).attr('font-size', 10).attr('font-weight', 700)
+            .attr('letter-spacing', '1').attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,255,255,0.5)').text('JANELA · curto prazo');
+        const sess = svg.append('text').attr('x', jx1 - 14).attr('y', by0 + 22).attr('text-anchor', 'end').attr('font-size', 10)
+            .attr('font-weight', 800).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(89,234,173,0.85)').text('Sessão 1');
+
+        const jMsgs = ['— quero um tênis 42', '— entrega à tarde', '— pago no Pix'];
+        const jl = jMsgs.map((t, i) => svg.append('text').attr('x', jx0 + 18).attr('y', 108 + i * 38).attr('font-size', 12)
+            .attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,255,255,0.75)').attr('opacity', 0).text(t));
+        const wipe = svg.append('text').attr('x', (jx0 + jx1) / 2).attr('y', by1 - 16).attr('text-anchor', 'middle').attr('font-size', 10.5)
+            .attr('font-weight', 700).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,90,90,0.85)').attr('opacity', 0).text('fim da sessão · a janela esvazia');
+        const recall = svg.append('text').attr('x', jx0 + 18).attr('y', 148).attr('font-size', 12).attr('font-weight', 700)
+            .attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(100,210,130,0.95)').attr('opacity', 0).text('');
+
+        // ── caixa MEMÓRIA (longo prazo · caderno)
+        const mx0 = 540, mx1 = 902;
+        svg.append('rect').attr('x', mx0).attr('y', by0).attr('width', mx1 - mx0).attr('height', by1 - by0).attr('rx', 10)
+            .attr('fill', 'rgba(0,223,129,0.04)').attr('stroke', 'rgba(89,234,173,0.28)').attr('stroke-width', 1.3);
+        svg.append('text').attr('x', mx0 + 14).attr('y', by0 + 22).attr('font-size', 10).attr('font-weight', 700)
+            .attr('letter-spacing', '1').attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(89,234,173,0.8)').text('MEMÓRIA · caderno (longo prazo)');
+
+        const notes = [
+            { y: 108, l: 'tênis tamanho 42' },
+            { y: 146, l: 'prefere entrega à tarde' },
+            { y: 184, l: 'paga no Pix' },
+        ];
+        notes.forEach(n => {
+            n.dot = svg.append('circle').attr('cx', mx0 + 22).attr('cy', n.y - 4).attr('r', 3).attr('fill', 'rgba(89,234,173,0.5)');
+            n.txt = svg.append('text').attr('x', mx0 + 36).attr('y', n.y).attr('font-size', 12).attr('font-family', 'Inter,sans-serif')
+                .attr('fill', 'rgba(255,255,255,0.55)').text(n.l);
+        });
+
+        const pk = svg.append('circle').attr('r', 4).attr('opacity', 0);
+        const T = 5000;
+
+        d3.timer(elapsed => {
+            const ci = Math.floor(elapsed / T) % notes.length, m = elapsed % T, note = notes[ci];
+
+            // sessão 1: janela preenche (300–1500)
+            jl.forEach((l, i) => {
+                let o = 0;
+                if (m >= 300 + i * 360 && m < 2400) o = smooth((m - (300 + i * 360)) / 350);
+                else if (m >= 2400 && m < 2900) o = 1 - smooth((m - 2400) / 500);  // wipe
+                l.attr('opacity', o);
+            });
+
+            // persiste fato no caderno (1700–2350): janela → memória
+            if (m >= 1700 && m < 2350) {
+                const b = smooth((m - 1700) / 650);
+                pk.attr('opacity', b > 0.92 ? (1 - b) / 0.08 : 1).attr('fill', 'rgba(89,234,173,0.95)')
+                    .attr('cx', lerp(jx1 - 16, mx0 + 16, b)).attr('cy', lerp(130, note.y - 4, b));
+            } else if (m >= 3300 && m < 3950) {
+                // sessão 2: recall (memória → janela)
+                const b = smooth((m - 3300) / 650);
+                pk.attr('opacity', b > 0.92 ? (1 - b) / 0.08 : 1).attr('fill', 'rgba(100,210,130,0.95)')
+                    .attr('cx', lerp(mx0 + 16, jx0 + 22, b)).attr('cy', lerp(note.y - 4, 144, b));
+            } else pk.attr('opacity', 0);
+
+            // realce da nota relevante (no persist e no recall)
+            notes.forEach((n, i) => {
+                const hot = i === ci && ((m >= 2000 && m < 2700) || (m >= 3300 && m < 4300));
+                n.txt.attr('fill', hot ? 'rgba(100,210,130,0.95)' : 'rgba(255,255,255,0.55)');
+                n.dot.attr('fill', hot ? 'rgba(100,210,130,0.95)' : 'rgba(89,234,173,0.5)').attr('r', hot ? 4 : 3);
+            });
+
+            wipe.attr('opacity', m >= 2450 && m < 3100 ? 1 : 0);
+            sess.text(m >= 3050 ? 'Sessão 2' : 'Sessão 1')
+                .attr('fill', m >= 3050 ? 'rgba(100,210,130,0.85)' : 'rgba(89,234,173,0.85)');
+            recall.attr('opacity', m >= 3900 && m < 4600 ? 1 : 0).text('✓ continua: ' + note.l);
+        });
+    }
+})();
+
+// ── Slide SK: skills — tarefa chega, agente puxa o manual certo da estante e executa (loop) ──
+(function() {
+    if (window.__ssk_done) return;
+    const io = new IntersectionObserver(entries => {
+        if (!entries[0].isIntersecting) return;
+        window.__ssk_done = true; io.disconnect();
+        runSkills();
+    }, { threshold: 0.25 });
+    const el = document.getElementById('ssk');
+    if (el) io.observe(el);
+
+    function runSkills() {
+        const VW = 960, VH = 300;
+        const svg = d3.select('#ssk-svg').attr('viewBox', `0 0 ${VW} ${VH}`).attr('height', 'auto');
+        svg.selectAll('*').remove();
+        const smooth = t => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
+        const lerp = (a, b, t) => a + (b - a) * t;
+
+        // estante
+        const bx = 56, bw = 188, bh = 20;
+        svg.append('text').attr('x', bx).attr('y', 22).attr('font-size', 10).attr('font-weight', 700)
+            .attr('letter-spacing', '1').attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,255,255,0.45)').text('ESTANTE · skills/');
+        const books = [
+            { y: 46, l: 'discover_needs.md' },
+            { y: 69, l: 'select_products.md' },
+            { y: 92, l: 'build_cart.md' },
+            { y: 115, l: 'handle_objection.md' },
+            { y: 138, l: 'collect_customer_info.md' },
+            { y: 161, l: 'explain_policies.md' },
+            { y: 184, l: 'close_sale.md' },
+            { y: 207, l: 'process_return.md' },
+            { y: 230, l: 'human_handoff.md' },
+        ];
+        svg.append('line').attr('x1', bx - 6).attr('y1', 34).attr('x2', bx - 6).attr('y2', 242)
+            .attr('stroke', 'rgba(255,255,255,0.16)').attr('stroke-width', 2);
+        books.forEach(b => {
+            b.rect = svg.append('rect').attr('x', bx).attr('y', b.y - bh / 2).attr('width', bw).attr('height', bh).attr('rx', 4)
+                .attr('fill', 'rgba(255,255,255,0.03)').attr('stroke', 'rgba(89,234,173,0.25)').attr('stroke-width', 1.2);
+            b.txt = svg.append('text').attr('x', bx + 9).attr('y', b.y + 3.5).attr('font-size', 9.5).attr('font-weight', 700)
+                .attr('font-family', 'ui-monospace,Menlo,monospace').attr('fill', 'rgba(255,255,255,0.6)').text(b.l);
+        });
+
+        // tarefa (bolha)
+        const tbx = 548, tby = 30;
+        const taskG = svg.append('g').attr('opacity', 0);
+        taskG.append('rect').attr('x', tbx - 110).attr('y', tby - 16).attr('width', 220).attr('height', 32).attr('rx', 8)
+            .attr('fill', 'rgba(0,223,129,0.10)').attr('stroke', 'rgba(89,234,173,0.4)').attr('stroke-width', 1.3);
+        const taskT = taskG.append('text').attr('x', tbx).attr('y', tby + 4).attr('text-anchor', 'middle').attr('font-size', 11)
+            .attr('font-weight', 700).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,255,255,0.85)').text('');
+
+        // agente (mesa)
+        const agx = 812, agy = 140;
+        svg.append('circle').attr('cx', agx).attr('cy', agy).attr('r', 28)
+            .attr('fill', 'rgba(0,223,129,0.12)').attr('stroke', 'rgba(89,234,173,0.55)').attr('stroke-width', 1.7);
+        const agPulse = svg.append('circle').attr('cx', agx).attr('cy', agy).attr('r', 28)
+            .attr('fill', 'none').attr('stroke', 'rgba(89,234,173,0.7)').attr('stroke-width', 2).attr('opacity', 0);
+        svg.append('circle').attr('cx', agx).attr('cy', agy).attr('r', 6).attr('fill', 'rgba(89,234,173,0.9)');
+        svg.append('text').attr('x', agx).attr('y', agy + 46).attr('text-anchor', 'middle').attr('font-size', 11)
+            .attr('font-weight', 800).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(89,234,173,0.9)').text('agente');
+
+        // passos do procedimento
+        const steps = [0, 1, 2].map(i => {
+            const g = svg.append('g').attr('opacity', 0);
+            g.append('circle').attr('cx', agx - 30 + i * 30).attr('cy', agy - 56).attr('r', 9)
+                .attr('fill', 'rgba(100,210,130,0.15)').attr('stroke', 'rgba(100,210,130,0.6)').attr('stroke-width', 1.3);
+            g.append('text').attr('x', agx - 30 + i * 30).attr('y', agy - 52).attr('text-anchor', 'middle').attr('font-size', 9)
+                .attr('font-weight', 800).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(100,210,130,0.95)').text(i + 1);
+            return g;
+        });
+        const done = svg.append('text').attr('x', agx).attr('y', agy - 40).attr('text-anchor', 'middle').attr('font-size', 11)
+            .attr('font-weight', 800).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(100,210,130,0.95)').attr('opacity', 0).text('✓ feito');
+
+        // skill carregada (cópia que viaja)
+        const carry = svg.append('g').attr('opacity', 0);
+        carry.append('rect').attr('x', -90).attr('y', -12).attr('width', 180).attr('height', 24).attr('rx', 5)
+            .attr('fill', 'rgba(89,234,173,0.14)').attr('stroke', 'rgba(89,234,173,0.6)').attr('stroke-width', 1.3);
+        const carryT = carry.append('text').attr('x', 0).attr('y', 3.5).attr('text-anchor', 'middle').attr('font-size', 9.5)
+            .attr('font-weight', 700).attr('font-family', 'ui-monospace,Menlo,monospace').attr('fill', 'rgba(89,234,173,0.95)').text('');
+
+        const tasks = [
+            { label: 'Descobrir a necessidade', k: 0 },
+            { label: 'Recomendar produtos', k: 1 },
+            { label: 'Montar o carrinho', k: 2 },
+            { label: 'Contornar objeção', k: 3 },
+            { label: 'Coletar dados do cliente', k: 4 },
+            { label: 'Explicar políticas', k: 5 },
+            { label: 'Fechar a venda', k: 6 },
+            { label: 'Processar devolução', k: 7 },
+            { label: 'Passar para humano', k: 8 },
+        ];
+        const T = 4400;
+        let agHit = -1e9;
+
+        d3.timer(elapsed => {
+            const ci = Math.floor(elapsed / T) % tasks.length, m = elapsed % T;
+            const task = tasks[ci], bk = books[task.k];
+            taskT.text(task.label); carryT.text(bk.l);
+
+            books.forEach((b, i) => {
+                const hot = i === task.k && m > 700 && m < 2400;
+                b.rect.attr('stroke', hot ? 'rgba(89,234,173,0.95)' : 'rgba(89,234,173,0.25)')
+                    .attr('fill', hot ? 'rgba(89,234,173,0.10)' : 'rgba(255,255,255,0.03)');
+                b.txt.attr('fill', hot ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.6)');
+            });
+
+            // bolha da tarefa
+            taskG.attr('opacity', m < 600 ? smooth(m / 600) : m > 3700 ? 1 - smooth((m - 3700) / 600) : 1);
+
+            // cópia da skill: estante → agente (1150–2350)
+            if (m >= 1150 && m < 2350) {
+                const b = smooth((m - 1150) / 1200);
+                carry.attr('opacity', m > 2150 ? 1 - smooth((m - 2150) / 200) : 1)
+                    .attr('transform', `translate(${lerp(bx + bw, agx, b)},${lerp(bk.y, agy, b)})`);
+                if (b >= 0.95 && elapsed - agHit > 300) agHit = elapsed;
+            } else carry.attr('opacity', 0);
+
+            // passos do procedimento (2350–3100)
+            steps.forEach((g, i) => {
+                const on = m > 2350 + i * 220 && m < 3700;
+                g.attr('opacity', on ? 1 : 0);
+            });
+            // feito
+            done.attr('opacity', m > 3150 && m < 3800 ? 1 : 0);
+
+            const ap = (elapsed - agHit) / 600;
+            agPulse.attr('opacity', ap >= 0 && ap <= 1 ? 0.7 * (1 - ap) : 0).attr('r', 28 + (ap >= 0 && ap <= 1 ? ap * 16 : 0));
+        });
+    }
+})();
+
+// ── Slide RG: RAG — pergunta → embedding → busca na base → injeta chunk → responde c/ fonte (loop) ──
+(function() {
+    if (window.__srg_done) return;
+    const io = new IntersectionObserver(entries => {
+        if (!entries[0].isIntersecting) return;
+        window.__srg_done = true; io.disconnect();
+        runRag();
+    }, { threshold: 0.25 });
+    const el = document.getElementById('srg');
+    if (el) io.observe(el);
+
+    function runRag() {
+        const VW = 960, VH = 300;
+        const svg = d3.select('#srg-svg').attr('viewBox', `0 0 ${VW} ${VH}`).attr('height', 'auto');
+        svg.selectAll('*').remove();
+        const smooth = t => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
+        const lerp = (a, b, t) => a + (b - a) * t;
+
+        const qx = 64, baseY = 150, ex = 196, mx = 740, rx = 892;
+
+        // guias
+        svg.append('line').attr('x1', qx + 8).attr('y1', baseY).attr('x2', ex - 28).attr('y2', baseY)
+            .attr('stroke', 'rgba(255,255,255,0.08)').attr('stroke-width', 1.3).attr('stroke-dasharray', '2 6');
+        svg.append('line').attr('x1', mx + 30).attr('y1', baseY).attr('x2', rx - 18).attr('y2', baseY)
+            .attr('stroke', 'rgba(255,255,255,0.08)').attr('stroke-width', 1.3).attr('stroke-dasharray', '2 6');
+
+        // pergunta
+        svg.append('circle').attr('cx', qx).attr('cy', baseY).attr('r', 16)
+            .attr('fill', 'rgba(255,255,255,0.05)').attr('stroke', 'rgba(255,255,255,0.35)').attr('stroke-width', 1.4);
+        svg.append('text').attr('x', qx).attr('y', baseY + 5).attr('text-anchor', 'middle').attr('font-size', 13)
+            .attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,255,255,0.7)').text('?');
+        svg.append('text').attr('x', qx).attr('y', baseY + 36).attr('text-anchor', 'middle').attr('font-size', 10)
+            .attr('font-weight', 700).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,255,255,0.5)').text('pergunta');
+
+        // embedding
+        svg.append('rect').attr('x', ex - 28).attr('y', baseY - 18).attr('width', 56).attr('height', 36).attr('rx', 7)
+            .attr('fill', 'rgba(89,234,173,0.07)').attr('stroke', 'rgba(89,234,173,0.4)').attr('stroke-width', 1.3);
+        svg.append('text').attr('x', ex).attr('y', baseY + 4).attr('text-anchor', 'middle').attr('font-size', 10)
+            .attr('font-weight', 700).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(89,234,173,0.9)').text('vetor');
+        svg.append('text').attr('x', ex).attr('y', baseY + 36).attr('text-anchor', 'middle').attr('font-size', 10)
+            .attr('font-weight', 700).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,255,255,0.5)').text('embedding');
+
+        // base vetorial (nuvem)
+        svg.append('rect').attr('x', 296).attr('y', 40).attr('width', 296).attr('height', 232).attr('rx', 12)
+            .attr('fill', 'rgba(89,234,173,0.03)').attr('stroke', 'rgba(89,234,173,0.16)').attr('stroke-width', 1.2).attr('stroke-dasharray', '5 6');
+        svg.append('text').attr('x', 312).attr('y', 62).attr('font-size', 10).attr('font-weight', 700)
+            .attr('letter-spacing', '1').attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(89,234,173,0.7)').text('SUA BASE');
+
+        const dotsXY = [
+            [340, 96], [392, 78], [444, 116], [498, 86], [548, 126],
+            [330, 168], [386, 158], [446, 182], [506, 162], [556, 196],
+            [352, 240], [410, 256], [466, 244], [520, 262], [430, 214],
+        ];
+        const dots = dotsXY.map(p => svg.append('circle').attr('cx', p[0]).attr('cy', p[1]).attr('r', 3.4)
+            .attr('fill', 'rgba(89,234,173,0.4)'));
+        const targets = [2, 8, 11];
+        const tRing = svg.append('circle').attr('r', 0).attr('fill', 'none')
+            .attr('stroke', 'rgba(100,210,130,0.9)').attr('stroke-width', 2).attr('opacity', 0);
+        const chunk = svg.append('g').attr('opacity', 0);
+        chunk.append('rect').attr('x', -22).attr('y', -10).attr('width', 44).attr('height', 20).attr('rx', 4)
+            .attr('fill', 'rgba(100,210,130,0.14)').attr('stroke', 'rgba(100,210,130,0.6)').attr('stroke-width', 1.2);
+        chunk.append('text').attr('x', 0).attr('y', 4).attr('text-anchor', 'middle').attr('font-size', 9)
+            .attr('font-weight', 700).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(100,210,130,0.95)').text('trecho');
+
+        // modelo
+        svg.append('circle').attr('cx', mx).attr('cy', baseY).attr('r', 28)
+            .attr('fill', 'rgba(0,223,129,0.12)').attr('stroke', 'rgba(89,234,173,0.55)').attr('stroke-width', 1.7);
+        const mPulse = svg.append('circle').attr('cx', mx).attr('cy', baseY).attr('r', 28)
+            .attr('fill', 'none').attr('stroke', 'rgba(89,234,173,0.7)').attr('stroke-width', 2).attr('opacity', 0);
+        svg.append('circle').attr('cx', mx).attr('cy', baseY).attr('r', 6).attr('fill', 'rgba(89,234,173,0.9)');
+        svg.append('text').attr('x', mx).attr('y', baseY + 46).attr('text-anchor', 'middle').attr('font-size', 11)
+            .attr('font-weight', 800).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(89,234,173,0.9)').text('modelo');
+
+        // resposta + fonte
+        svg.append('circle').attr('cx', rx).attr('cy', baseY).attr('r', 15)
+            .attr('fill', 'rgba(100,210,130,0.10)').attr('stroke', 'rgba(100,210,130,0.5)').attr('stroke-width', 1.4);
+        svg.append('text').attr('x', rx).attr('y', baseY + 35).attr('text-anchor', 'middle').attr('font-size', 10)
+            .attr('font-weight', 700).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(100,210,130,0.85)').text('resposta');
+        const fonte = svg.append('text').attr('x', rx).attr('y', baseY - 24).attr('text-anchor', 'middle').attr('font-size', 10)
+            .attr('font-weight', 700).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(100,210,130,0.95)').attr('opacity', 0).text('fonte ✓');
+
+        const pk = svg.append('circle').attr('r', 4.2).attr('opacity', 0);
+
+        const T = 4600;
+        let mHit = -1e9;
+        d3.timer(elapsed => {
+            const ci = Math.floor(elapsed / T) % targets.length;
+            const m = elapsed % T;
+            const ti = targets[ci];
+            const dp = dotsXY[ti];
+
+            // realce do alvo durante busca→injeção
+            dots.forEach((d, i) => {
+                const hot = i === ti && m > 1500 && m < 3200;
+                d.attr('fill', hot ? 'rgba(100,210,130,0.95)' : 'rgba(89,234,173,0.4)').attr('r', hot ? 4.6 : 3.4);
+            });
+            if (m > 1550 && m < 3200) {
+                const rp = (m % 1100) / 1100;
+                tRing.attr('cx', dp[0]).attr('cy', dp[1]).attr('opacity', 0.7 * (1 - rp)).attr('r', 6 + rp * 12);
+            } else tRing.attr('opacity', 0);
+
+            let x, y = baseY, col = 'rgba(89,234,173,0.95)', show = 1;
+            if (m < 700) {                          // pergunta → embedding
+                x = lerp(qx, ex, smooth(m / 700));
+            } else if (m < 1600) {                  // embedding → ponto da base (busca)
+                const b = smooth((m - 700) / 900);
+                x = lerp(ex, dp[0], b); y = lerp(baseY, dp[1], b);
+                col = 'rgba(89,234,173,0.95)';
+            } else if (m < 2150) {                  // dwell: trecho encontrado
+                x = dp[0]; y = dp[1]; show = 0;
+                chunk.attr('transform', `translate(${dp[0]},${dp[1]})`).attr('opacity', 1);
+            } else if (m < 3200) {                  // ponto → modelo (injeta)
+                const b = smooth((m - 2150) / 1050);
+                x = lerp(dp[0], mx, b); y = lerp(dp[1], baseY, b);
+                col = 'rgba(100,210,130,0.95)';
+                chunk.attr('transform', `translate(${x},${y})`).attr('opacity', 1 - b);
+                if (b >= 0.96 && elapsed - mHit > 300) mHit = elapsed;
+            } else if (m < 3800) {                  // modelo → resposta
+                const b = smooth((m - 3200) / 600);
+                x = lerp(mx, rx, b); col = 'rgba(100,210,130,0.95)';
+                fonte.attr('opacity', b);
+                chunk.attr('opacity', 0);
+            } else {                                // segura e some
+                x = rx; show = 0;
+                fonte.attr('opacity', Math.max(0, 1 - (m - 3800) / 800));
+            }
+            pk.attr('cx', x).attr('cy', y).attr('fill', col).attr('opacity', show);
+
+            const mp = (elapsed - mHit) / 600;
+            mPulse.attr('opacity', mp >= 0 && mp <= 1 ? 0.7 * (1 - mp) : 0).attr('r', 28 + (mp >= 0 && mp <= 1 ? mp * 16 : 0));
+        });
+    }
+})();
+
+// ── Slide TL: tools — loop do agente (orbe gira + dispara tools) + MCP (dispositivos plugam na porta) ──
+(function() {
+    if (window.__stl_done) return;
+    const io = new IntersectionObserver(entries => {
+        if (!entries[0].isIntersecting) return;
+        window.__stl_done = true; io.disconnect();
+        runLoop(); runMcp();
+    }, { threshold: 0.25 });
+    const el = document.getElementById('stl');
+    if (el) io.observe(el);
+
+    const smooth = t => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
+
+    function chip(svg, x, y, w, label, stroke) {
+        const g = svg.append('g');
+        g.append('rect').attr('x', x - w / 2).attr('y', y - 13).attr('width', w).attr('height', 26).attr('rx', 6)
+            .attr('fill', 'rgba(255,255,255,0.04)').attr('stroke', stroke).attr('stroke-width', 1.3);
+        const t = g.append('text').attr('x', x).attr('y', y + 4).attr('text-anchor', 'middle').attr('font-size', 11)
+            .attr('font-weight', 700).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,255,255,0.8)').text(label);
+        return { g, rect: g.select('rect'), txt: t };
+    }
+
+    function runLoop() {
+        const VW = 440, VH = 296;
+        const svg = d3.select('#stl-loop').attr('viewBox', `0 0 ${VW} ${VH}`).attr('height', 'auto');
+        svg.selectAll('*').remove();
+
+        const mx = 150, my = 148, ring = 64;
+        // anel do loop
+        svg.append('circle').attr('cx', mx).attr('cy', my).attr('r', ring).attr('fill', 'none')
+            .attr('stroke', 'rgba(89,234,173,0.22)').attr('stroke-width', 1.5).attr('stroke-dasharray', '4 7');
+
+        const tools = [
+            { x: 328, y: 56, label: 'API' },
+            { x: 352, y: 148, label: 'Banco' },
+            { x: 328, y: 240, label: 'E-mail' },
+        ];
+        tools.forEach(t => {
+            t.line = svg.append('line').attr('x1', mx).attr('y1', my).attr('x2', t.x).attr('y2', t.y)
+                .attr('stroke', 'rgba(89,234,173,0.14)').attr('stroke-width', 1.4);
+            t.ui = chip(svg, t.x, t.y, 72, t.label, 'rgba(89,234,173,0.3)');
+        });
+
+        // modelo (centro)
+        svg.append('circle').attr('cx', mx).attr('cy', my).attr('r', 30)
+            .attr('fill', 'rgba(0,223,129,0.12)').attr('stroke', 'rgba(89,234,173,0.55)').attr('stroke-width', 1.8);
+        const mPulse = svg.append('circle').attr('cx', mx).attr('cy', my).attr('r', 30)
+            .attr('fill', 'none').attr('stroke', 'rgba(89,234,173,0.7)').attr('stroke-width', 2).attr('opacity', 0);
+        svg.append('circle').attr('cx', mx).attr('cy', my).attr('r', 6).attr('fill', 'rgba(89,234,173,0.9)');
+        svg.append('text').attr('x', mx).attr('y', my + 4).attr('text-anchor', 'middle').attr('font-size', 0);
+
+        // orbe que percorre o loop (o agente "rodando")
+        const orb = svg.append('circle').attr('r', 4).attr('fill', 'rgba(89,234,173,0.95)');
+        // partícula de disparo (modelo↔tool)
+        const shot = svg.append('circle').attr('r', 3.6).attr('opacity', 0);
+
+        const FT = 2100;
+        let lastFire = -1e9, fi = -1, mHit = -1e9;
+        d3.timer(e => {
+            // orbe gira sempre
+            const a = (e / 1500) * Math.PI * 2;
+            orb.attr('cx', mx + ring * Math.cos(a)).attr('cy', my + ring * Math.sin(a));
+
+            // dispara a próxima tool
+            if (e - lastFire >= FT) { lastFire = e; fi = (fi + 1) % tools.length; }
+            const ftp = e - lastFire;
+            const t = tools[fi] || tools[0];
+            tools.forEach(tk => { const on = tk === t && ftp > 350 && ftp < 1350;
+                tk.ui.rect.attr('stroke', on ? 'rgba(89,234,173,0.9)' : 'rgba(89,234,173,0.3)')
+                    .attr('fill', on ? 'rgba(89,234,173,0.10)' : 'rgba(255,255,255,0.04)');
+                tk.line.attr('stroke', on ? 'rgba(89,234,173,0.5)' : 'rgba(89,234,173,0.14)'); });
+
+            if (ftp < 600) {                       // modelo → tool (chamada)
+                const b = smooth(ftp / 600);
+                shot.attr('opacity', 1).attr('fill', 'rgba(89,234,173,0.95)')
+                    .attr('cx', mx + (t.x - mx) * b).attr('cy', my + (t.y - my) * b);
+            } else if (ftp >= 700 && ftp < 1300) { // tool → modelo (resultado)
+                const b = smooth((ftp - 700) / 600);
+                shot.attr('opacity', 1).attr('fill', 'rgba(100,210,130,0.95)')
+                    .attr('cx', t.x + (mx - t.x) * b).attr('cy', t.y + (my - t.y) * b);
+                if (b >= 0.96 && e - mHit > 300) mHit = e;
+            } else shot.attr('opacity', 0);
+
+            const mp = (e - mHit) / 600;
+            mPulse.attr('opacity', mp >= 0 && mp <= 1 ? 0.7 * (1 - mp) : 0).attr('r', 30 + (mp >= 0 && mp <= 1 ? mp * 16 : 0));
+        });
+    }
+
+    function runMcp() {
+        const VW = 440, VH = 296;
+        const svg = d3.select('#stl-mcp').attr('viewBox', `0 0 ${VW} ${VH}`).attr('height', 'auto');
+        svg.selectAll('*').remove();
+
+        const portX = 112, portY = 148;
+        // porta USB-C
+        svg.append('rect').attr('x', portX - 16).attr('y', portY - 36).attr('width', 32).attr('height', 72).attr('rx', 15)
+            .attr('fill', 'rgba(89,234,173,0.10)').attr('stroke', 'rgba(89,234,173,0.55)').attr('stroke-width', 1.8);
+        svg.append('rect').attr('x', portX - 7).attr('y', portY - 24).attr('width', 14).attr('height', 48).attr('rx', 7)
+            .attr('fill', 'rgba(89,234,173,0.18)');
+        const portPulse = svg.append('circle').attr('cx', portX).attr('cy', portY).attr('r', 22)
+            .attr('fill', 'none').attr('stroke', 'rgba(89,234,173,0.7)').attr('stroke-width', 2).attr('opacity', 0);
+        svg.append('text').attr('x', portX).attr('y', portY - 46).attr('text-anchor', 'middle').attr('font-size', 12)
+            .attr('font-weight', 800).attr('letter-spacing', '1').attr('font-family', 'Inter,sans-serif')
+            .attr('fill', 'var(--amber)').text('MCP');
+
+        const devs = [
+            { y: 50, label: 'API' }, { y: 116, label: 'Banco' }, { y: 182, label: 'Slack' }, { y: 248, label: 'Drive' },
+        ];
+        const dx = 312;
+        devs.forEach(d => {
+            d.line = svg.append('line').attr('x1', portX + 16).attr('y1', portY).attr('x2', dx - 36).attr('y2', d.y)
+                .attr('stroke', 'rgba(89,234,173,0.18)').attr('stroke-width', 1.4);
+            chip(svg, dx, d.y, 70, d.label, 'rgba(89,234,173,0.3)');
+        });
+
+        const SP = 720;
+        let last = -1e9, di = -1, hit = -1e9;
+        const shot = svg.append('circle').attr('r', 3.6).attr('opacity', 0);
+        d3.timer(e => {
+            if (e - last >= SP) { last = e; di = (di + 1) % devs.length; }
+            const tp = e - last, d = devs[di] || devs[0];
+            const b = smooth(tp / SP);
+            // dispositivo → porta (mesma conexão padrão pra todos)
+            const x = (dx - 36) + (portX + 16 - (dx - 36)) * b;
+            const y = d.y + (portY - d.y) * b;
+            shot.attr('opacity', b > 0.93 ? (1 - b) / 0.07 : 1).attr('fill', 'rgba(89,234,173,0.95)').attr('cx', x).attr('cy', y);
+            d.line.attr('stroke', 'rgba(89,234,173,0.5)');
+            devs.forEach(o => { if (o !== d) o.line.attr('stroke', 'rgba(89,234,173,0.18)'); });
+            if (b >= 0.96 && e - hit > 250) hit = e;
+            const mp = (e - hit) / 550;
+            portPulse.attr('opacity', mp >= 0 && mp <= 1 ? 0.7 * (1 - mp) : 0).attr('r', 22 + (mp >= 0 && mp <= 1 ? mp * 14 : 0));
+        });
+    }
+})();
+
+// ── Slide CX: camada de contexto — 4 fontes → agente → guardrail → cliente (fluxo perpétuo) ──
+(function() {
+    if (window.__scx_done) return;
+    const io = new IntersectionObserver(entries => {
+        if (!entries[0].isIntersecting) return;
+        window.__scx_done = true; io.disconnect();
+        runHub();
+    }, { threshold: 0.25 });
+    const el = document.getElementById('scx');
+    if (el) io.observe(el);
+
+    function runHub() {
+        const VW = 960, VH = 320;
+        const svg = d3.select('#scx-svg').attr('viewBox', `0 0 ${VW} ${VH}`).attr('height', 'auto');
+        svg.selectAll('*').remove();
+        const smooth = t => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
+
+        const ax = 460, ay = 160;
+        const cardX = 34, cardW = 122, cardH = 34;
+        const sources = [
+            { y: 52, label: 'Tools / MCP' },
+            { y: 118, label: 'RAG' },
+            { y: 202, label: 'Skills' },
+            { y: 268, label: 'Memória' },
+        ];
+
+        svg.append('text').attr('x', cardX).attr('y', 24).attr('font-size', 10).attr('font-weight', 700)
+            .attr('letter-spacing', '1').attr('font-family', 'Inter,sans-serif')
+            .attr('fill', 'rgba(255,255,255,0.4)').text('FONTES DE CONTEXTO');
+
+        sources.forEach(s => {
+            s.px = cardX + cardW; s.py = s.y;
+            svg.append('line').attr('x1', s.px).attr('y1', s.py).attr('x2', ax).attr('y2', ay)
+                .attr('stroke', 'rgba(89,234,173,0.18)').attr('stroke-width', 1.4);
+            svg.append('rect').attr('x', cardX).attr('y', s.y - cardH / 2).attr('width', cardW).attr('height', cardH).attr('rx', 7)
+                .attr('fill', 'rgba(255,255,255,0.03)').attr('stroke', 'rgba(89,234,173,0.28)').attr('stroke-width', 1.2);
+            svg.append('text').attr('x', cardX + cardW / 2).attr('y', s.y + 4).attr('text-anchor', 'middle')
+                .attr('font-size', 11).attr('font-weight', 700).attr('font-family', 'Inter,sans-serif')
+                .attr('fill', 'rgba(255,255,255,0.78)').text(s.label);
+        });
+
+        // ── linha de saída: agente → guardrail → cliente
+        const gx = 686, ox = 880;
+        svg.append('line').attr('x1', ax).attr('y1', ay).attr('x2', ox).attr('y2', ay)
+            .attr('stroke', 'rgba(255,255,255,0.08)').attr('stroke-width', 1.4).attr('stroke-dasharray', '2 6');
+
+        // agente (hub)
+        const aRing = svg.append('circle').attr('cx', ax).attr('cy', ay).attr('r', 34)
+            .attr('fill', 'rgba(0,223,129,0.12)').attr('stroke', 'rgba(89,234,173,0.55)').attr('stroke-width', 1.8);
+        const aPulse = svg.append('circle').attr('cx', ax).attr('cy', ay).attr('r', 34)
+            .attr('fill', 'none').attr('stroke', 'rgba(89,234,173,0.7)').attr('stroke-width', 2).attr('opacity', 0);
+        svg.append('circle').attr('cx', ax).attr('cy', ay).attr('r', 7).attr('fill', 'rgba(89,234,173,0.9)');
+        svg.append('text').attr('x', ax).attr('y', ay + 54).attr('text-anchor', 'middle').attr('font-size', 12)
+            .attr('font-weight', 800).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(89,234,173,0.9)').text('agente');
+
+        // guardrail (portão âmbar)
+        [-16, 16].forEach(dx => svg.append('rect').attr('x', gx + dx - 3).attr('y', ay - 48).attr('width', 6).attr('height', 96)
+            .attr('rx', 3).attr('fill', 'rgba(89,234,173,0.16)').attr('stroke', 'rgba(89,234,173,0.45)').attr('stroke-width', 1));
+        svg.append('text').attr('x', gx).attr('y', ay - 58).attr('text-anchor', 'middle').attr('font-size', 11)
+            .attr('font-weight', 800).attr('letter-spacing', '1').attr('font-family', 'Inter,sans-serif')
+            .attr('fill', 'var(--amber)').text('GUARDRAIL');
+        const scan = svg.append('line').attr('x1', gx - 13).attr('x2', gx + 13)
+            .attr('stroke', 'rgba(89,234,173,0.9)').attr('stroke-width', 2.5).attr('stroke-linecap', 'round');
+
+        // cliente (saída)
+        svg.append('circle').attr('cx', ox).attr('cy', ay).attr('r', 18)
+            .attr('fill', 'rgba(100,210,130,0.10)').attr('stroke', 'rgba(100,210,130,0.5)').attr('stroke-width', 1.4);
+        svg.append('circle').attr('cx', ox).attr('cy', ay).attr('r', 4).attr('fill', 'rgba(100,210,130,0.85)');
+        svg.append('text').attr('x', ox).attr('y', ay + 38).attr('text-anchor', 'middle').attr('font-size', 11)
+            .attr('font-weight', 700).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(100,210,130,0.85)').text('cliente');
+
+        // ── partículas: fontes → agente
+        const inP = [];
+        const lastIn = sources.map(() => -1e9);
+        const IN_T = 1700, IN_SPAWN = 1500;
+        let aHit = -1e9;
+
+        // ── partículas: agente → guardrail → cliente
+        const outP = [];
+        let lastOut = -1e9, scanHit = -1e9;
+        const OUT_SPAWN = 1600, OUT_T = 2400;
+
+        d3.timer(e => {
+            // spawn entradas (escalonado por fonte)
+            sources.forEach((s, i) => {
+                if (e - lastIn[i] >= IN_SPAWN) { lastIn[i] = e + i * 320; inP.push({ s, t0: e + i * 320 }); }
+            });
+            // spawn saídas
+            if (e - lastOut >= OUT_SPAWN) { lastOut = e; outP.push({ t0: e }); }
+
+            // pulso do agente
+            const ap = (e - aHit) / 650;
+            aPulse.attr('opacity', ap >= 0 && ap <= 1 ? 0.7 * (1 - ap) : 0).attr('r', 34 + (ap >= 0 && ap <= 1 ? ap * 18 : 0));
+
+            // varredura do guardrail (sempre)
+            const sy = (ay - 44) + ((e % 1200) / 1200) * 88;
+            scan.attr('y1', sy).attr('y2', sy).attr('opacity', 0.4 + 0.4 * Math.abs(Math.sin(e / 200)));
+
+            // entradas
+            for (let i = inP.length - 1; i >= 0; i--) {
+                const p = inP[i], lt = e - p.t0;
+                if (lt < 0) continue;
+                const b = smooth(lt / IN_T);
+                const x = p.s.px + (ax - p.s.px) * b, y = p.s.py + (ay - p.s.py) * b;
+                if (!p.g) p.g = svg.append('circle').attr('r', 3.2).attr('fill', 'rgba(89,234,173,0.95)');
+                p.g.attr('cx', x).attr('cy', y).attr('opacity', b > 0.92 ? (1 - b) / 0.08 : 1);
+                if (b >= 0.96 && e - aHit > 280) aHit = e;
+                if (lt >= IN_T) { p.g.remove(); inP.splice(i, 1); }
+            }
+
+            // saídas
+            for (let i = outP.length - 1; i >= 0; i--) {
+                const p = outP[i], lt = e - p.t0, b = smooth(lt / OUT_T);
+                let x, col;
+                if (b < 0.5) { x = ax + (gx - ax) * (b / 0.5); col = 'rgba(89,234,173,0.95)'; }
+                else { x = gx + (ox - gx) * ((b - 0.5) / 0.5); col = 'rgba(100,210,130,0.95)'; }
+                if (!p.g) p.g = svg.append('circle').attr('r', 3.4);
+                p.g.attr('cx', x).attr('cy', ay).attr('fill', col).attr('opacity', b > 0.94 ? (1 - b) / 0.06 : 1);
+                if (Math.abs(x - gx) < 4 && e - scanHit > 300) scanHit = e;
+                if (lt >= OUT_T) { p.g.remove(); outP.splice(i, 1); }
+            }
+        });
+    }
+})();
+
+// ── Slide PR: introdução ao prompt — faixa de tokens fluindo pro modelo + pulso na lista (loop) ──
+(function() {
+    if (window.__spr_done) return;
+    const io = new IntersectionObserver(entries => {
+        if (!entries[0].isIntersecting) return;
+        window.__spr_done = true; io.disconnect();
+        runStrip(); startList();
+    }, { threshold: 0.25 });
+    const el = document.getElementById('spr');
+    if (el) io.observe(el);
+
+    function runStrip() {
+        const VW = 960, VH = 64;
+        const svg = d3.select('#spr-svg').attr('viewBox', `0 0 ${VW} ${VH}`).attr('height', 'auto');
+        svg.selectAll('*').remove();
+
+        const laneY = 32, mx = 876, sx = 8, ex = mx - 30;
+        svg.append('line').attr('x1', sx).attr('y1', laneY).attr('x2', ex).attr('y2', laneY)
+            .attr('stroke', 'rgba(255,255,255,0.07)').attr('stroke-width', 1).attr('stroke-dasharray', '2 6');
+        svg.append('text').attr('x', sx).attr('y', laneY - 15).attr('font-size', 10).attr('font-weight', 700)
+            .attr('letter-spacing', '1').attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(255,255,255,0.4)').text('PROMPT');
+
+        // modelo (destino)
+        svg.append('circle').attr('cx', mx).attr('cy', laneY).attr('r', 20)
+            .attr('fill', 'rgba(0,223,129,0.10)').attr('stroke', 'rgba(89,234,173,0.45)').attr('stroke-width', 1.4);
+        const pulse = svg.append('circle').attr('cx', mx).attr('cy', laneY).attr('r', 20)
+            .attr('fill', 'none').attr('stroke', 'rgba(89,234,173,0.7)').attr('stroke-width', 2).attr('opacity', 0);
+        svg.append('circle').attr('cx', mx).attr('cy', laneY).attr('r', 5).attr('fill', 'rgba(89,234,173,0.85)');
+        svg.append('text').attr('x', mx).attr('y', laneY + 4).attr('text-anchor', 'middle').attr('font-size', 0);
+        svg.append('text').attr('x', mx - 30).attr('y', laneY - 15).attr('text-anchor', 'end').attr('font-size', 10)
+            .attr('font-weight', 700).attr('font-family', 'Inter,sans-serif').attr('fill', 'rgba(89,234,173,0.8)').text('→ modelo');
+
+        const roles = [
+            { c: 'rgba(89,234,173,0.9)', t: 'system' },
+            { c: 'rgba(89,234,173,0.9)', t: 'developer' },
+            { c: 'rgba(255,255,255,0.6)', t: 'user' },
+            { c: 'rgba(100,210,130,0.9)', t: 'assistant' },
+        ];
+        const pk = [];
+        let last = -1e9, hit = -1e9, ri = 0;
+        const SPAWN = 640, TT = 2600;
+        const smooth = t => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
+
+        function spawn(e) {
+            const r = roles[ri % roles.length]; ri++;
+            const g = svg.append('g').attr('opacity', 0);
+            g.append('rect').attr('x', -15).attr('y', -9).attr('width', 30).attr('height', 18).attr('rx', 4)
+                .attr('fill', 'rgba(255,255,255,0.06)').attr('stroke', r.c).attr('stroke-width', 1.2);
+            g.append('circle').attr('cx', -8).attr('cy', 0).attr('r', 2.6).attr('fill', r.c);
+            pk.push({ g, t0: e });
+        }
+
+        d3.timer(e => {
+            if (e - last >= SPAWN) { last = e; spawn(e); }
+            const mp = (e - hit) / 650;
+            pulse.attr('opacity', mp >= 0 && mp <= 1 ? 0.7 * (1 - mp) : 0).attr('r', 20 + (mp >= 0 && mp <= 1 ? mp * 16 : 0));
+            for (let i = pk.length - 1; i >= 0; i--) {
+                const p = pk[i], lt = e - p.t0, b = smooth(lt / TT);
+                const x = sx + (ex - sx) * b;
+                p.g.attr('transform', `translate(${x.toFixed(1)},${laneY})`)
+                    .attr('opacity', b < 0.1 ? b / 0.1 : b > 0.9 ? (1 - b) / 0.1 : 1);
+                if (b >= 0.98 && e - hit > 300) hit = e;
+                if (lt >= TT) { p.g.remove(); pk.splice(i, 1); }
+            }
+        });
+    }
+
+    function startList() {
+        const rows = document.querySelectorAll('#spr-in .lyr');
+        if (!rows.length) return;
+        let cur = 0;
+        setInterval(() => {
+            rows.forEach((r, i) => i === cur ? r.classList.add('hi') : r.classList.remove('hi'));
+            cur = (cur + 1) % rows.length;
+        }, 1500);
+    }
+})();
+
+// ── Slide Q: cards por modelo — destaque cíclico perpétuo ──
+(function() {
+    let started = false;
+    const io = new IntersectionObserver(entries => {
+        if (!entries[0].isIntersecting || started) return;
+        started = true;
+        const cards = document.querySelectorAll('#sq .mcard');
+        let cur = 0;
+        setInterval(() => {
+            cards.forEach((c, i) => i === cur ? c.classList.add('mhi') : c.classList.remove('mhi'));
+            cur = (cur + 1) % cards.length;
+        }, 1700);
+    }, { threshold: 0.3 });
+    const el = document.getElementById('sq');
+    if (el) io.observe(el);
+})();
+</script>
+</body>
+</html>
