@@ -27,7 +27,7 @@ class MagicLinkMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.magic-link',
+            markdown: 'emails.magic-link',
             with: [
                 'url' => route('client.magic-link.verify', ['token' => $this->token]),
             ],
