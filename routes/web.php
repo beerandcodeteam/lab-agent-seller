@@ -1,12 +1,23 @@
 <?php
 
+use App\Http\Controllers\Client\MagicLinkController;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
+use App\Livewire\Client\Access;
 use App\Livewire\Crm\Connect;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
+
+// Acesso do cliente final (magic link).
+Route::get('/acesso', Access::class)->name('client.access');
+Route::get('/acesso/{token}', [MagicLinkController::class, 'verify'])->name('client.magic-link.verify');
+
+Route::middleware('auth:client')->group(function () {
+    Route::view('/chat', 'client.chat')->name('client.chat');
+    Route::view('/selecionar-empresa', 'client.company-selection')->name('client.company-selection');
+});
 
 Route::middleware('guest')->group(function () {
     Route::get('/register', Register::class)->name('register');

@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\CrmConnection;
+use App\Models\CrmPerson;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -47,4 +50,19 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * Create a company (tenant) whose scanned CRM contains a person with the given
+ * email, so the email matches that company during magic-link access.
+ */
+function companyMatchingEmail(string $email): User
+{
+    $company = User::factory()->create();
+
+    $connection = CrmConnection::factory()->for($company)->create();
+
+    CrmPerson::factory()->for($connection)->create(['email' => $email]);
+
+    return $company;
 }
