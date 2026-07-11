@@ -5,47 +5,48 @@
 ## AS IS — Current state
 
 ### Runtime and language
-- **Language**: PHP ^8.3 (`composer.json` require; CI matrix 8.3/8.4/8.5; Sail runtime 8.5)
+- **Language**: PHP ^8.3 (`composer.json`; CI matrix 8.3/8.4/8.5 in `.github/workflows/tests.yml`; Sail app container `sail-8.5/app`)
 - **Framework**: Laravel `laravel/framework` ^13.17
+
 | Component | Value | Evidence |
 | --- | --- | --- |
 | UI framework | Livewire ^4.1 + `livewire/blaze` ^1.0 | `composer.json` |
-| AI SDK | `laravel/ai` ^0.9.0 (OpenAI provider) | `composer.json`, `SellerAgent` `#[Provider(Lab::OpenAI)]` |
-| CSS | TailwindCSS v4 | CLAUDE.md guidelines, `resources/css/` |
-| Asset bundler | Vite (`npm run build` → `vite build`) | `package.json` |
-| Dev environment | Laravel Sail / Docker: PHP 8.5 app, Postgres 18-alpine, Redis alpine, Mailpit | `compose.yaml` |
+| AI SDK | `laravel/ai` ^0.9.0, OpenAI provider | `composer.json`; `SellerAgent` `#[Provider(Lab::OpenAI)]` |
+| CSS | TailwindCSS ^4.0.7 + `@tailwindcss/vite` ^4.1.11 | `package.json` |
+| Asset bundler | Vite ^8.0.0 + `laravel-vite-plugin` ^3.1 (`npm run build` → `vite build`) | `package.json`, `vite.config.js` |
+| Dev environment | Laravel Sail / Docker: PHP 8.5 app, `postgres:18-alpine`, Redis, Mailpit | `compose.yaml` |
 | REPL | `laravel/tinker` ^3.0 | `composer.json` |
 
 ### Tests
 | Tool | Value | Version |
 | --- | --- | --- |
-| Runner | Pest (`pestphp/pest`, `pest-plugin-laravel`) over PHPUnit | ^4.7 / ^4.1; PHPUnit ^12 |
+| Runner | Pest (`pestphp/pest` + `pest-plugin-laravel`) | ^4.7 / ^4.1 |
 | Assertions | Pest `expect()` + Livewire test helpers | pestphp/pest ^4.7 |
 | Mocks | `mockery/mockery` | ^1.6 |
-| Fakes | `Http::fake`, `Mail::fake`, `SellerAgent::fake` | built-in / `laravel/ai` |
+| Fakes | `Http::fake`, `Mail::fake`, `SellerAgent::fake` | framework / `laravel/ai` |
 | Fake data | `fakerphp/faker` | ^1.24 |
-| Coverage | none found | — |
+| Coverage | none found (CI enables xdebug but never runs a coverage command) | — |
 | CLI errors | `nunomaduro/collision` | ^8.9.3 |
 
-Config: `phpunit.xml`; suites `tests/Feature` (20 files), `tests/Unit`; `tests/Pest.php`, `tests/TestCase.php`. Test queue runs `sync`.
+Config: `phpunit.xml` (suites `tests/Unit`, `tests/Feature` — 20 feature files; testing env `DB_DATABASE=testing`, `QUEUE_CONNECTION=sync`); `tests/Pest.php` binds `RefreshDatabase` to all Feature tests.
 
 ### Quality tooling
 | Tool | Config | Enforcement |
 | --- | --- | --- |
 | Laravel Pint | `pint.json` (preset `laravel`) | `composer lint` = `pint --parallel`; CI `.github/workflows/lint.yml` |
-| Larastan / PHPStan | `phpstan.neon` level 7 (paths: app, bootstrap/app.php, config, database, routes) | `composer types:check` |
-| EditorConfig | `.editorconfig` | editor-level |
-| Laravel Boost | `boost.json` (MCP + AI guidelines) | dev tooling |
+| Larastan / PHPStan | `phpstan.neon` level 7 (paths: `app/`, `bootstrap/app.php`, `config/`, `database/`, `routes/`) | `composer types:check` = `phpstan analyse`; CI `tests.yml` |
+| EditorConfig | `.editorconfig` (4-space PHP, 2-space YAML, LF) | editor-level |
+| Laravel Boost | `boost.json` (MCP server + AI guidelines) | dev tooling |
 
-CI: `.github/workflows/{lint.yml,tests.yml}`. `composer test` = `config:clear` + `lint:check` + `types:check` + `php artisan test`.
+CI: `.github/workflows/{lint.yml,tests.yml}`. `composer test` = `config:clear` + `lint:check` + `types:check` + `php artisan test` (`composer.json` scripts).
 
 ### External integrations
 | System | Client wiring |
 | --- | --- |
-| Pipedrive REST v1 | `PipedriveDriver` via `Http::` facade, `config('services.pipedrive.base_url')` |
-| OpenAI | `laravel/ai` ^0.9.0, `SellerAgent` streaming |
+| Pipedrive REST v1 | `PipedriveDriver` via `Http::` facade; `config('services.pipedrive.base_url')` / `PIPEDRIVE_BASE_URL` |
+| OpenAI | `laravel/ai` ^0.9.0; `SellerAgent` streaming with `reasoning.effort = low` provider option |
 | SMTP / Mailpit | `MagicLinkMail` via `Mail::` facade; `MAIL_*` env |
-| Queue | `QUEUE_CONNECTION` (default `database`); Redis in `compose.yaml` |
+| Queue | `QUEUE_CONNECTION=database` (`.env.example`); Redis service in `compose.yaml` |
 
 ## Related documents
 

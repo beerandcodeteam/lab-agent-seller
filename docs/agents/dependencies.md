@@ -7,32 +7,31 @@
 ### External services
 | Service | Purpose |
 | --- | --- |
-| Pipedrive REST API v1 | Source CRM; `PipedriveDriver` reads pipelines/stages/fields/persons/deals, validates token via `/users/me`. Base `PIPEDRIVE_BASE_URL` (default `https://api.pipedrive.com/v1`) |
+| Pipedrive REST API v1 | Source CRM; `PipedriveDriver` validates tokens via `/users/me` and reads pipelines/stages/fields/persons/deals. Base `PIPEDRIVE_BASE_URL` (default `https://api.pipedrive.com/v1`, `config/services.php`) |
 | OpenAI | LLM behind `SellerAgent` (`laravel/ai`, `#[Provider(Lab::OpenAI)]`), streamed responses |
-| SMTP / Mailpit | Delivers `MagicLinkMail`; Mailpit in `compose.yaml`, `MAIL_*` env |
+| SMTP / Mailpit | Delivers `MagicLinkMail`; Mailpit service in `compose.yaml`, `MAIL_*` env |
 
-`config/services.php` also references (default Laravel scaffold, not in `.env.example`, no code wiring observed): `POSTMARK_API_KEY`, `RESEND_API_KEY`, AWS SES (`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`/`AWS_DEFAULT_REGION`), Slack (`SLACK_BOT_USER_OAUTH_TOKEN`/`SLACK_BOT_USER_DEFAULT_CHANNEL`). Only `PIPEDRIVE_BASE_URL` is actively consumed (`PipedriveDriver`).
+`config/services.php` also carries default Laravel scaffold entries with no code wiring observed: Postmark (`POSTMARK_API_KEY`), Resend (`RESEND_API_KEY`), AWS SES, Slack. Only `services.pipedrive.base_url` is actively consumed (`PipedriveDriver`).
 
 ### Runtime packages (composer require)
 | Package | Version | Role |
 | --- | --- | --- |
 | `laravel/framework` | ^13.17 | Core framework |
-| `laravel/ai` | ^0.9.0 | AI agent SDK — `SellerAgent`, OpenAI provider, streaming events |
-| `livewire/livewire` | ^4.1 | Reactive server-driven UI (all screens) |
-| `livewire/blaze` | ^1.0 | Livewire Blade/Blaze optimization |
+| `laravel/ai` | ^0.9.0 | AI agent SDK — `SellerAgent`, OpenAI provider, streaming events, `SellerAgent::fake` test helper |
+| `livewire/livewire` | ^4.1 | Server-driven reactive UI (all screens) |
+| `livewire/blaze` | ^1.0 | Livewire compile/performance optimization |
 | `laravel/tinker` | ^3.0 | REPL |
 
 ### Dev packages (composer require-dev)
 | Package | Version | Role |
 | --- | --- | --- |
 | `pestphp/pest` + `pest-plugin-laravel` | ^4.7 / ^4.1 | Test runner |
-| `phpunit/phpunit` | ^12 (transitive) | Underlying test framework |
 | `mockery/mockery` | ^1.6 | Mocking |
-| `larastan/larastan` | ^3.9 | Static analysis (phpstan.neon level 7) |
-| `laravel/pint` | ^1.27 | Code style (preset laravel) |
+| `larastan/larastan` | ^3.9 | Static analysis (`phpstan.neon` level 7) |
+| `laravel/pint` | ^1.27 | Code style (preset `laravel`) |
 | `laravel/sail` | ^1.53 | Docker dev environment |
 | `laravel/pail` | ^1.2.5 | Log tailing |
-| `laravel/pao` | ^1.0.6 | Laravel tooling (dev) |
+| `laravel/pao` | ^1.0.6 | Dev tooling |
 | `laravel/boost` | ^2.2 | MCP server + AI guidelines (`boost.json`) |
 | `nunomaduro/collision` | ^8.9.3 | CLI error reporting |
 | `fakerphp/faker` | ^1.24 | Factory fake data |
@@ -44,22 +43,22 @@
 | `laravel-vite-plugin` | ^3.1 | Laravel/Vite integration |
 | `tailwindcss` | ^4.0.7 | Styling |
 | `@tailwindcss/vite` | ^4.1.11 | Tailwind v4 Vite plugin |
-| `concurrently` | ^9.0.1 | Runs parallel dev processes |
+| `concurrently` | ^9.0.1 | Parallel dev processes |
 
-Optional (platform binaries): `@rollup/rollup-linux-x64-gnu`, `@tailwindcss/oxide-linux-x64-gnu`, `lightningcss-linux-x64-gnu`.
+Optional platform binaries: `@rollup/rollup-linux-x64-gnu`, `@tailwindcss/oxide-linux-x64-gnu`, `lightningcss-linux-x64-gnu`.
 
 ### Internal libraries
-No first-party/private Composer packages. PSR-4 autoload is single-root: `App\` → `app/`, `Database\Factories\`, `Database\Seeders\` (`composer.json`). All domain code lives in this repo under `app/`.
+No first-party/private Composer packages. PSR-4 autoload is single-root: `App\` → `app/`, plus `Database\Factories\` and `Database\Seeders\` (`composer.json`). All domain code lives under `app/`.
 
 ### Shared infrastructure
 | Component | Usage | Evidence |
 | --- | --- | --- |
-| Postgres 18-alpine | Primary DB under Sail | `compose.yaml`; SQLite for local/tests |
-| Redis alpine | Cache / queue backend option | `compose.yaml`; `REDIS_*` env |
-| Queue | `ScanCrmConnection` (`ShouldQueue`); `QUEUE_CONNECTION` default `database` | `config/queue.php`; tests use `sync` |
+| Postgres 18-alpine | Primary DB under Sail; SQLite for local/tests | `compose.yaml`; `.env.example` `DB_CONNECTION=sqlite` |
+| Redis | Cache / queue backend option | `compose.yaml`; `REDIS_*` env |
+| Queue | `ScanCrmConnection` (`ShouldQueue`); `QUEUE_CONNECTION=database`; tests `sync` | `.env.example`, `config/queue.php`, `phpunit.xml` |
 | Mailpit | Local mail capture | `compose.yaml` |
 | Laravel Sail / Docker | Dev runtime, PHP 8.5 app container | `compose.yaml` |
-| CI (GitHub Actions) | `lint.yml` (pint), `tests.yml` (build + `php artisan test`) | `.github/workflows/` |
+| CI (GitHub Actions) | `lint.yml` (pint), `tests.yml` (PHP 8.3/8.4/8.5 matrix, asset build, phpstan, `php artisan test`) | `.github/workflows/` |
 
 ## Related documents
 

@@ -4,33 +4,33 @@
 
 ## AS IS — Current state
 
-19 migration files under `database/migrations/`: 16 app tables (`2026_07_11_000001..000016`) plus 3 framework (`users`/`cache`/`jobs`). 17 Eloquent models in `app/Models` + `Concerns/IsLookup`. Lookup tables seeded by `LookupSeeder`.
+19 migration files under `database/migrations/`: 16 app tables (`2026_07_11_000001..000016`) plus 3 framework files (`users`/`cache`/`jobs`). 17 Eloquent models in `app/Models` + `Concerns/IsLookup`. Lookup tables seeded by `LookupSeeder`.
 
 ### Storage
-- **Engine**: SQLite locally (`database/database.sqlite`); Postgres 18-alpine via Sail (`compose.yaml`). `DB_CONNECTION` env-driven.
+- **Engine**: SQLite locally (`database/database.sqlite`, `.env.example` `DB_CONNECTION=sqlite`); `postgres:18-alpine` via Sail (`compose.yaml`).
 - **Schema location**: `database/migrations/`.
 - **Migration tool**: Laravel migrations (`php artisan migrate`).
-- **Seeders**: `database/seeders/LookupSeeder.php` (idempotent by `slug`).
+- **Seeders**: `database/seeders/LookupSeeder.php` — idempotent `updateOrInsert` by `slug`.
 
 ### Lookup tables (`Concerns\IsLookup`, slug-keyed)
 | Table | Model | Seeded slugs |
 | --- | --- | --- |
-| `crm_providers` | `CrmProvider` | `pipedrive` (+ `name`, `is_active`) |
+| `crm_providers` | `CrmProvider` | `pipedrive` (+ `is_active` boolean) |
 | `scan_statuses` | `ScanStatus` | `pending`, `running`, `success`, `failed` |
 | `custom_field_entities` | `CustomFieldEntity` | `deal`, `person`, `organization` |
 | `deal_statuses` | `DealStatus` | `open`, `won`, `lost` |
 | `message_roles` | `MessageRole` | `user`, `assistant` |
 
-Each: `id`, `name`, `slug` (unique), timestamps.
+Each: `id`, `name`, `slug` (unique), timestamps. Resolved in code via `IsLookup::slug()`.
 
 ### Entities
 
 **users** (company / tenant) — `User`
-- `id`, `name` (nome da empresa), `email`, `email_verified_at?`, `password` (cast `hashed`), `remember_token?`, timestamps.
+- `id`, `name` (company name), `email`, `email_verified_at?`, `password` (cast `hashed`), `remember_token?`, timestamps.
 - `hasOne` crm_connection; `hasMany` conversations.
 
 **crm_connections** — `CrmConnection`
-- `id`, `user_id` → users (cascade, **unique** — one per company), `crm_provider_id` → crm_providers, `api_token` (cast **`encrypted`**), `last_validated_at?`, timestamps.
+- `id`, `user_id` → users (cascade, **unique** — one per company), `crm_provider_id` → crm_providers, `api_token` (text, cast **`encrypted`**), `last_validated_at?`, timestamps.
 - `hasMany` crm_scans, pipelines, custom_fields, crm_persons, deals.
 
 **crm_scans** — `CrmScan`
@@ -47,27 +47,27 @@ Each: `id`, `name`, `slug` (unique), timestamps.
 - `id`, `crm_connection_id` (cascade), `custom_field_entity_id` → custom_field_entities, `external_id`, `name`, `field_key?`, `field_type?`, timestamps. **unique(`crm_connection_id`,`external_id`)**.
 
 **crm_persons** — `CrmPerson`
-- `id`, `crm_connection_id` (cascade), `external_id`, `name?`, `email?` (**indexed** — used for tenant matching), `phone?`, timestamps. **unique(`crm_connection_id`,`external_id`)**.
+- `id`, `crm_connection_id` (cascade), `external_id`, `name?`, `email?` (**indexed** — drives tenant matching), `phone?`, timestamps. **unique(`crm_connection_id`,`external_id`)**.
 
 **deals** — `Deal`
-- `id`, `crm_connection_id` (cascade), `pipeline_id?` (nullOnDelete), `pipeline_stage_id?` (nullOnDelete), `crm_person_id?` → crm_persons (nullOnDelete), `deal_status_id?` → deal_statuses, `external_id`, `title`, `value?` decimal(15,2), timestamps. **unique(`crm_connection_id`,`external_id`)**.
+- `id`, `crm_connection_id` (cascade), `pipeline_id?` (nullOnDelete), `pipeline_stage_id?` (nullOnDelete), `crm_person_id?` → crm_persons (nullOnDelete), `deal_status_id?` → deal_statuses, `external_id`, `title`, `value?` decimal(15,2) (cast `decimal:2`), timestamps. **unique(`crm_connection_id`,`external_id`)**.
 
 **clients** (final client) — `Client`
-- `id`, `email` (unique), `name?`, timestamps. Authenticated on the `client` guard.
+- `id`, `email` (unique), `name?`, timestamps. `Authenticatable`, logged in on the `client` guard (`config/auth.php` guards.client → provider `clients`).
 
 **magic_links** — `MagicLink`
-- `id`, `email` (indexed), `token` (unique, sha256 hash of plaintext), `expires_at`, `used_at?`, timestamps.
-- Invariants: single-use (`used_at` gate), 15-min expiry. Helpers `isExpired()`, `isUsed()`.
+- `id`, `email` (indexed), `token` (unique, sha256 hash of the emailed plaintext), `expires_at`, `used_at?`, timestamps.
+- Invariants: single-use (`used_at` gate via `isUsed()`), 15-minute expiry (`isExpired()`).
 
 **conversations** — `Conversation`
 - `id`, `client_id` (cascade), `user_id` → users (cascade), timestamps. **unique(`client_id`,`user_id`)** — one conversation per client+company pair.
 
 **messages** — `Message`
-- `id`, `conversation_id` (cascade), `message_role_id` → message_roles, `content` (text), timestamps. Ordered by `id` as chronological turns.
+- `id`, `conversation_id` (cascade), `message_role_id` → message_roles, `content` (text), timestamps. Ordered by `id` as chronological turns (`SellerAgent::messages()`).
 
 ### Relationship summary
 ```
-users (company) 1─1 crm_connections 1─* crm_scans
+users (company) 1─1 crm_connections 1─* crm_scans ─> scan_statuses
                                    1─* pipelines 1─* pipeline_stages
                                    1─* custom_fields ─> custom_field_entities
                                    1─* crm_persons
@@ -78,7 +78,7 @@ clients ── (email match) ──> crm_persons.email
 ```
 
 ### Cache
-`CACHE_STORE` env-driven; framework `cache`/`cache_locks` tables exist (`0001_01_01_000001_create_cache_table`). No application-specific cache keys observed. Chat activity panel is ephemeral in-memory Livewire component state (`Chat::$activity`), never persisted. Session holds `selected_company_id` (active chat company).
+`CACHE_STORE` env-driven; framework `cache`/`cache_locks` tables exist (`0001_01_01_000001_create_cache_table`). No application-specific cache keys observed in `app/`. The chat activity panel is ephemeral Livewire component state (`Chat::$activity`), never persisted. Session holds `selected_company_id` (active chat company).
 
 ## Related documents
 

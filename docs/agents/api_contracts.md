@@ -4,7 +4,7 @@
 
 ## AS IS — Current state
 
-No REST/GraphQL API and no `routes/api.php`. The HTTP surface is `routes/web.php`: one controller endpoint (`MagicLinkController`) plus Livewire-class routes whose behavior is driven by component actions. Below documents the HTTP routes, the Livewire actions behind them, and the outbound Pipedrive contract consumed by `PipedriveDriver`.
+No REST/GraphQL API and no `routes/api.php`. The HTTP surface is `routes/web.php`: one controller endpoint (`MagicLinkController`) plus Livewire-class routes whose behavior lives in component actions. Below: the HTTP routes, the Livewire actions behind them, and the outbound Pipedrive contract consumed by `PipedriveDriver`.
 
 ### HTTP endpoints
 | Method | Path | Name | Guard | Backed by |
@@ -18,45 +18,46 @@ No REST/GraphQL API and no `routes/api.php`. The HTTP surface is `routes/web.php
 | GET | `/login` | `login` | `guest` | `Livewire\Auth\Login` |
 | GET | `/dashboard` | `dashboard` | `auth` | `dashboard` view |
 | GET | `/crm/connect` | `crm.connect` | `auth` | `Livewire\Crm\Connect` |
-| POST | `/logout` | `logout` | `auth` | closure (logout + invalidate) |
+| POST | `/logout` | `logout` | `auth` | route closure (logout + session invalidate) |
 
 ### `GET /acesso/{token}` — magic-link verify
-- **Auth**: none (token is the credential).
-- **Request**: `{token}` = 64-char plaintext string emailed to the client.
+- **Auth**: none (the token is the credential).
+- **Request**: `{token}` = 64-char plaintext string emailed to the client (`Str::random(64)`).
 - **Success**: `used_at` stamped, `Client` upserted, logged into `client` guard, redirect `client.chat` (1 match) or `client.company-selection` (0 or 2+).
-- **Error**: null / expired / already-used token → HTTP **410**, view `client.invalid-link`.
+- **Error**: unknown / expired / already-used token → HTTP **410**, view `client.invalid-link` ("Este link não é mais válido").
 
 ### Livewire action: `Access::sendLink` (magic-link request)
 - Validates `email` = `required|string|email`.
-- Always renders the same confirmation (enumeration-safe); issues a link only on CRM match.
-- Component state shape:
+- Always renders the same confirmation (enumeration-safe); a link is issued only on a CRM match.
+- Component state after submit:
 ```json
 { "email": "ana@cliente.com", "sent": true }
 ```
 
-### Livewire action: `Chat::sendMessage`
+### Livewire actions: `Chat::sendMessage` + `Chat::generateResponse`
 - Input: `body` (trimmed, non-empty, ignored while `streaming`).
-- Persists user turn, streams assistant reply, persists assistant turn.
-- Persisted `messages` rows (from test `client_message_and_agent_reply_are_persisted`):
+- `sendMessage` persists the user turn and sets `pendingMessageId`; `generateResponse` (triggered via `$wire`) streams the assistant reply then persists it.
+- Persisted `messages` rows (from test `client_message_and_agent_reply_are_persisted`, `SellerAgent::fake(['Olá! Como posso ajudar?'])`):
 ```json
 [
   { "role": "user", "content": "Oi, tudo bem?" },
   { "role": "assistant", "content": "Olá! Como posso ajudar?" }
 ]
 ```
-- Ephemeral activity event shape (`Chat::event`, not persisted):
+- Ephemeral activity event shape (`Chat::event`, component state only, never persisted). Types emitted: `request.started`, `stream.start`, `reasoning`, `tool.called`, `tool.result`, `stream.delta`, `response.completed`, `error`:
 ```json
 {
-  "type": "request.started",
+  "type": "stream.start",
   "timestamp": "14:32:07.412",
-  "summary": "gpt · 3 mensagens enviadas",
-  "payload": { "provider": "openai", "messages": 3 }
+  "summary": "gpt-5 em execução",
+  "payload": { "provider": "openai", "model": "gpt-5" }
 }
 ```
+- wire:stream targets: `agent-model` (model name), `agent-response` (text deltas), `activity-live` / `activity-live-mobile` (rendered `<x-agent-event>` HTML).
 
 ### Livewire action: `Connect::connect`
-- Input: `provider` (`"pipedrive"`), `api_token` (`required`).
-- Outcome by token status — see `domain_rules.md` matrix. Valid → connection upserted + scan queued + redirect `dashboard`.
+- Input: `provider` (`"pipedrive"`), `api_token` (`required`, message "Informe o token da API.").
+- Outcome by token status — see the matrix in `domain_rules.md`. Valid → connection upserted + scan queued + redirect `dashboard`; the token is never echoed back.
 
 ## Outbound: Pipedrive REST v1 (consumed)
 
@@ -83,7 +84,7 @@ Response envelope (from `tests/Feature/ScanCrmConnectionTest.php` fixtures):
 }
 ```
 
-Persons payload — note `email`/`phone` are `{value,primary}` lists or a plain string; only `edit_flag=true` fields are imported as custom:
+Persons payload — `email`/`phone` arrive as `{value,primary}` lists or a plain string (`primaryValue` normalizes both):
 ```json
 {
   "data": [
@@ -94,7 +95,7 @@ Persons payload — note `email`/`phone` are `{value,primary}` lists or a plain 
 }
 ```
 
-Deals payload:
+Deals payload — relation ids may be scalar or `{value: id}` maps (`idValue` normalizes); only `edit_flag=true` fields import as custom:
 ```json
 {
   "data": [
@@ -106,9 +107,9 @@ Deals payload:
 ```
 
 ### Message formats (queue)
-`App\Jobs\ScanCrmConnection` (`ShouldQueue`), dispatched by `ScanCrmConnection::enqueue(CrmConnection)`.
-- Payload: `CrmConnection` + `CrmScan` (serialized models).
-- `QUEUE_CONNECTION` default `database`; Redis available via `compose.yaml`; tests run `sync`.
+`App\Jobs\ScanCrmConnection` (`ShouldQueue` + `Queueable`), dispatched by `ScanCrmConnection::enqueue(CrmConnection)`.
+- Payload: serialized `CrmConnection` + `CrmScan` models (constructor promotion).
+- `QUEUE_CONNECTION=database` (`.env.example`, `jobs` table migration); tests run `sync` (`phpunit.xml`).
 - No explicit retry/backoff/DLQ configured on the job (default Laravel queue behavior). Failure path is handled in-job: `CrmApiException` → scan marked `failed`, partial data kept, job returns normally (does not re-throw).
 
 ## Related documents

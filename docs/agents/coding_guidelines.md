@@ -7,22 +7,22 @@
 Patterns below are verified in the source and, where applicable, cite their enforcement config.
 
 ### 1. Strict typing everywhere
-Every method declares parameter and return types; models use PHPDoc `@property` blocks and typed `casts()`. Verified in `PipedriveDriver::validateToken(string $token): CrmTokenStatus`, `MagicLinkService::matchedCompanies(string $email): Collection`, `CrmScan` (typed `@property` header). Enforced by `phpstan.neon` level 7 (larastan) via `composer types:check`.
+Every method declares parameter and return types; models carry PHPDoc `@property` blocks and typed `casts()`. Verified in `PipedriveDriver::validateToken(string $token): CrmTokenStatus`, `MagicLinkService::matchedCompanies(string $email): Collection`, `CrmScan` (typed `@property` header). Enforced by `phpstan.neon` level 7 (larastan) via `composer types:check`.
 
 ### 2. Constructor property promotion
-Dependencies and value objects are promoted in the constructor. Verified in `ScanCrmConnection::__construct(public CrmConnection $crmConnection, public ?CrmScan $crmScan = null)` and `SellerAgent::__construct(public Conversation $conversation, public ?int $historyBeforeMessageId = null)`. Matches CLAUDE.md PHP rule.
+Dependencies and value objects are promoted in the constructor. Verified in `ScanCrmConnection::__construct(public CrmConnection $crmConnection, public ?CrmScan $crmScan = null)` and `SellerAgent::__construct(public Conversation $conversation, public ?int $historyBeforeMessageId = null)`. Matches the CLAUDE.md PHP rule.
 
 ### 3. Curly braces on all control structures
-Single-line bodies still use braces. Verified in `PipedriveDriver::fetchCustomFields` (`if (empty(...)) { continue; }`) and `ScanCrmConnection::import` (`if ($pipelineId === null) { continue; }`). Matches CLAUDE.md PHP rule; formatting fixed by `pint.json` (preset `laravel`) via `composer lint`.
+Single-line bodies still use braces. Verified in `PipedriveDriver::fetchCustomFields` (`if (empty($field['edit_flag'])) { continue; }`) and `ScanCrmConnection::import` (`if ($pipelineId === null) { continue; }`). Matches the CLAUDE.md PHP rule; formatting fixed by `pint.json` (preset `laravel`) via `composer lint`.
 
 ### 4. Lookup enums as slug-keyed tables
-Status/role/provider "enums" are DB rows resolved by slug through `Concerns\IsLookup::slug()`, not PHP enums. Verified in `ScanStatus::slug('pending')`, `MessageRole`, `DealStatus`, `CustomFieldEntity`; canonical values seeded by `LookupSeeder`. Behavioral enums (`CrmTokenStatus`) use native PHP enums with TitleCase cases (`Valid`, `Invalid`, `Retryable`).
+Status/role/provider "enums" are DB rows resolved by slug through `Concerns\IsLookup::slug()`, not PHP enums. Verified in `ScanStatus::slug('pending')` (`ScanCrmConnection`), `CustomFieldEntity::slug($entity)`, `MessageRole::firstOrCreate(['slug' => ...])` (`Chat::roleId`); canonical values seeded by `LookupSeeder`. Behavioral enums (`CrmTokenStatus`) use native PHP enums with TitleCase cases (`Valid`, `Invalid`, `Retryable`).
 
 ### 5. Fat service / thin component
-Business rules live in `app/Services`; Livewire components orchestrate and delegate. Verified: `Access::sendLink` delegates to `MagicLinkService::requestLink`; `Connect::connect` delegates token validation to `CrmDriverManager->driver()->validateToken`. Persistence orchestration for scans lives in `ScanCrmConnection`, not the component.
+Business rules live in `app/Services`; Livewire components orchestrate and delegate. Verified: `Access::sendLink` delegates to `MagicLinkService::requestLink`; `Connect::connect` delegates token validation to `CrmDriverManager->driver()->validateToken` and dispatches outcomes via `match`. Scan persistence lives in `ScanCrmConnection`, not the component.
 
 ### 6. Idempotent upsert by external id
-CRM imports use `updateOrCreate` keyed on `(crm_connection_id, external_id)` so re-scans never duplicate. Verified in `ScanCrmConnection::import` for pipelines, stages, custom fields, persons, deals; enforced at the DB by `unique(['crm_connection_id', 'external_id'])` constraints in the migrations.
+CRM imports use `updateOrCreate` keyed on `(crm_connection_id, external_id)` so re-scans never duplicate. Verified in `ScanCrmConnection::import` for pipelines, stages, custom fields, persons, deals; enforced at the DB by `unique(['crm_connection_id', 'external_id'])` constraints in the `2026_07_11_*` migrations; proven by test `scan_upsert_does_not_duplicate`.
 
 ### 7. Portuguese (PT-BR) user-facing strings
 All user-visible text, error banners, and the agent system prompt are PT-BR. Verified in `Connect::markInvalid` ("Token inválido..."), `PipedriveDriver::failureMessage`, `SellerAgent::SystemPrompt`, `LookupSeeder` names. Code identifiers stay English.

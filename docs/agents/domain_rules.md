@@ -5,32 +5,32 @@
 ## AS IS — Current state
 
 ### Overview
-- **Company (tenant)** = `users` row; owns exactly one `crm_connection`.
+- **Company (tenant)** = `users` row; owns at most one `crm_connection` (`unique('user_id')`).
 - **CRM graph** = pipelines → stages, custom fields, persons, deals, imported from Pipedrive and mirrored locally.
 - **Final client** = `clients` row, identified by email, matched to companies via `crm_persons.email`.
 - **Passwordless access** = single-use, 15-minute, enumeration-safe magic links.
 - **Conversation** = one per (client, company) pair; **messages** hold user/assistant turns.
-- **AI agent** = per-company `SellerAgent`, PT-BR, no CRM/tool access in MVP.
+- **AI agent** = `SellerAgent`, PT-BR, fixed global system prompt, no CRM data access.
 
 ### Magic-link issuance (enumeration-safe)
 `App\Services\ClientAccess\MagicLinkService`.
 - `requestLink($email)` issues a link **only** when `matchedCompanies($email)` is non-empty; otherwise it silently returns.
-- `App\Livewire\Client\Access::sendLink` always sets `sent = true` and shows the same "Verifique seu e-mail" screen — the response never reveals whether the email matched (test `no_crm_match_sends_no_link`: 0 links, nothing sent, still shows confirmation).
+- `App\Livewire\Client\Access::sendLink` always sets `sent = true` and shows the same "Verifique seu e-mail" screen — the response never reveals whether the email matched (tests `no_crm_match_sends_no_link`, `access_response_is_enumeration_safe`).
 - Token: `Str::random(64)` plaintext emailed; only `hash('sha256', $plainToken)` stored (test `magic_link_token_is_hashed`).
-- Expiry: `ExpiryMinutes = 15`, `expires_at = now()->addMinutes(15)`.
+- Expiry: `ExpiryMinutes = 15`, `expires_at = now()->addMinutes(15)` (test `match_generates_link_expiring_in_15_min`).
 - Email is normalized `Str::lower(trim())`; matching is case-insensitive (`whereRaw('lower(email) = ?')`).
 
 ### Magic-link verification (single-use)
 `App\Http\Controllers\Client\MagicLinkController::verify`.
-- Looks up by `hash('sha256', $token)`. Null, expired (`isExpired`), or used (`isUsed`) → HTTP **410** `client.invalid-link` view.
-- Valid → `used_at = now()` (consumed), `Client::firstOrCreate(['email' => ...])`, login on `client` guard.
-- Post-login routing depends on match count (see matrix below).
+- Looks up by `hash('sha256', $token)`. Null, expired (`isExpired`), or used (`isUsed`) → HTTP **410** with the `client.invalid-link` view.
+- Valid → `used_at = now()` (consumed), `Client::firstOrCreate(['email' => ...])`, login on the `client` guard.
+- Post-login routing depends on match count (matrix below).
 
 ### Tenant matching by CRM email
-`MagicLinkService::matchedCompanies` returns companies whose `crmConnection.crmPersons` contains the email. A client can only enter a company that matches — `CompanySelection::select` calls `abort_unless($matched->contains('id', $company), 403)`; `Chat::mount` redirects to selection when the session company is not in the matched set.
+`MagicLinkService::matchedCompanies` returns companies whose `crmConnection.crmPersons` contains the email. A client can only enter a matching company — `CompanySelection::select` calls `abort_unless($matched->contains('id', $company), 403)` (test `cannot_select_an_unmatched_company`); `Chat::mount` redirects to selection when the session company is not in the matched set.
 
 ### Post-authentication routing matrix
-| Matched companies | MagicLinkController::verify | CompanySelection::mount |
+| Matched companies | `MagicLinkController::verify` | `CompanySelection::mount` |
 | --- | --- | --- |
 | 0 | redirect `client.company-selection` | redirect `client.access` |
 | 1 | set `selected_company_id`, redirect `client.chat` | auto-select the one, redirect `client.chat` |
@@ -46,31 +46,35 @@ Extend: routing is driven by `$companies->count()` in both classes; add branches
 | HTTP 401 | `Invalid` | `danger` banner, `api_token` field cleared (never re-echoed) |
 | Network fail / timeout | `Retryable` | `warn` banner, token kept server-side for retry |
 | HTTP 5xx | `Retryable` | `warn` banner |
-| HTTP 2xx | `Valid` | persist encrypted connection + `ScanCrmConnection::enqueue` |
+| HTTP 2xx | `Valid` | persist encrypted connection + `ScanCrmConnection::enqueue` + redirect `dashboard` |
 
 Extend: register a new provider driver in `CrmDriverManager::__construct`; unknown slug → `UnsupportedCrmProviderException`.
 
 ### Scan state machine
 `App\Jobs\ScanCrmConnection`. States are `scan_statuses` rows: `pending → running → success|failed`.
 - `enqueue()` creates a `pending` scan and dispatches the job.
-- `handle()` sets `running` + `started_at`, clears `error_message`, imports every entity.
-- Import order: pipelines, stages, custom fields (person + deal), persons, deals — cross-references resolved by external-id maps (`mapId`).
-- Only Pipedrive fields with `edit_flag = true` are imported as custom (`fetchCustomFields` filter); defaults are skipped.
-- `CrmApiException` → status `failed` + copyable `error_message`; **partial data imported before the failure is kept (no rollback)**.
+- `handle()` sets `running` + `started_at`, clears `error_message`, then imports every entity.
+- Import order: pipelines, stages, custom fields (person + deal), persons, deals — cross-references resolved by external-id maps (`mapId`); stages whose pipeline is unknown are skipped.
+- Only Pipedrive fields with `edit_flag = true` are imported as custom (`fetchCustomFields` filter); provider defaults are skipped.
+- `CrmApiException` → status `failed` + copyable `error_message`; **partial data imported before the failure is kept — no rollback** (test `scan_failure_sets_failed_status_and_keeps_partial_data`).
 - Success → status `success` + `finished_at`; both terminal states persist per-entity counts read from the DB (`counts()`), so counts reflect exactly what was imported.
+- `ScanCard::rescan` refuses to queue while a scan is `pending`/`running`; card UI states map `running→syncing`, `success→completed`, `failed→failed`, else `pending` (`ScanCard::uiState`).
 
 ### Conversation & message persistence
 `App\Livewire\Client\Chat`.
-- `mount` guards company access, then `Conversation::firstOrCreate(['client_id', 'user_id'])` — one conversation per (client, company); enforced by `unique(['client_id','user_id'])`.
-- `sendMessage` persists the **user** turn before the AI call (survives provider failure), streams `SellerAgent` deltas, then persists the **assistant** turn only after the stream completes (test `client_message_and_agent_reply_are_persisted`).
-- On stream error: user message is kept, error added, banner "Sua mensagem foi mantida — tente reenviar."
-- Activity panel events are ephemeral (component state only), lost on reload.
+- `mount` guards company access, then `Conversation::firstOrCreate(['client_id', 'user_id'])` — one conversation per (client, company), enforced by `unique(['client_id','user_id'])` (test `conversation_is_reused_per_client_company_pair`).
+- Two-step send: `sendMessage` persists the **user** turn before any AI call (survives provider failure) and triggers `generateResponse` via `$this->js('$wire.generateResponse()')`; `generateResponse` streams the reply and persists the **assistant** turn only after the stream completes (tests `client_message_and_agent_reply_are_persisted`, `streamed_response_is_persisted_on_completion`).
+- Stream events handled: `StreamStart` (model name to `agent-model`), `TextDelta` (accumulated + streamed to `agent-response`), `ReasoningStart/End`, `ToolCall`, `ToolResult`, `ProviderToolEvent`, `Error` (rethrown as `RuntimeException`).
+- On stream error: user message is kept, activity group marked `error`, banner "O agente não conseguiu responder agora. Sua mensagem foi mantida — tente reenviar." (test `provider_error_shows_friendly_message_and_preserves_client_message`).
+- Activity panel events ("RESPOSTA #N" groups) are ephemeral component state, live-streamed as rendered HTML to `activity-live`/`activity-live-mobile`, never persisted, lost on reload.
+- "Trocar empresa" is only offered when the client email matches 2+ companies (`Chat::canSwitchCompany`; test `switch_hidden_for_single_match_client`).
 
 ### SellerAgent behavior
-`App\Ai\Agents\SellerAgent`.
-- Fixed global `SystemPrompt` (PT-BR) shared by every company in the MVP; `instructions()` returns it verbatim.
-- No CRM data, no tools — answers only from conversation history (`messages()` loads prior turns in chronological order, mapped to `role->slug`).
-- `historyBeforeMessageId` excludes the just-persisted user turn from context so it is not duplicated with the live prompt.
+`App\Ai\Agents\SellerAgent` (`#[Provider(Lab::OpenAI)]`).
+- Fixed global `SystemPrompt` (PT-BR) shared by every company; `instructions()` returns it verbatim (test `agent_uses_global_system_prompt`).
+- No CRM data — answers from conversation history; the prompt allows public web lookups, but `tools()` currently returns an empty array (test `agent_exposes_web_search_tool` expects 1 `WebSearch` with `maxSearches = 3`, diverging from the code on disk).
+- `providerOptions()` sets `reasoning.effort = low` for fast time-to-first-token.
+- `messages()` loads prior turns in chronological order mapped to `role->slug`; `historyBeforeMessageId` excludes the just-persisted user turn so it is not duplicated with the live prompt.
 
 ## Related documents
 

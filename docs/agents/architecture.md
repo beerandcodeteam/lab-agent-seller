@@ -5,7 +5,7 @@
 ## AS IS — Current state
 
 ### Style
-Layered Laravel 13 monolith: HTTP/Livewire presentation → service layer (`app/Services`) → Eloquent persistence, with a provider-agnostic driver abstraction for CRM integration and a queued job for background scanning.
+Layered Laravel 13 monolith: Livewire/HTTP presentation → service layer (`app/Services`) → Eloquent persistence, with a provider-agnostic driver abstraction for CRM integration (`CrmDriver` contract) and a queued job for background scanning.
 
 ### Directory layout
 ```
@@ -13,9 +13,9 @@ app/
   Ai/Agents/            # SellerAgent — Laravel\Ai agent, OpenAI provider, streamed replies
   Http/Controllers/     # MagicLinkController (only non-Livewire HTTP endpoint) + base Controller
   Jobs/                 # ScanCrmConnection — ShouldQueue, scan state machine
-  Livewire/             # Auth/, Client/{Access,Chat,CompanySelection}, Crm/{Connect,ConnectionStatus,ScanCard}
+  Livewire/             # Auth/{Login,Register}, Client/{Access,Chat,CompanySelection}, Crm/{Connect,ConnectionStatus,ScanCard}
   Mail/                 # MagicLinkMail
-  Models/               # 17 Eloquent models + Concerns/IsLookup (slug lookup tables)
+  Models/               # 17 Eloquent models + Concerns/IsLookup (slug-keyed lookup tables)
   Providers/            # AppServiceProvider
   Services/
     ClientAccess/       # MagicLinkService — passwordless login + tenant matching
@@ -25,30 +25,30 @@ app/
     Crm/Exceptions/     # CrmApiException, EmptyTokenException, UnsupportedCrmProviderException
 database/
   migrations/           # 19 files: 16 app tables (2026_07_11_*) + 3 framework (users/cache/jobs)
-  factories/ seeders/   # LookupSeeder seeds lookup tables
-routes/                 # web.php (all HTTP routes), console.php
-resources/views/        # Blade + Livewire views, components/, layouts/{app,public,chat}
+  factories/ seeders/   # 8 factories; LookupSeeder seeds lookup tables
+routes/                 # web.php (all HTTP routes), console.php (inspire only)
+resources/views/        # Blade + Livewire views, components/, layouts (app/public/chat)
 tests/                  # Feature/ (20 files) + Unit/, Pest
 ```
 
 ### Layer responsibilities
 | Layer | Owns | Does NOT own |
 | --- | --- | --- |
-| Livewire components | Request/UI state, validation, guard checks, session context | HTTP token verify (that is `MagicLinkController`), CRM API calls |
-| `MagicLinkController` | Magic-link token verify + client login | Link issuance (that is `MagicLinkService`) |
-| `MagicLinkService` | Link issuance, hashing, expiry, tenant matching by CRM email | HTTP concerns, CRM fetching |
-| `CrmDriver` / `PipedriveDriver` | Provider HTTP, token validation, paginated fetch | Persistence, cross-reference resolution |
-| `ScanCrmConnection` | Scan state machine, upsert by `external_id`, counts | Provider HTTP details, UI |
-| `SellerAgent` | System prompt, conversation context, streaming | Persistence of turns (that is `Chat`) |
+| Livewire components | UI state, validation, guard checks, session context, turn persistence (`Chat`) | Magic-link token verify (`MagicLinkController`), CRM API calls |
+| `MagicLinkController` | Magic-link token verify + client login + post-login routing | Link issuance (`MagicLinkService`) |
+| `MagicLinkService` | Link issuance, sha256 hashing, expiry, tenant matching by CRM email | HTTP concerns, CRM fetching |
+| `CrmDriver` / `PipedriveDriver` | Provider HTTP, token validation, paginated fetch (generators) | Persistence, cross-reference resolution |
+| `ScanCrmConnection` | Scan state machine, upsert by `external_id`, per-entity counts | Provider HTTP details, UI |
+| `SellerAgent` | System prompt, conversation context, provider options | Persistence of turns (`Chat` does that) |
 | Eloquent models | Schema mapping, relationships, casts (`encrypted`, `hashed`) | Business orchestration |
 
 ### External integration points
 | System | Client/config | Notes |
 | --- | --- | --- |
 | Pipedrive REST v1 | `PipedriveDriver` via `Http::` facade; `config('services.pipedrive.base_url')` (`PIPEDRIVE_BASE_URL`, default `https://api.pipedrive.com/v1`) | Personal API token as `api_token` query param; page size 100 |
-| OpenAI | `SellerAgent` `#[Provider(Lab::OpenAI)]`, `laravel/ai` ^0.9.0 | Streamed via `Laravel\Ai\Streaming\Events\{TextDelta,Error}` |
-| Mail (SMTP/Mailpit) | `Mail::to()->send(MagicLinkMail)` | Mailpit in `compose.yaml` |
-| Queue | `ScanCrmConnection implements ShouldQueue` | `QUEUE_CONNECTION` default `database`; Redis service in `compose.yaml`; tests use `sync` |
+| OpenAI | `SellerAgent` `#[Provider(Lab::OpenAI)]`, `laravel/ai` ^0.9.0 | Streamed via `Laravel\Ai\Streaming\Events\*`; `providerOptions` sets `reasoning.effort = low` |
+| Mail (SMTP/Mailpit) | `Mail::to()->send(new MagicLinkMail($plainToken))` | Mailpit service in `compose.yaml` |
+| Queue | `ScanCrmConnection implements ShouldQueue` | `QUEUE_CONNECTION=database` (`.env.example`); tests run `sync` (`phpunit.xml`) |
 
 ### Macro flow: CRM scan (ScanCrmConnection)
 ```
@@ -63,11 +63,10 @@ CrmConnection.updateOrCreate  --enqueue-->  crm_scans(pending)
                                                  |
                         driver = CrmDriverManager->driver(provider.slug)
                                                  |
-             +-----------+-----------+-----------+-----------+-----------+
-             v           v           v           v           v           v
-        pipelines --> stages --> customFields --> persons --> deals   (yielded page by page,
-             |           |           |           |           |         upsert by external_id)
-             +-----------+-----------+-----------+-----------+-----------+
+             +-----------+-----------+-----------+-----------+
+             v           v           v           v           v
+        pipelines --> stages --> customFields --> persons --> deals
+            (yielded page by page, upsert by external_id)
                                                  |
                           CrmApiException? --yes--> status=failed, error_message,
                                                  |   partial data kept (no rollback)
@@ -76,21 +75,28 @@ CrmConnection.updateOrCreate  --enqueue-->  crm_scans(pending)
                                     status=success, finished_at, counts
 ```
 
-### Macro flow: client chat (Chat::sendMessage)
+### Macro flow: client chat (Chat)
 ```
 client types body --> sendMessage()
         |
-   persist user turn (messages, role=user)   <-- saved BEFORE AI call
+   persist user turn (messages, role=user)   <-- saved BEFORE the AI call
         |
-   new SellerAgent(conversation, userMessage.id)
+   push "RESPOSTA #N" activity group (ephemeral)
         |
-   agent->stream(content)  ---> TextDelta ---> $this->stream(to:'agent-response')
-        |                            (accumulate text)
-        |                        Error event ---> RuntimeException
+   $this->js('$wire.generateResponse()')     <-- second Livewire request
         |
+generateResponse():
+   new SellerAgent(conversation, pendingMessageId)
+        |
+   agent->stream(content)
+        |--- StreamStart        --> activity + wire:stream 'agent-model'
+        |--- TextDelta          --> accumulate + wire:stream 'agent-response'
+        |--- Reasoning{Start,End}, ToolCall, ToolResult,
+        |    ProviderToolEvent  --> activity panel events (live-streamed HTML)
+        |--- Error event        --> RuntimeException --> group status=error,
+        |                           user message kept, "tente reenviar" error
+        v
    stream done --> persist assistant turn (messages, role=assistant)
-        |
-   activity panel updated (ephemeral, not persisted)
 ```
 
 ## Related documents

@@ -5,37 +5,37 @@
 ## AS IS — Current state
 
 ### Purpose
-Multi-tenant SaaS where a company connects its Pipedrive CRM, the system scans and imports the CRM graph locally, and each CRM contact (final client) logs in passwordlessly by magic link to chat with that company's PT-BR AI sales agent.
+Multi-tenant SaaS where a company connects its Pipedrive CRM, the system scans and mirrors the CRM graph locally, and each CRM contact (final client) logs in passwordlessly via magic link to chat with that company's PT-BR AI sales agent.
 
 ### Business problem
 - Without it, a final client has no self-service channel to ask a company about their commercial relationship — every question goes to a human.
-- No local mirror of CRM data means the platform cannot match a client email to a company (`MagicLinkService::matchedCompanies` queries `crm_persons.email`).
-- No passwordless entry means clients would need company-issued credentials; magic links (`MagicLinkService`, 15-min single-use) remove that.
+- Without the local CRM mirror, the platform cannot match a client email to a company (`MagicLinkService::matchedCompanies` queries `crm_persons.email`).
+- Without passwordless entry, clients would need company-issued credentials; single-use 15-minute magic links (`MagicLinkService::ExpiryMinutes = 15`) remove that.
 
 ### Consumers and integrations
 | System | Role |
 | --- | --- |
-| Company user (tenant) | Authenticates (`auth` guard), connects CRM via `App\Livewire\Crm\Connect`, views scan status |
+| Company user (tenant) | Authenticates (`auth` guard), connects CRM via `App\Livewire\Crm\Connect`, monitors scans via `ScanCard`/`ConnectionStatus` |
 | Final client | Authenticates via magic link (`auth:client` guard), chats via `App\Livewire\Client\Chat` |
-| Pipedrive REST API v1 | Source CRM; `App\Services\Crm\Drivers\PipedriveDriver` reads pipelines/stages/fields/persons/deals |
-| OpenAI (via `laravel/ai`) | LLM provider for `SellerAgent` (`#[Provider(Lab::OpenAI)]`), streamed responses |
-| SMTP / Mailpit | Delivers `App\Mail\MagicLinkMail` |
-| Redis / database queue | Runs `App\Jobs\ScanCrmConnection` (`ShouldQueue`) |
+| Pipedrive REST API v1 | Source CRM; `App\Services\Crm\Drivers\PipedriveDriver` validates tokens and reads pipelines/stages/fields/persons/deals |
+| OpenAI (via `laravel/ai`) | LLM provider for `SellerAgent` (`#[Provider(Lab::OpenAI)]`), streamed replies |
+| SMTP / Mailpit | Delivers `App\Mail\MagicLinkMail` (Mailpit service in `compose.yaml`) |
+| Queue (`database` connection) | Runs `App\Jobs\ScanCrmConnection` (`ShouldQueue`) |
 
 ### Macro flow
-1. Company logs in (`/login`, `App\Livewire\Auth\Login`) and opens `/crm/connect`.
-2. `Connect::connect` validates the Pipedrive API token (`PipedriveDriver::validateToken` → `/users/me`).
-3. Valid token → `CrmConnection` upserted (token `encrypted`), `ScanCrmConnection::enqueue` queues a scan.
+1. Company registers/logs in (`App\Livewire\Auth\Register`/`Login`) and opens `/crm/connect`.
+2. `Connect::connect` validates the Pipedrive API token (`PipedriveDriver::validateToken` → `GET /users/me`).
+3. Valid token → `CrmConnection` upserted (token cast `encrypted`), `ScanCrmConnection::enqueue` creates a `pending` scan and dispatches the job.
 4. `ScanCrmConnection::handle` drives `pending → running → success|failed`, upserting pipelines, stages, custom fields, persons, deals by `external_id`.
-5. Final client visits `/acesso`, submits email (`App\Livewire\Client\Access`); if a scanned `crm_persons.email` matches, a single-use magic link is emailed.
-6. Client opens `/acesso/{token}` (`MagicLinkController::verify`) → link marked used, `clients` row upserted, logged into `client` guard.
-7. Single company match → straight to `/chat`; multiple → `/selecionar-empresa` (`CompanySelection`).
-8. `Chat::sendMessage` persists the client turn, streams the `SellerAgent` reply (OpenAI), persists the assistant turn in `messages`.
+5. Final client visits `/acesso`, submits email (`App\Livewire\Client\Access`); on a `crm_persons.email` match, a single-use magic link is emailed (response is enumeration-safe either way).
+6. Client opens `/acesso/{token}` (`MagicLinkController::verify`) → link marked used, `clients` row upserted, logged into the `client` guard.
+7. One company match → straight to `/chat`; several → `/selecionar-empresa` (`CompanySelection`).
+8. `Chat::sendMessage` persists the client turn, then `generateResponse` streams the `SellerAgent` reply (OpenAI) and persists the assistant turn in `messages`.
 
 ### Out of scope
-- The AI agent has no CRM/tool access in the MVP — `SellerAgent` system prompt states "Você não tem acesso a ferramentas nem aos dados do CRM"; it answers only from conversation history.
-- Only Pipedrive is a registered CRM driver (`CrmDriverManager` constructor maps `'pipedrive'` only).
-- No rollback of partially imported CRM data on scan failure (`ScanCrmConnection::handle` comment: "no rollback").
+- The agent has no CRM data access — `SellerAgent::SystemPrompt` states "Você não tem acesso aos dados do CRM"; it answers from conversation history (and the prompt permits public web lookups, though `tools()` currently returns an empty array).
+- Only Pipedrive has a registered CRM driver (`CrmDriverManager::__construct` maps `'pipedrive'` only; other slugs throw `UnsupportedCrmProviderException`).
+- No rollback of partially imported CRM data on scan failure (`ScanCrmConnection::handle`: partial data stays put).
 
 ## Related documents
 
