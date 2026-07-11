@@ -3,6 +3,59 @@
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
+/* Dark mode por classe (.dark), sem segunda paleta — apenas sobrescreve variáveis. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+    --color-bg: #f6f7fa;
+    --color-surface: #ffffff;
+    --color-ink: #12161f;
+    --color-ink-2: #4a5468;
+    --color-ink-3: #9aa3b5;
+    --color-border: #e3e7ef;
+
+    --color-accent: oklch(0.51 0.21 264);
+    --color-accent-strong: oklch(0.44 0.19 264);
+    --color-accent-soft: oklch(0.94 0.03 264);
+
+    --color-success: oklch(0.55 0.15 155);
+    --color-success-soft: oklch(0.95 0.03 155);
+    --color-warn: oklch(0.55 0.15 75);
+    --color-warn-soft: oklch(0.95 0.03 75);
+    --color-danger: oklch(0.55 0.19 25);
+    --color-danger-soft: oklch(0.95 0.03 25);
+    --color-tool: oklch(0.55 0.19 300);
+    --color-tool-soft: oklch(0.95 0.03 300);
+
+    --radius-field: 8px;
+    --radius-card: 12px;
+
+    --shadow-sm: 0 1px 2px rgb(19 22 31 / 0.06);
+    --shadow-md: 0 2px 8px rgb(19 22 31 / 0.09);
+    --shadow-lg: 0 8px 24px rgb(19 22 31 / 0.12);
+}
+
+/* dark mode: sobrescrever variáveis sob .dark, sem segunda paleta */
+.dark {
+    --color-bg: #0e1118;
+    --color-surface: #151a26;
+    --color-ink: #e8ebf2;
+    --color-ink-2: #aab2c4;
+    --color-ink-3: #626c82;
+    --color-border: #232a3a;
+    --color-accent: oklch(0.68 0.17 264);
+    --color-accent-strong: oklch(0.62 0.18 264);
+    --color-accent-soft: oklch(0.25 0.05 264);
+}
+
+@layer base {
+    body {
+        background-color: var(--color-bg);
+        color: var(--color-ink);
+        font-family: var(--font-sans);
+        -webkit-font-smoothing: antialiased;
+    }
 }
