@@ -7,6 +7,8 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -14,7 +16,7 @@ use Illuminate\Support\Str;
 
 /**
  * @property int $id
- * @property string $name
+ * @property string $name nome da empresa (tenant)
  * @property string $email
  * @property Carbon|null $email_verified_at
  * @property string $password
@@ -40,6 +42,26 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * The CRM connection this company owns (one active per company).
+     *
+     * @return HasOne<CrmConnection, $this>
+     */
+    public function crmConnection(): HasOne
+    {
+        return $this->hasOne(CrmConnection::class);
+    }
+
+    /**
+     * Conversations this company holds with final clients.
+     *
+     * @return HasMany<Conversation, $this>
+     */
+    public function conversations(): HasMany
+    {
+        return $this->hasMany(Conversation::class);
     }
 
     /**
