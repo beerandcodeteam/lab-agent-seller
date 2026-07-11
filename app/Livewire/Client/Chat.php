@@ -11,9 +11,15 @@ use App\Services\ClientAccess\MagicLinkService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Blade;
 use Laravel\Ai\Streaming\Events\Error as ErrorEvent;
+use Laravel\Ai\Streaming\Events\ProviderToolEvent;
+use Laravel\Ai\Streaming\Events\ReasoningEnd;
+use Laravel\Ai\Streaming\Events\ReasoningStart;
 use Laravel\Ai\Streaming\Events\StreamStart;
 use Laravel\Ai\Streaming\Events\TextDelta;
+use Laravel\Ai\Streaming\Events\ToolCall;
+use Laravel\Ai\Streaming\Events\ToolResult;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Throwable;
@@ -154,7 +160,8 @@ class Chat extends Component
 
             foreach ($stream as $streamEvent) {
                 if ($streamEvent instanceof StreamStart) {
-                    $this->activity[$groupIndex]['events'][] = $this->event(
+                    $this->pushActivityEvent(
+                        $groupIndex,
                         'stream.start',
                         $streamEvent->model.' em execução',
                         ['provider' => $streamEvent->provider, 'model' => $streamEvent->model],
@@ -171,6 +178,59 @@ class Chat extends Component
                     continue;
                 }
 
+                if ($streamEvent instanceof ReasoningStart) {
+                    $this->pushActivityEvent($groupIndex, 'reasoning', 'modelo raciocinando…');
+
+                    continue;
+                }
+
+                if ($streamEvent instanceof ReasoningEnd) {
+                    $this->pushActivityEvent(
+                        $groupIndex,
+                        'reasoning',
+                        'raciocínio concluído',
+                        filled($streamEvent->summary) ? ['summary' => $streamEvent->summary] : null,
+                    );
+
+                    continue;
+                }
+
+                if ($streamEvent instanceof ToolCall) {
+                    $this->pushActivityEvent(
+                        $groupIndex,
+                        'tool.called',
+                        $streamEvent->toolCall->name,
+                        ['arguments' => $streamEvent->toolCall->arguments],
+                    );
+
+                    continue;
+                }
+
+                if ($streamEvent instanceof ToolResult) {
+                    $this->pushActivityEvent(
+                        $groupIndex,
+                        $streamEvent->successful ? 'tool.result' : 'error',
+                        $streamEvent->toolResult->name.($streamEvent->successful ? '' : ' falhou'),
+                        ['result' => $streamEvent->toolResult->result, 'error' => $streamEvent->error],
+                    );
+
+                    continue;
+                }
+
+                // Provider-side tools (e.g. web search) stream progress as
+                // generic events: completed steps land as tool.result, the
+                // rest as tool.called.
+                if ($streamEvent instanceof ProviderToolEvent) {
+                    $this->pushActivityEvent(
+                        $groupIndex,
+                        $streamEvent->status === 'completed' ? 'tool.result' : 'tool.called',
+                        $streamEvent->type.' · '.$streamEvent->status,
+                        $streamEvent->data ?: null,
+                    );
+
+                    continue;
+                }
+
                 if ($streamEvent instanceof ErrorEvent) {
                     throw new \RuntimeException($streamEvent->message);
                 }
@@ -183,18 +243,21 @@ class Chat extends Component
                 'content' => $fullText,
             ]);
 
-            $this->activity[$groupIndex]['events'][] = $this->event(
+            $this->pushActivityEvent(
+                $groupIndex,
                 'stream.delta',
                 mb_strlen($fullText).' caracteres agregados',
             );
-            $this->activity[$groupIndex]['events'][] = $this->event(
+            $this->pushActivityEvent(
+                $groupIndex,
                 'response.completed',
                 'resposta concluída',
                 ['characters' => mb_strlen($fullText)],
             );
             $this->activity[$groupIndex]['status'] = 'completed';
         } catch (Throwable $exception) {
-            $this->activity[$groupIndex]['events'][] = $this->event(
+            $this->pushActivityEvent(
+                $groupIndex,
                 'error',
                 'Falha ao gerar a resposta do agente.',
                 ['message' => $exception->getMessage()],
@@ -245,6 +308,28 @@ class Chat extends Component
         $client = Auth::guard('client')->user();
 
         return $client;
+    }
+
+    /**
+     * Record an activity event and push it live to the panel while the
+     * response is still streaming — component state alone only reaches the
+     * browser when the request finishes, so each event is also streamed as
+     * rendered HTML into the running group's wire:stream containers.
+     *
+     * @param  array<string, mixed>|null  $payload
+     */
+    private function pushActivityEvent(int $groupIndex, string $type, string $summary, ?array $payload = null): void
+    {
+        $event = $this->event($type, $summary, $payload);
+        $this->activity[$groupIndex]['events'][] = $event;
+
+        $html = Blade::render(
+            '<x-agent-event :type="$type" :timestamp="$timestamp" :summary="$summary" :payload="$payload" />',
+            $event,
+        );
+
+        $this->stream(to: 'activity-live', content: $html);
+        $this->stream(to: 'activity-live-mobile', content: $html);
     }
 
     /**

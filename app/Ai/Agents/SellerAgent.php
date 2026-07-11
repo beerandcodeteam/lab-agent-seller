@@ -7,18 +7,22 @@ use App\Models\Message as MessageModel;
 use Laravel\Ai\Attributes\Provider;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
+use Laravel\Ai\Contracts\HasProviderOptions;
+use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Messages\Message;
 use Laravel\Ai\Promptable;
+use Laravel\Ai\Providers\Tools\WebSearch;
 
 /**
  * The final-client facing sales agent. In the MVP it is driven solely by the
- * global system prompt fixed in code below — it uses neither CRM data nor tools.
- * Conversation context is fed from the local `messages` table so the agent can
- * answer with awareness of what was said before in this client+company chat.
+ * global system prompt fixed in code below — it has no CRM data, only the
+ * provider's web search tool for public information. Conversation context is
+ * fed from the local `messages` table so the agent can answer with awareness
+ * of what was said before in this client+company chat.
  */
 #[Provider(Lab::OpenAI)]
-class SellerAgent implements Agent, Conversational
+class SellerAgent implements Agent, Conversational, HasProviderOptions, HasTools
 {
     use Promptable;
 
@@ -31,7 +35,8 @@ class SellerAgent implements Agent, Conversational
         Diretrizes:
         - Responda sempre em português do Brasil, com tom cordial, claro e objetivo.
         - Seja prestativo e ajude o cliente a tirar dúvidas sobre a relação comercial dele com a empresa.
-        - Você não tem acesso a ferramentas nem aos dados do CRM: responda apenas com base no que o cliente disser na conversa.
+        - Você não tem acesso aos dados do CRM: responda com base no que o cliente disser na conversa.
+        - Você pode buscar na web informações públicas (endereços, notícias, dados de mercado) quando isso ajudar a responder.
         - Se não souber ou não tiver a informação, diga isso com transparência e oriente o cliente a falar com um atendente humano.
         - Nunca invente dados de negócios, valores, prazos ou etapas que não tenham sido informados na conversa.
         PROMPT;
@@ -54,6 +59,32 @@ class SellerAgent implements Agent, Conversational
     public function instructions(): string
     {
         return self::SystemPrompt;
+    }
+
+    /**
+     * Extra provider request options. Reasoning effort is kept low because a
+     * sales chat needs fast time-to-first-token, not deep deliberation —
+     * higher efforts make the reply feel non-streamed.
+     *
+     * @return array<string, mixed>
+     */
+    public function providerOptions(Lab|string $provider): array
+    {
+        return [
+            'reasoning' => ['effort' => 'low'],
+        ];
+    }
+
+    /**
+     * Provider-side tools available to the agent (web search only, capped so a
+     * single reply never fans out into many searches).
+     *
+     * @return iterable<int, object>
+     */
+    public function tools(): iterable
+    {
+        return [
+        ];
     }
 
     /**

@@ -141,7 +141,7 @@
     <div x-show="mobileActivity" x-cloak class="fixed inset-0 z-40 lg:hidden">
         <div class="absolute inset-0 bg-ink/40" x-on:click="mobileActivity = false"></div>
         <aside class="absolute right-0 top-0 flex h-full w-[86%] max-w-[380px] flex-col border-l border-border bg-bg shadow-xl">
-            <x-chat.activity :activity="$activity" />
+            <x-chat.activity :activity="$activity" stream-name="activity-live-mobile" />
         </aside>
     </div>
 </div>

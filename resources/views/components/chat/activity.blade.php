@@ -1,5 +1,6 @@
 @props([
     'activity' => [],
+    'streamName' => 'activity-live',
 ])
 
 @php
@@ -37,6 +38,12 @@
                     :payload="$activityEvent['payload']"
                 />
             @endforeach
+
+            {{-- Eventos chegam aqui em tempo real durante o stream; a
+                 re-renderização final os substitui pela lista persistida acima. --}}
+            @if ($group['status'] === 'running')
+                <div wire:stream="{{ $streamName }}"></div>
+            @endif
         @empty
             <div class="px-[18px] py-6 font-sans text-[12px] text-ink-3">
                 Envie uma mensagem para ver a atividade do agente aqui.

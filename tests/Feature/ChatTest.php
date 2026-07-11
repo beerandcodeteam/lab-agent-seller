@@ -8,6 +8,7 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
 use Laravel\Ai\Prompts\AgentPrompt;
+use Laravel\Ai\Providers\Tools\WebSearch;
 use Livewire\Livewire;
 
 /**
@@ -50,6 +51,14 @@ test('client_message_and_agent_reply_are_persisted', function () {
     expect($messages[0]->content)->toBe('Oi, tudo bem?');
     expect($messages[1]->role->slug)->toBe('assistant');
     expect($messages[1]->content)->toBe('Olá! Como posso ajudar?');
+});
+
+test('agent_exposes_web_search_tool', function () {
+    $tools = collect((new SellerAgent(new Conversation))->tools());
+
+    expect($tools)->toHaveCount(1);
+    expect($tools->first())->toBeInstanceOf(WebSearch::class);
+    expect($tools->first()->maxSearches)->toBe(3);
 });
 
 test('agent_uses_global_system_prompt', function () {

@@ -13,6 +13,7 @@
     $schemes = [
         'request.started' => ['icon' => 'bg-accent-soft text-accent', 'glyph' => '→', 'row' => '', 'name' => 'text-ink'],
         'stream.start' => ['icon' => 'bg-accent-soft text-accent', 'glyph' => '▸', 'row' => '', 'name' => 'text-ink'],
+        'reasoning' => ['icon' => 'bg-warn-soft text-warn', 'glyph' => '∴', 'row' => '', 'name' => 'text-ink'],
         'stream.delta' => ['icon' => 'bg-[#eef0f6] text-ink-2', 'glyph' => '≈', 'row' => '', 'name' => 'text-ink'],
         'response.completed' => ['icon' => 'bg-success-soft text-success', 'glyph' => '✓', 'row' => '', 'name' => 'text-ink'],
         'error' => ['icon' => 'bg-danger-soft text-danger', 'glyph' => '×', 'row' => 'bg-danger-soft/30', 'name' => 'text-danger'],
