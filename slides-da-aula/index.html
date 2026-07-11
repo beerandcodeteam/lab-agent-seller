@@ -1,0 +1,2563 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Do Prompt ao Harness | Beer and Code</title>
+    <script src="assets/vendor/tailwind.js"></script>
+    <link href="assets/vendor/aos.css" rel="stylesheet">
+    <script src="assets/vendor/aos.js"></script>
+    <script src="assets/vendor/lucide.js"></script>
+    <script src="assets/vendor/d3.v7.min.js"></script>
+    <link href="assets/vendor/inter.css" rel="stylesheet">
+    <style>
+        /* @MIRA:THEME:START */
+/* MIRA THEME: neon-emerald
+   Verde neon sobre grafite — demos técnicas, terminal vibes, dev-first. */
+:root {
+    --mira-primary: #00df81;
+    --mira-bg: #0B0F0D;
+    --mira-text: #F2FFF8;
+    --mira-text-soft: rgba(242, 255, 248, 0.72);
+    --mira-text-softer: rgba(242, 255, 248, 0.50);
+    --mira-card-bg: rgba(255, 255, 255, 0.04);
+    --mira-card-border: rgba(52, 232, 158, 0.12);
+    --mira-glow-soft: rgba(0, 223, 129, 0.15);
+    --mira-glow-strong: rgba(0, 223, 129, 0.25);
+    --mira-icon-bg: rgba(0, 223, 129, 0.15);
+    --mira-icon-border: rgba(0, 223, 129, 0.30);
+    --mira-pill-bg: rgba(255, 255, 255, 0.04);
+    --mira-pill-border: rgba(255, 255, 255, 0.08);
+    --mira-stage-glow: rgba(0, 223, 129, 0.06);
+    --mira-accent-2: #59EAAD;
+}
+
+
+/* ============================================================
+   MIRA — base.css
+   Estrutura compartilhada por todos os temas.
+   Os temas definem apenas as CSS variables (--mira-*).
+   ============================================================ */
+
+body {
+    background: var(--mira-bg);
+    min-height: 100vh;
+    color: var(--mira-text);
+    font-family: 'Inter', sans-serif;
+}
+
+.primary-color { color: var(--mira-primary); }
+.primary-bg { background: var(--mira-primary); }
+
+.glass-card {
+    background: var(--mira-card-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--mira-card-border);
+    box-shadow: 0 10px 30px var(--mira-glow-soft);
+    transition: all 0.3s ease;
+    border-radius: 0.75rem;
+}
+
+.glass-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px var(--mira-glow-strong);
+}
+
+.icon-hero {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    background: var(--mira-icon-bg);
+    border: 1px solid var(--mira-icon-border);
+}
+
+.attribute-pill {
+    background: var(--mira-pill-bg);
+    border: 1px solid var(--mira-pill-border);
+    transition: all 0.25s ease;
+    border-radius: 9999px;
+}
+
+.attribute-pill:hover {
+    background: var(--mira-icon-bg);
+    border-color: var(--mira-icon-border);
+    transform: translateY(-3px);
+}
+
+/* Palco de animação D3 — tamanho padrão do canvas */
+.anim-stage {
+    width: 100%;
+    height: clamp(400px, 60vh, 620px);
+    background: radial-gradient(circle at 50% 50%, var(--mira-stage-glow), transparent 70%);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+.anim-stage svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.replay-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 10;
+    background: var(--mira-pill-bg);
+    border: 1px solid var(--mira-pill-border);
+    color: var(--mira-text-soft);
+    border-radius: 9999px;
+    padding: 6px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.replay-btn:hover {
+    background: var(--mira-icon-bg);
+    color: var(--mira-primary);
+}
+
+.text-soft { color: var(--mira-text-soft); }
+.text-softer { color: var(--mira-text-softer); }
+
+@keyframes mira-pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.08); opacity: 0.85; }
+}
+
+@keyframes mira-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes mira-gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* @MIRA:THEME:END */
+
+        /* === CONTROLES DE SLIDE (passagem card-a-card) === */
+        html { scroll-behavior: smooth; }
+        /* Scroll discreto (padrao Mira): a navegacao e por teclado/botao e o
+           progresso ja aparece na barra do topo; a scrollbar fica quase invisivel. */
+        html { scrollbar-width: thin; scrollbar-color: #2e2e2e #0d0d0d; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; background: #0d0d0d; }
+        ::-webkit-scrollbar-track { background: #0d0d0d; }
+        ::-webkit-scrollbar-thumb { background: #2e2e2e; border-radius: 999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4a4a4a; }
+        ::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+
+        #mira-progress {
+            position: fixed; top: 0; left: 0; height: 3px; width: 0%;
+            background: linear-gradient(90deg, var(--mira-primary), var(--mira-accent-2), var(--mira-primary));
+            background-size: 200% 100%;
+            animation: mira-shimmer 2s linear infinite;
+            z-index: 9999; transition: width 0.1s linear;
+            box-shadow: 0 0 10px var(--mira-glow-strong);
+        }
+
+        @keyframes mira-shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+
+        #mira-next {
+            position: fixed; bottom: 32px; right: 32px;
+            width: 48px; height: 48px; border-radius: 50%;
+            background: var(--mira-primary); color: var(--mira-bg);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; border: none;
+            opacity: 0; transform: translateY(20px);
+            transition: all 0.3s ease; z-index: 9998;
+            box-shadow: 0 4px 20px var(--mira-glow-strong);
+        }
+        #mira-next.visible { opacity: 1; transform: translateY(0); }
+        #mira-next:hover { transform: translateY(-3px) scale(1.1); }
+    
+/* @MIRA:RESPONSIVE:START */
+/* ============================================================
+   MIRA — responsive.css  (camada de reflow mobile-first)
+   Objetivo: TODO slide 16:9 do Mira vira legível no celular em
+   retrato SEM arquivo mobile separado. O mesmo deck se reorganiza:
+   fontes encolhem, grids empilham, padding reduz, palcos escalam.
+
+   Estratégia: os decks nascem "desktop-first" (classes Tailwind com
+   tamanhos fixos: text-6xl, p-10, ...). Esta camada sobrescreve essas
+   classes abaixo de 640px. Usa !important de propósito — precisa
+   vencer o Tailwind CDN (injetado em runtime) em decks legados sem
+   reescrever o HTML. Os clamps têm teto ~= valor desktop, então em
+   telas largas nada muda; só encolhem no estreito.
+   ============================================================ */
+
+/* Guarda universal contra overflow horizontal (o "print cortado" no zap). */
+html, body { max-width: 100%; overflow-x: hidden; }
+img, svg, video, canvas, iframe, table, pre { max-width: 100%; }
+
+@media (max-width: 640px) {
+
+  /* --- Tipografia fluida: encolhe títulos gigantes no celular --- */
+  .text-9xl { font-size: clamp(3rem, 12vw, 5rem)      !important; line-height: 1.05 !important; }
+  .text-8xl { font-size: clamp(2.75rem, 11vw, 4.5rem) !important; line-height: 1.06 !important; }
+  .text-7xl { font-size: clamp(2.25rem, 10vw, 3.75rem)!important; line-height: 1.08 !important; }
+  .text-6xl { font-size: clamp(2rem, 9vw, 3rem)       !important; line-height: 1.1  !important; }
+  .text-5xl { font-size: clamp(1.75rem, 8vw, 2.5rem)  !important; line-height: 1.12 !important; }
+  .text-4xl { font-size: clamp(1.5rem, 7vw, 2rem)     !important; line-height: 1.15 !important; }
+  .text-3xl { font-size: clamp(1.35rem, 6vw, 1.75rem) !important; line-height: 1.2  !important; }
+  .text-2xl { font-size: clamp(1.2rem, 5vw, 1.5rem)   !important; line-height: 1.25 !important; }
+  .text-xl  { font-size: clamp(1.05rem, 4.5vw, 1.25rem)!important; line-height: 1.3 !important; }
+
+  /* Títulos: quebram entre palavras; só partem uma palavra se ela sozinha
+     estourar a largura. Sem hyphens:auto — em PT ele hifena no meio
+     ("pode-rosas") e fica feio em título de display. */
+  h1, h2, h3 { overflow-wrap: break-word; }
+
+  /* --- Espaçamento: paddings de desktop sufocam o celular --- */
+  .p-12 { padding: 1.25rem !important; }
+  .p-10 { padding: 1.15rem !important; }
+  .p-8  { padding: 1.05rem !important; }
+  .px-12, .px-10 { padding-left: 1.15rem !important; padding-right: 1.15rem !important; }
+  .px-8 { padding-left: 1rem !important; padding-right: 1rem !important; }
+  .py-16 { padding-top: 2.5rem !important; padding-bottom: 2.5rem !important; }
+  .gap-8 { gap: 1rem !important; }
+  .gap-10, .gap-12 { gap: 1.25rem !important; }
+
+  /* --- Layout: seção de slide sempre alcançável pelo topo ---
+     min-h-screen + justify-center clipa o topo quando o conteúdo é
+     maior que a tela. No celular, ancora no topo e deixa rolar. */
+  .min-h-screen {
+    min-height: 100dvh !important;
+    height: auto !important;
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+  }
+  .min-h-screen.justify-center,
+  .min-h-screen.items-center { justify-content: flex-start !important; }
+
+  /* --- Grids/flex de 2+ colunas empilham (redundante ao md: do
+         Tailwind, mas cobre grids sem breakpoint declarado). --- */
+  .grid-cols-2, .grid-cols-3, .grid-cols-4 { grid-template-columns: 1fr !important; }
+
+  /* --- Palco de animação (D3/SVG/canvas): nunca estoura a largura,
+         mantém proporção e encolhe a altura. --- */
+  .anim-stage {
+    max-width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 16 / 9;
+    min-height: 0 !important;
+  }
+
+  /* --- Tabelas: fonte menor + rolagem horizontal se precisar. --- */
+  table { font-size: 0.82rem !important; }
+  .overflow-x-auto { -webkit-overflow-scrolling: touch; }
+
+  /* --- Controles flutuantes respeitam a safe-area do iPhone. --- */
+  #mira-next, #next-card {
+    bottom: max(1rem, env(safe-area-inset-bottom)) !important;
+    right: max(1rem, env(safe-area-inset-right)) !important;
+    width: 44px !important; height: 44px !important;
+  }
+}
+/* @MIRA:RESPONSIVE:END */
+</style>
+</head>
+
+<body>
+    <!-- Controles de slide: barra de progresso + botão flutuante "próximo" -->
+    <div id="mira-progress"></div>
+    <button id="mira-next" aria-label="Próximo slide">
+        <i data-lucide="chevron-down" class="w-6 h-6" id="mira-next-icon"></i>
+    </button>
+
+    <!-- ============ SLIDE 1: CAPA ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center relative overflow-hidden px-6">
+        <div class="cta-breathe absolute inset-0 pointer-events-none"></div>
+        <div id="capa-stage" class="absolute inset-0 pointer-events-none"></div>
+        <div class="relative z-10 text-center max-w-4xl" data-aos="fade-up">
+            <p class="attribute-pill inline-block px-5 py-2 text-sm tracking-widest uppercase text-soft mb-8 font-mono">Beer and Code · AI Engineering Lab</p>
+            <h1 class="text-6xl md:text-7xl font-black leading-tight mb-6">
+                Do Prompt ao <span class="primary-color">Harness</span>
+            </h1>
+            <p class="text-xl text-soft max-w-2xl mx-auto mb-10">Construindo o harness de um assistente de código com IA: contexto, skills, hooks e loops de execução.<span class="capa-cursor primary-color font-mono">▮</span></p>
+            <div class="flex items-center justify-center gap-3 text-softer text-sm">
+                <i data-lucide="user" class="w-4 h-4 primary-color"></i> Lucas Souza
+                <span class="opacity-40">|</span>
+                <i data-lucide="terminal" class="w-4 h-4 primary-color"></i> beerandcode.com.br
+            </div>
+            <p class="mt-10 text-xs uppercase tracking-[3px] text-softer font-mono">Vibe coding é uma técnica. Engenharia de IA é uma profissão.</p>
+        </div>
+        <style>
+            .cta-breathe {
+                background: radial-gradient(ellipse at 50% 60%, var(--mira-glow-strong), transparent 65%);
+                animation: mira-pulse 4s ease-in-out infinite;
+            }
+
+            body > section:first-of-type h1,
+            body > section:first-of-type h2 {
+                text-wrap: balance;
+            }
+
+            .capa-cursor {
+                margin-left: 3px;
+                animation: capa-blink 1s steps(1) infinite;
+            }
+
+            @keyframes capa-blink {
+                50% { opacity: 0; }
+            }
+        </style>
+    </section>
+
+    <!-- ============ SLIDE 2: O QUE É UM HARNESS ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up" data-aos-delay="100">
+            <div class="text-center mb-2">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    O que é um <span class="primary-color italic">Harness</span>?
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">Prompt solto improvisa. Harness executa processo.</p>
+            </div>
+
+            <div class="glass-card rounded-2xl p-1 md:p-2">
+                <div class="flex items-center justify-between mb-2 px-1">
+                    <div class="flex items-center gap-3">
+                        <div class="icon-hero" style="width:40px;height:40px;">
+                            <i data-lucide="wrench" class="w-5 h-5 primary-color"></i>
+                        </div>
+                        <div>
+                            <p class="text-white font-bold text-sm">O agente no centro, a estrutura em volta</p>
+                            <p class="text-white/50 text-xs italic">Contexto, comandos, validação e loops presos ao núcleo.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- @MIRA:SIZE 3/10 -->
+                <div class="anim-stage" id="harness-stage">
+                    <svg id="harness-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet"></svg>
+                </div>
+
+                <div class="border-t border-white/10 pt-1 mt-1 mb-1">
+                    <p class="text-xs uppercase tracking-[3px] text-white/40 text-center mb-1">Por que construir um?</p>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="repeat" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Repetível</p>
+                            <p class="text-xs text-white/50">Mesmo processo, sempre</p>
+                        </div>
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="shield-check" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Verificado</p>
+                            <p class="text-xs text-white/50">Gates mecânicos, não confiança</p>
+                        </div>
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="brain" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Contexto vivo</p>
+                            <p class="text-xs text-white/50">O agente conhece o projeto</p>
+                        </div>
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="user-check" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Humano no comando</p>
+                            <p class="text-xs text-white/50">Decisão nos checkpoints</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 3: O PROCESSO EM 3 ETAPAS ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up">
+            <div class="text-center mb-8">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    Um processo em <span class="primary-color italic">3 etapas</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">Além do contexto padronizado ao modelo, o harness estrutura o caminho da ideia ao código.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="glass-card p-8" data-aos="fade-right" data-aos-delay="100">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-5xl font-black primary-color font-mono">01</span>
+                        <span class="attribute-pill px-3 py-1 rounded-lg font-mono text-sm primary-color">/init</span>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-2">Iniciar um projeto</h3>
+                    <p class="text-soft">Do zero ao <span class="primary-color font-semibold">MVP em poucas horas</span>: descrição do projeto, user stories, schema de banco e fases prontas para execução.</p>
+                </div>
+
+                <div class="glass-card p-8" data-aos="fade-left" data-aos-delay="100">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-5xl font-black primary-color font-mono">02</span>
+                        <span class="flex gap-2">
+                            <span class="attribute-pill px-3 py-1 rounded-lg font-mono text-sm primary-color">/ai-context</span>
+                            <span class="attribute-pill px-3 py-1 rounded-lg font-mono text-sm primary-color">/plan</span>
+                        </span>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-2">Evoluir um projeto existente</h3>
+                    <p class="text-soft">Documenta a <span class="primary-color font-semibold">realidade do código</span> e transforma a descrição da feature em SPEC formal e plano faseado.</p>
+                </div>
+            </div>
+
+            <svg viewBox="0 0 1152 80" class="w-full h-16 md:h-20" aria-hidden="true">
+                <path d="M 288 4 C 288 44, 576 34, 576 56" fill="none" stroke="var(--mira-primary)" stroke-opacity="0.5" stroke-width="2" stroke-dasharray="6 6"/>
+                <path d="M 864 4 C 864 44, 576 34, 576 56" fill="none" stroke="var(--mira-primary)" stroke-opacity="0.5" stroke-width="2" stroke-dasharray="6 6"/>
+                <path d="M 564 58 L 576 72 L 588 58" fill="none" stroke="var(--mira-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <text x="576" y="26" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="13" fill="var(--mira-primary)">PHASES.md</text>
+            </svg>
+
+            <div class="glass-card p-8" data-aos="fade-up" data-aos-delay="200">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-5xl font-black primary-color font-mono">03</span>
+                    <span class="attribute-pill px-3 py-1 rounded-lg font-mono text-sm primary-color">./ralph.sh</span>
+                </div>
+                <h3 class="text-2xl font-bold mb-2">Executar</h3>
+                <p class="text-soft mb-5">As etapas <span class="primary-color font-semibold">1 e 2 desembocam aqui</span>: o plano de fases vira execução autônoma, validada a cada passo.</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <div class="attribute-pill text-center p-2 rounded-xl">
+                        <p class="text-sm font-semibold tracking-wide">1 fase = 1 sessão</p>
+                    </div>
+                    <div class="attribute-pill text-center p-2 rounded-xl">
+                        <p class="text-sm font-semibold tracking-wide">4 gates mecânicos</p>
+                    </div>
+                    <div class="attribute-pill text-center p-2 rounded-xl">
+                        <p class="text-sm font-semibold tracking-wide">1 commit por fase</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 4: COMO A LLM GERA A RESPOSTA ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up">
+            <div class="text-center mb-8">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    Como a LLM gera a <span class="primary-color italic">resposta</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">Alto nível, sem purismo: um loop de próximo token.</p>
+            </div>
+
+            <!-- @MIRA:SIZE 3/10 -->
+            <div class="anim-stage" id="llm-stage">
+                <svg id="llm-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet"></svg>
+            </div>
+            <p class="text-softer mt-4 text-center max-w-3xl mx-auto text-sm">Não existe "a resposta" guardada no modelo: existe o próximo passo mais provável dado o caminho já percorrido. O reasoning desenha a rota no rascunho <span class="primary-color">antes de pisar</span>.</p>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 5: O PESO DA PERSONA ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up">
+            <div class="text-center mb-2">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    O peso da <span class="primary-color italic">persona</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">Nenhum token novo entra em cena: o campo inclina e a massa escorre.</p>
+            </div>
+
+            <!-- @MIRA:SIZE 3/10 -->
+            <div class="anim-stage" id="persona-stage">
+                <svg id="persona-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet"></svg>
+            </div>
+            <p class="text-softer mt-4 text-center max-w-3xl mx-auto text-sm">Sem persona a resposta é <span class="primary-color">genérica</span>: a média de todo mundo que já escreveu sobre aquilo. A persona não dá bolinhas novas nem acerta mais, ela muda o peso das que já estavam lá.</p>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 6: LOST IN THE MIDDLE ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up">
+            <div class="text-center mb-2">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    Lost in the <span class="primary-color italic">Middle</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">A atenção pesa nas pontas: instrução enterrada no meio é instrução ignorada.</p>
+            </div>
+
+            <!-- @MIRA:SIZE 3/10 -->
+            <div class="anim-stage" id="litm-stage">
+                <svg id="litm-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet"></svg>
+            </div>
+            <p class="text-softer mt-4 text-center max-w-3xl mx-auto text-sm"><span class="primary-color">Antídoto no harness:</span> prompt enxuto e self-contained, com o crítico nas pontas: papel no início, template e self-checks no fim.</p>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 7: CONTEXT ROT ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up">
+            <div class="text-center mb-2">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    Context <span class="primary-color italic">Rot</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">Sessão longa acumula lixo: instrução velha, tentativa falha, contradição.</p>
+            </div>
+
+            <!-- @MIRA:SIZE 3/10 -->
+            <div class="anim-stage" id="rot-stage">
+                <svg id="rot-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet"></svg>
+            </div>
+            <p class="text-softer mt-4 text-center max-w-3xl mx-auto text-sm"><span class="primary-color">Antídoto no harness:</span> decisão vira artefato em disco, não memória de chat. E no ralph, cada fase nada em água limpa: sessão nova.</p>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 8: MÉTODO MALT ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up" data-aos-delay="100">
+            <div class="text-center mb-2">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    O método <span class="primary-color italic">MALT</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">A maior dificuldade não é codar: é planejar antes de desenvolver.</p>
+            </div>
+
+            <!-- @MIRA:SIZE 3/10 -->
+            <div class="anim-stage" id="malt-stage">
+                <svg id="malt-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet"></svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 9: /INIT EM 4 FASES ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="text-center mb-2" data-aos="fade-up">
+            <h2 class="text-4xl md:text-5xl font-bold mb-2">O <span class="primary-color italic">/init</span> em 4 fases</h2>
+            <p class="text-white/60 italic text-lg md:text-xl">O MALT aplicado: do alto nível ao faseamento, antes da primeira linha de código.</p>
+        </div>
+        <div class="glass-card w-full max-w-5xl p-8 relative" data-aos="fade-up">
+            <div id="fluxo-stage" class="anim-stage"></div>
+        </div>
+        <p class="text-softer mt-8 text-center max-w-2xl" data-aos="fade-up">Muitos projetos morrem na fase 3, antes da primeira linha de código: <span class="primary-color">errou na modelagem do banco, errou na vida do projeto</span>.</p>
+    </section>
+
+    <!-- ============ SLIDE 10: COMANDO DE DESCRIÇÃO ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up">
+            <div class="text-center mb-8">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    O comando de <span class="primary-color italic">descrição</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">A fase 1 do /init: onde a ideia vaga ganha contorno concreto.</p>
+            </div>
+
+            <div class="grid md:grid-cols-5 gap-6">
+                <div class="glass-card p-8 md:col-span-3" data-aos="fade-right" data-aos-delay="100">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-2xl font-bold">O processo</h3>
+                        <span class="attribute-pill px-3 py-1 rounded-lg font-mono text-sm primary-color">/init:project-description</span>
+                    </div>
+                    <ol class="space-y-5">
+                        <li class="flex gap-4">
+                            <span class="font-mono font-black primary-color text-xl">1</span>
+                            <div>
+                                <p class="font-bold">Descobre o ambiente</p>
+                                <p class="text-soft text-sm">Stack com versões reais vem do projeto, não de chute do modelo.</p>
+                            </div>
+                        </li>
+                        <li class="flex gap-4">
+                            <span class="font-mono font-black primary-color text-xl">2</span>
+                            <div>
+                                <p class="font-bold">Entrevista pra fechar lacunas</p>
+                                <p class="text-soft text-sm">O que é o projeto, o que não pode ficar de fora, o que fica de fora, como o usuário lida com ele, quais as regras de negócio.</p>
+                            </div>
+                        </li>
+                        <li class="flex gap-4">
+                            <span class="font-mono font-black primary-color text-xl">3</span>
+                            <div>
+                                <p class="font-bold">Escreve o artefato</p>
+                                <p class="text-soft text-sm">Overview, conceitos-chave, tech stack e workflows numerados em <span class="font-mono text-xs">.spec/init/project-description.md</span>.</p>
+                            </div>
+                        </li>
+                        <li class="flex gap-4">
+                            <span class="font-mono font-black primary-color text-xl">4</span>
+                            <div>
+                                <p class="font-bold">Valida até ficar verde</p>
+                                <p class="text-soft text-sm">Self-checks mecânicos; falhou, corrige e roda de novo.</p>
+                            </div>
+                        </li>
+                    </ol>
+                </div>
+
+                <div class="glass-card p-8 md:col-span-2" data-aos="fade-left" data-aos-delay="200">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="file-text" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-2xl font-bold">A estrutura gerada</h3>
+                    </div>
+                    <p class="text-soft text-sm mb-4"><span class="font-mono text-xs primary-color">.spec/init/project-description.md</span></p>
+                    <div class="rounded-xl bg-black/40 border border-white/10 p-5 font-mono text-sm leading-7">
+                        <p><span class="primary-color">#</span> Projeto: Project Description</p>
+                        <p><span class="primary-color">##</span> Overview</p>
+                        <p class="pl-4"><span class="primary-color">###</span> Key Concepts</p>
+                        <p><span class="primary-color">##</span> Tech Stack <span class="text-white/40 text-xs">versões reais detectadas</span></p>
+                        <p><span class="primary-color">##</span> Core Workflows</p>
+                        <p class="pl-4"><span class="primary-color">###</span> 1. Fluxo principal</p>
+                        <p class="pl-4"><span class="primary-color">###</span> 2. Fluxo seguinte...</p>
+                        <p class="text-white/40"><span class="primary-color opacity-60">##</span> Open Questions <span class="text-xs">só se sobrar lacuna</span></p>
+                    </div>
+                    <div class="border-t border-white/10 mt-6 pt-4">
+                        <p class="text-xs text-white/50 italic">Estrutura fixa é contrato: as user stories cobrem cada workflow numerado, o schema persiste cada key concept, e tudo downstream carimba o hash deste arquivo.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 11: OS CONCEITOS POR TRÁS DO PROMPT ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up">
+            <div class="text-center mb-8">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    Os conceitos por trás do <span class="primary-color italic">prompt</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">Comando é só um prompt? Sim: um prompt com engenharia. O project-description.md por dentro.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="glass-card p-6" data-aos="fade-right" data-aos-delay="100">
+                    <p class="font-mono text-xs text-white/40 mb-3">commands/init/project-description.md</p>
+                    <div class="rounded-xl bg-black/40 border border-white/10 p-5 font-mono text-xs md:text-sm leading-6 text-soft">
+                        <p class="text-white/40">---</p>
+                        <p>allowed-tools: Read, Write, Edit, Bash,<br>&nbsp;&nbsp;AskUserQuestion... <span class="inline-block w-5 h-5 rounded-full text-center leading-5 text-xs font-bold" style="background:var(--mira-icon-bg);color:var(--mira-primary)">1</span></p>
+                        <p class="text-white/40">---</p>
+                        <p class="mt-2">You are helping a developer turn a rough<br>idea into a structured description... <span class="inline-block w-5 h-5 rounded-full text-center leading-5 text-xs font-bold" style="background:var(--mira-icon-bg);color:var(--mira-primary)">2</span></p>
+                        <p class="mt-2"><span class="primary-color">$ARGUMENTS</span> <span class="inline-block w-5 h-5 rounded-full text-center leading-5 text-xs font-bold" style="background:var(--mira-icon-bg);color:var(--mira-primary)">3</span></p>
+                        <p class="mt-2"><span class="primary-color">##</span> Your goal <span class="text-white/40">(1 a 5)</span> <span class="inline-block w-5 h-5 rounded-full text-center leading-5 text-xs font-bold" style="background:var(--mira-icon-bg);color:var(--mira-primary)">4</span></p>
+                        <p class="mt-2"><span class="primary-color">##</span> Process</p>
+                        <p class="pl-4"><span class="primary-color">###</span> 1. Discover the environment first</p>
+                        <p class="pl-4"><span class="primary-color">###</span> 2. Interview to close gaps</p>
+                        <p class="pl-4"><span class="primary-color">###</span> 3. Write the document <span class="inline-block w-5 h-5 rounded-full text-center leading-5 text-xs font-bold" style="background:var(--mira-icon-bg);color:var(--mira-primary)">5</span></p>
+                        <p class="pl-4"><span class="primary-color">###</span> 4. Self-checks (run until green) <span class="inline-block w-5 h-5 rounded-full text-center leading-5 text-xs font-bold" style="background:var(--mira-icon-bg);color:var(--mira-primary)">6</span></p>
+                        <p class="pl-4"><span class="primary-color">###</span> 5. Close out</p>
+                    </div>
+                </div>
+
+                <div class="glass-card p-6" data-aos="fade-left" data-aos-delay="200">
+                    <ul class="space-y-4">
+                        <li class="flex gap-3">
+                            <span class="flex-shrink-0 w-6 h-6 rounded-full text-center leading-6 text-xs font-bold" style="background:var(--mira-icon-bg);color:var(--mira-primary)">1</span>
+                            <p class="text-soft text-sm"><span class="text-white font-bold">Menor privilégio.</span> O cabeçalho declara só as ferramentas que o comando usa. Nada de acesso sobrando.</p>
+                        </li>
+                        <li class="flex gap-3">
+                            <span class="flex-shrink-0 w-6 h-6 rounded-full text-center leading-6 text-xs font-bold" style="background:var(--mira-icon-bg);color:var(--mira-primary)">2</span>
+                            <p class="text-soft text-sm"><span class="text-white font-bold">Papel e porquê.</span> Uma frase define a persona e o peso do artefato: fonte de verdade, escrita antes do código.</p>
+                        </li>
+                        <li class="flex gap-3">
+                            <span class="flex-shrink-0 w-6 h-6 rounded-full text-center leading-6 text-xs font-bold" style="background:var(--mira-icon-bg);color:var(--mira-primary)">3</span>
+                            <p class="text-soft text-sm"><span class="text-white font-bold">Input isolado.</span> A ideia do dev entra num bloco próprio, separada das instruções. O prompt prevê até input vazio.</p>
+                        </li>
+                        <li class="flex gap-3">
+                            <span class="flex-shrink-0 w-6 h-6 rounded-full text-center leading-6 text-xs font-bold" style="background:var(--mira-icon-bg);color:var(--mira-primary)">4</span>
+                            <p class="text-soft text-sm"><span class="text-white font-bold">Objetivos enumerados.</span> Cinco metas verificáveis: o modelo sabe exatamente o que é "pronto".</p>
+                        </li>
+                        <li class="flex gap-3">
+                            <span class="flex-shrink-0 w-6 h-6 rounded-full text-center leading-6 text-xs font-bold" style="background:var(--mira-icon-bg);color:var(--mira-primary)">5</span>
+                            <p class="text-soft text-sm"><span class="text-white font-bold">Processo ordenado + template verbatim.</span> Descobrir antes de perguntar, perguntar antes de escrever; e o output segue "exactly this structure", sem formato inventado.</p>
+                        </li>
+                        <li class="flex gap-3">
+                            <span class="flex-shrink-0 w-6 h-6 rounded-full text-center leading-6 text-xs font-bold" style="background:var(--mira-icon-bg);color:var(--mira-primary)">6</span>
+                            <p class="text-soft text-sm"><span class="text-white font-bold">Fecha com prova.</span> Self-checks em bash dentro do próprio prompt e relatório final padronizado, vermelho até verde.</p>
+                        </li>
+                    </ul>
+                    <div class="border-t border-white/10 mt-5 pt-4">
+                        <p class="text-xs text-white/50 italic">Regra transversal: toda afirmação rastreável ao dev ou ao ambiente. Lacuna vira Open Question, nunca invenção.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 12: COMO CONSTRUIR UM BOM COMANDO ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up">
+            <div class="text-center mb-8">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    Como construir um <span class="primary-color italic">bom comando</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">Todo prompt promete. Comando bom <span class="primary-color not-italic font-semibold">prova</span>. Seis conceitos que viram precisão de entrega.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-5">
+                <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="0">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="shield-check" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-lg font-bold leading-tight">Self-checks mecânicos</h3>
+                    </div>
+                    <p class="text-soft text-sm">O comando prova o próprio output com bash, vermelho até verde. Estrutura, contagens e formato são <span class="primary-color font-semibold">verificados, não prometidos</span>.</p>
+                </div>
+
+                <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="60">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="table-2" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-lg font-bold leading-tight">Cobertura verificável</h3>
+                    </div>
+                    <p class="text-soft text-sm">"Cobre tudo" só vale com enforcement: cada workflow vira story, cada story rastreada em task, <span class="primary-color font-semibold">via grep e diff</span>. Faltou, o check acusa.</p>
+                </div>
+
+                <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="120">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="refresh-ccw" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-lg font-bold leading-tight">Re-run sem perda</h3>
+                    </div>
+                    <p class="text-soft text-sm">Reexecutar atualiza só os deltas: <span class="primary-color font-semibold">IDs estáveis, nunca renumera</span>, edição do dev respeitada. Regravar do zero destrói trabalho.</p>
+                </div>
+
+                <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="180">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="git-compare" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-lg font-bold leading-tight">Detecção de drift</h3>
+                    </div>
+                    <p class="text-soft text-sm">Cada artefato carimba o <span class="font-mono text-xs primary-color">sha256</span> dos insumos. Insumo mudou, downstream acusa stale: <span class="primary-color font-semibold">avisa, nunca bloqueia</span>.</p>
+                </div>
+
+                <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="240">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="split" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-lg font-bold leading-tight">Roteador fino</h3>
+                    </div>
+                    <p class="text-soft text-sm">O roteador lê o estado da cadeia e <span class="primary-color font-semibold">invoca um comando por execução</span>. Ele mesmo não escreve nada: quem gera conteúdo é o comando especialista.</p>
+                </div>
+
+                <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="300">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="file-check-2" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-lg font-bold leading-tight">Contrato de máquina</h3>
+                    </div>
+                    <p class="text-soft text-sm">Se um script consome o formato (o ralph parseia <span class="font-mono text-xs primary-color">## Phase N:</span>), isso é <span class="primary-color font-semibold">contrato documentado e validado</span>, não coincidência.</p>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- ============ SLIDE 13: HOOKS — CÓDIGO NO LOOP ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up">
+            <div class="text-center mb-8">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    Hooks: <span class="primary-color italic">código no loop</span> do agente
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">Prompt é sugestão. Hook é lei: script determinístico intercepta cada evento da sessão.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="glass-card p-8" data-aos="fade-right" data-aos-delay="100">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="webhook" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-2xl font-bold">Como funciona</h3>
+                    </div>
+                    <ol class="space-y-5">
+                        <li class="flex gap-4">
+                            <span class="font-mono font-black primary-color text-xl">1</span>
+                            <div>
+                                <p class="font-bold">Um evento dispara</p>
+                                <p class="text-soft text-sm">Sessão abre, prompt chega, ferramenta vai rodar, turno termina... cada momento do loop tem um evento.</p>
+                            </div>
+                        </li>
+                        <li class="flex gap-4">
+                            <span class="font-mono font-black primary-color text-xl">2</span>
+                            <div>
+                                <p class="font-bold">Seu script recebe JSON no stdin</p>
+                                <p class="text-soft text-sm">Quem é a ferramenta, qual o comando, qual o cwd. O script decide com <span class="primary-color font-semibold">lógica, não com probabilidade</span>.</p>
+                            </div>
+                        </li>
+                        <li class="flex gap-4">
+                            <span class="font-mono font-black primary-color text-xl">3</span>
+                            <div>
+                                <p class="font-bold">A saída decide o destino</p>
+                                <p class="text-soft text-sm">Deixa passar, bloqueia devolvendo o motivo ao agente, ou injeta contexto novo na conversa.</p>
+                            </div>
+                        </li>
+                    </ol>
+                    <div class="border-t border-white/10 mt-6 pt-4 grid grid-cols-3 gap-2">
+                        <div class="attribute-pill text-center p-2 rounded-xl">
+                            <p class="font-mono text-sm primary-color font-bold">exit 0</p>
+                            <p class="text-xs text-white/50">passa; stdout pode virar contexto</p>
+                        </div>
+                        <div class="attribute-pill text-center p-2 rounded-xl">
+                            <p class="font-mono text-sm primary-color font-bold">exit 2</p>
+                            <p class="text-xs text-white/50">bloqueia; stderr volta pro agente</p>
+                        </div>
+                        <div class="attribute-pill text-center p-2 rounded-xl">
+                            <p class="font-mono text-sm primary-color font-bold">JSON</p>
+                            <p class="text-xs text-white/50">decisão fina: allow / deny / ask</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card p-8" data-aos="fade-left" data-aos-delay="200">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="file-code" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-2xl font-bold">A configuração</h3>
+                    </div>
+                    <p class="text-soft text-sm mb-3">Hook real deste harness — <span class="font-mono text-xs primary-color">hooks/hooks.json</span> do plugin:</p>
+                    <div class="rounded-xl bg-black/40 border border-white/10 p-5 font-mono text-xs md:text-sm leading-6 text-soft">
+                        <p>{</p>
+                        <p class="pl-3">"hooks": {</p>
+                        <p class="pl-6"><span class="primary-color">"PreToolUse"</span>: [{</p>
+                        <p class="pl-9">"matcher": <span class="primary-color">"Bash"</span>,</p>
+                        <p class="pl-9">"hooks": [{</p>
+                        <p class="pl-12">"type": "command",</p>
+                        <p class="pl-12">"command": <span class="primary-color">"sail-guard.sh"</span></p>
+                        <p class="pl-9">}]</p>
+                        <p class="pl-6">}]</p>
+                        <p class="pl-3">}</p>
+                        <p>}</p>
+                    </div>
+                    <ul class="space-y-2 mt-5 text-soft text-sm">
+                        <li><span class="text-white font-bold">matcher</span> filtra o alvo: só chamadas de <span class="font-mono text-xs">Bash</span>, só <span class="font-mono text-xs">Edit|Write</span>, ou regex.</li>
+                        <li><span class="text-white font-bold">Onde mora:</span> <span class="font-mono text-xs">settings.json</span> (usuário, projeto ou local) ou <span class="font-mono text-xs">hooks.json</span> de plugin.</li>
+                        <li><span class="text-white font-bold">Vários hooks no mesmo evento:</span> rodam em paralelo; a decisão mais restritiva vence.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 14: HOOKS — CHEATSHEET ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up">
+            <div class="text-center mb-8">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    Hooks: o <span class="primary-color italic">cheatsheet</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">Todos os eventos, agrupados por momento do loop. <span class="primary-color not-italic font-semibold">★</span> = os que você vai usar primeiro.</p>
+            </div>
+
+            <div class="grid md:grid-cols-4 gap-4">
+                <div class="glass-card p-5" data-aos="fade-up" data-aos-delay="0">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i data-lucide="power" class="w-4 h-4 primary-color"></i>
+                        <h3 class="text-sm font-bold uppercase tracking-wider">Sessão</h3>
+                    </div>
+                    <ul class="space-y-2 text-xs text-soft font-mono">
+                        <li><span class="primary-color">SessionStart ★</span><span class="block text-white/45 font-sans">injeta contexto ao abrir/retomar</span></li>
+                        <li><span class="text-white/80">SessionEnd</span><span class="block text-white/45 font-sans">limpeza ao encerrar</span></li>
+                        <li><span class="text-white/80">Setup</span><span class="block text-white/45 font-sans">preparação em CI/scripts</span></li>
+                    </ul>
+                </div>
+
+                <div class="glass-card p-5" data-aos="fade-up" data-aos-delay="40">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i data-lucide="message-square" class="w-4 h-4 primary-color"></i>
+                        <h3 class="text-sm font-bold uppercase tracking-wider">Prompt</h3>
+                    </div>
+                    <ul class="space-y-2 text-xs text-soft font-mono">
+                        <li><span class="primary-color">UserPromptSubmit ★</span><span class="block text-white/45 font-sans">valida/enriquece antes do modelo ver</span></li>
+                        <li><span class="text-white/80">UserPromptExpansion</span><span class="block text-white/45 font-sans">intercepta expansão de comando</span></li>
+                    </ul>
+                </div>
+
+                <div class="glass-card p-5" data-aos="fade-up" data-aos-delay="80">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i data-lucide="wrench" class="w-4 h-4 primary-color"></i>
+                        <h3 class="text-sm font-bold uppercase tracking-wider">Ferramentas</h3>
+                    </div>
+                    <ul class="space-y-2 text-xs text-soft font-mono">
+                        <li><span class="primary-color">PreToolUse ★</span><span class="block text-white/45 font-sans">antes de rodar — pode bloquear</span></li>
+                        <li><span class="primary-color">PostToolUse ★</span><span class="block text-white/45 font-sans">depois — formatar, logar, corrigir</span></li>
+                        <li><span class="text-white/80">PostToolUseFailure</span><span class="block text-white/45 font-sans">quando a ferramenta falha</span></li>
+                        <li><span class="text-white/80">PostToolBatch</span><span class="block text-white/45 font-sans">após lote paralelo</span></li>
+                    </ul>
+                </div>
+
+                <div class="glass-card p-5" data-aos="fade-up" data-aos-delay="120">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i data-lucide="shield-check" class="w-4 h-4 primary-color"></i>
+                        <h3 class="text-sm font-bold uppercase tracking-wider">Permissões</h3>
+                    </div>
+                    <ul class="space-y-2 text-xs text-soft font-mono">
+                        <li><span class="text-white/80">PermissionRequest</span><span class="block text-white/45 font-sans">auto-aprova o sabidamente seguro</span></li>
+                        <li><span class="text-white/80">PermissionDenied</span><span class="block text-white/45 font-sans">reage a negações automáticas</span></li>
+                    </ul>
+                </div>
+
+                <div class="glass-card p-5" data-aos="fade-up" data-aos-delay="160">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i data-lucide="brain" class="w-4 h-4 primary-color"></i>
+                        <h3 class="text-sm font-bold uppercase tracking-wider">Contexto</h3>
+                    </div>
+                    <ul class="space-y-2 text-xs text-soft font-mono">
+                        <li><span class="text-white/80">PreCompact / PostCompact</span><span class="block text-white/45 font-sans">re-injeta o crítico após compactar</span></li>
+                        <li><span class="text-white/80">InstructionsLoaded</span><span class="block text-white/45 font-sans">CLAUDE.md entrou no contexto</span></li>
+                        <li><span class="text-white/80">ConfigChange · FileChanged · CwdChanged</span><span class="block text-white/45 font-sans">reage a mudanças no ambiente</span></li>
+                    </ul>
+                </div>
+
+                <div class="glass-card p-5" data-aos="fade-up" data-aos-delay="200">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i data-lucide="flag" class="w-4 h-4 primary-color"></i>
+                        <h3 class="text-sm font-bold uppercase tracking-wider">Fim de turno</h3>
+                    </div>
+                    <ul class="space-y-2 text-xs text-soft font-mono">
+                        <li><span class="primary-color">Stop ★</span><span class="block text-white/45 font-sans">bloqueia o fim se a tarefa não terminou</span></li>
+                        <li><span class="primary-color">Notification ★</span><span class="block text-white/45 font-sans">alerta no desktop quando precisa de você</span></li>
+                        <li><span class="text-white/80">StopFailure · MessageDisplay</span><span class="block text-white/45 font-sans">erro de API · filtra texto exibido</span></li>
+                    </ul>
+                </div>
+
+                <div class="glass-card p-5" data-aos="fade-up" data-aos-delay="240">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i data-lucide="network" class="w-4 h-4 primary-color"></i>
+                        <h3 class="text-sm font-bold uppercase tracking-wider">Subagentes &amp; tasks</h3>
+                    </div>
+                    <ul class="space-y-2 text-xs text-soft font-mono">
+                        <li><span class="text-white/80">SubagentStart / SubagentStop</span><span class="block text-white/45 font-sans">monitora e limita subagentes</span></li>
+                        <li><span class="text-white/80">TaskCreated / TaskCompleted</span><span class="block text-white/45 font-sans">audita o quadro de tarefas</span></li>
+                    </ul>
+                </div>
+
+                <div class="glass-card p-5" data-aos="fade-up" data-aos-delay="280">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i data-lucide="git-branch" class="w-4 h-4 primary-color"></i>
+                        <h3 class="text-sm font-bold uppercase tracking-wider">Worktree &amp; MCP</h3>
+                    </div>
+                    <ul class="space-y-2 text-xs text-soft font-mono">
+                        <li><span class="text-white/80">WorktreeCreate / WorktreeRemove</span><span class="block text-white/45 font-sans">customiza isolamento git</span></li>
+                        <li><span class="text-white/80">Elicitation / ElicitationResult</span><span class="block text-white/45 font-sans">formulários de servidores MCP</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <p class="text-softer mt-6 text-center text-sm">Além de <span class="font-mono text-xs">command</span>, um hook pode ser <span class="font-mono text-xs primary-color">http</span>, <span class="font-mono text-xs primary-color">mcp_tool</span>, <span class="font-mono text-xs primary-color">prompt</span> ou <span class="font-mono text-xs primary-color">agent</span> — até um subagente inteiro validando o evento.</p>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 15: HOOK NA PRÁTICA — SAIL-GUARD ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up">
+            <div class="text-center mb-8">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    Na prática: o <span class="primary-color italic">sail-guard</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">Um PreToolUse deste harness: o erro vira instrução antes de acontecer.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="glass-card p-8" data-aos="fade-right" data-aos-delay="100">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="bug" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-2xl font-bold">Sem o hook</h3>
+                    </div>
+                    <div class="rounded-xl bg-black/40 border border-white/10 p-5 font-mono text-xs md:text-sm leading-7 text-soft mb-4">
+                        <p><span class="text-white/40">$</span> php artisan migrate</p>
+                        <p class="text-white/50">SQLSTATE[HY000] connection refused</p>
+                        <p><span class="text-white/40">$</span> php artisan migrate <span class="text-white/40 italic">// de novo</span></p>
+                        <p class="text-white/50">SQLSTATE[HY000] connection refused</p>
+                        <p><span class="text-white/40">$</span> php -v</p>
+                        <p class="text-white/50">php: command not found</p>
+                    </div>
+                    <p class="text-soft text-sm">Num projeto com Sail, PHP e banco só existem <span class="text-white font-bold">dentro do container</span>. O agente tenta no host, falha, tenta variações... <span class="primary-color font-semibold">loop de erro queimando tokens</span>.</p>
+                </div>
+
+                <div class="glass-card p-8" data-aos="fade-left" data-aos-delay="200">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="shield-check" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-2xl font-bold">Com o hook</h3>
+                    </div>
+                    <div class="rounded-xl bg-black/40 border border-white/10 p-5 font-mono text-xs md:text-sm leading-6 text-soft mb-4">
+                        <p class="primary-color">BLOQUEADO pelo sail-guard: este projeto</p>
+                        <p class="primary-color">usa Laravel Sail.</p>
+                        <p class="mt-2 text-white/70">Comando "php artisan migrate" rodaria no</p>
+                        <p class="text-white/70">HOST — e vai falhar.</p>
+                        <p class="mt-2">Use o equivalente via Sail:</p>
+                        <p class="pl-3 text-white font-bold">./vendor/bin/sail artisan migrate</p>
+                    </div>
+                    <ul class="space-y-2 text-soft text-sm">
+                        <li><span class="text-white font-bold">Detecta</span> <span class="font-mono text-xs">vendor/bin/sail</span> subindo do cwd até a raiz.</li>
+                        <li><span class="text-white font-bold">exit 2</span>: bloqueia a chamada; o stderr acima vira contexto do agente.</li>
+                        <li><span class="text-white font-bold">Corrige sozinho</span>: a próxima chamada já vem com <span class="font-mono text-xs primary-color">sail</span> na frente. Zero humano no meio.</li>
+                    </ul>
+                </div>
+            </div>
+            <p class="text-softer mt-6 text-center max-w-3xl mx-auto text-sm">Guardrail bom não só nega: <span class="primary-color">nega explicando o caminho certo</span>. Bloqueio sem sugestão vira outro loop de tentativa e erro.</p>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 16: LARAVEL BOOST — O QUE É ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up">
+            <div class="text-center mb-8">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    Laravel <span class="primary-color italic">Boost</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">O ecossistema Laravel empacotou o harness de contexto: guidelines, skills e MCP prontos de fábrica.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-5 mb-6">
+                <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="0">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="book-open" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-lg font-bold">Guidelines</h3>
+                    </div>
+                    <p class="text-soft text-sm">Regras de código mantidas pelo <span class="text-white font-bold">próprio time do Laravel</span>, específicas para cada pacote e cada versão que o seu projeto realmente usa.</p>
+                </div>
+                <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="80">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="sparkles" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-lg font-bold">Skills</h3>
+                    </div>
+                    <p class="text-soft text-sm">Instaladas em <span class="font-mono text-xs primary-color">.claude/skills/</span>: pest-testing, livewire-development, laravel-best-practices... O agente <span class="text-white font-bold">ativa a skill do domínio</span> em que está mexendo.</p>
+                </div>
+                <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="160">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="plug" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-lg font-bold">Servidor MCP</h3>
+                    </div>
+                    <p class="text-soft text-sm">Ferramentas que rodam <span class="text-white font-bold">dentro da aplicação</span>: schema real do banco, tinker, logs, docs da versão certa. O agente pergunta pra app, não chuta.</p>
+                </div>
+            </div>
+
+            <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="240">
+                <div class="grid md:grid-cols-2 gap-6 items-center">
+                    <div class="rounded-xl bg-black/40 border border-white/10 p-5 font-mono text-sm leading-8 text-soft">
+                        <p><span class="text-white/40">$</span> composer require laravel/boost --dev</p>
+                        <p><span class="text-white/40">$</span> php artisan <span class="primary-color font-bold">boost:install</span></p>
+                    </div>
+                    <ul class="space-y-2 text-soft text-sm">
+                        <li>Dois comandos: guidelines no <span class="font-mono text-xs">AGENTS.md</span>, skills no projeto, MCP no <span class="font-mono text-xs">.mcp.json</span>.</li>
+                        <li>O <span class="font-mono text-xs primary-color">boost:update</span> roda no post-update do composer: <span class="text-white font-bold">atualizou pacote, contexto acompanha</span>.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 17: BOOST — GUIDELINES VERSIONADAS ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up">
+            <div class="text-center mb-8">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    Guidelines que sabem a <span class="primary-color italic">sua versão</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">Caso real: o agent-seller, um SaaS multi-tenant com agente de vendas por IA.</p>
+            </div>
+
+            <div class="grid md:grid-cols-5 gap-6">
+                <div class="glass-card p-8 md:col-span-2" data-aos="fade-right" data-aos-delay="100">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="layers" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-xl font-bold">Detectado do composer</h3>
+                    </div>
+                    <div class="rounded-xl bg-black/40 border border-white/10 p-5 font-mono text-xs md:text-sm leading-7 text-soft mb-4">
+                        <p>PHP <span class="primary-color">8.5</span> · Laravel <span class="primary-color">v13</span></p>
+                        <p>Livewire <span class="primary-color">v4</span> · Pest <span class="primary-color">v4</span></p>
+                        <p>Tailwind <span class="primary-color">v4</span> · laravel/ai <span class="primary-color">v0.9</span></p>
+                    </div>
+                    <p class="text-soft text-sm">Os templates vivem no vendor por versão: <span class="font-mono text-xs primary-color">.ai/php/8.5/</span>, <span class="font-mono text-xs primary-color">.ai/livewire/4/</span>... O boost monta <span class="text-white font-bold">só o que se aplica ao seu lock</span> — nada de regra de Livewire 2 num projeto Livewire 4.</p>
+                </div>
+
+                <div class="glass-card p-8 md:col-span-3" data-aos="fade-left" data-aos-delay="200">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="book-open" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-xl font-bold">O que entra no AGENTS.md</h3>
+                    </div>
+                    <div class="rounded-xl bg-black/40 border border-white/10 p-5 font-mono text-xs md:text-sm leading-6 text-soft mb-4">
+                        <p class="primary-color">&lt;laravel-boost-guidelines&gt;</p>
+                        <p class="pl-3 text-white/40">=== foundation rules ===</p>
+                        <p class="pl-3">"You MUST activate the relevant skill<br class="hidden md:block">&nbsp;whenever you work in that domain"</p>
+                        <p class="pl-3 text-white/40">=== php rules ===</p>
+                        <p class="pl-3">"Use PHP 8 constructor property promotion"</p>
+                        <p class="pl-3 text-white/40">=== sail rules ===</p>
+                        <p class="pl-3">"You MUST execute all commands through Sail"</p>
+                        <p class="pl-3 text-white/40">=== laravel/core · livewire · pest · pint ===</p>
+                        <p class="primary-color">&lt;/laravel-boost-guidelines&gt;</p>
+                    </div>
+                    <p class="text-soft text-sm">Um bloco demarcado dentro do <span class="font-mono text-xs">AGENTS.md</span> — as regras do framework convivem com as do seu projeto. <span class="primary-color font-semibold">Guarde essa tag</span>: ela volta no /ai-context.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 18: BOOST — FERRAMENTAS MCP ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up">
+            <div class="text-center mb-8">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    O MCP do Boost: perguntar <span class="primary-color italic">pra aplicação</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">11 ferramentas rodando dentro da app. Fato observado no lugar de chute do modelo.</p>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                <div class="attribute-pill p-3 rounded-xl" data-aos="fade-up" data-aos-delay="0">
+                    <p class="font-mono text-sm primary-color font-bold">database-schema</p>
+                    <p class="text-xs text-white/50">tabelas, colunas e índices reais</p>
+                </div>
+                <div class="attribute-pill p-3 rounded-xl" data-aos="fade-up" data-aos-delay="30">
+                    <p class="font-mono text-sm primary-color font-bold">database-query</p>
+                    <p class="text-xs text-white/50">consulta direto no banco da app</p>
+                </div>
+                <div class="attribute-pill p-3 rounded-xl" data-aos="fade-up" data-aos-delay="60">
+                    <p class="font-mono text-sm primary-color font-bold">tinker</p>
+                    <p class="text-xs text-white/50">executa PHP dentro do runtime</p>
+                </div>
+                <div class="attribute-pill p-3 rounded-xl" data-aos="fade-up" data-aos-delay="90">
+                    <p class="font-mono text-sm primary-color font-bold">search-docs</p>
+                    <p class="text-xs text-white/50">docs filtradas pelas versões instaladas</p>
+                </div>
+                <div class="attribute-pill p-3 rounded-xl" data-aos="fade-up" data-aos-delay="120">
+                    <p class="font-mono text-sm primary-color font-bold">last-error</p>
+                    <p class="text-xs text-white/50">o último erro que a app cuspiu</p>
+                </div>
+                <div class="attribute-pill p-3 rounded-xl" data-aos="fade-up" data-aos-delay="150">
+                    <p class="font-mono text-sm primary-color font-bold">read-log-entries</p>
+                    <p class="text-xs text-white/50">entradas do laravel.log</p>
+                </div>
+                <div class="attribute-pill p-3 rounded-xl" data-aos="fade-up" data-aos-delay="180">
+                    <p class="font-mono text-sm primary-color font-bold">browser-logs</p>
+                    <p class="text-xs text-white/50">erros do navegador, sem print</p>
+                </div>
+                <div class="attribute-pill p-3 rounded-xl" data-aos="fade-up" data-aos-delay="210">
+                    <p class="font-mono text-sm primary-color font-bold">application-info</p>
+                    <p class="text-xs text-white/50">versões de PHP, Laravel e pacotes</p>
+                </div>
+                <div class="attribute-pill p-3 rounded-xl" data-aos="fade-up" data-aos-delay="240">
+                    <p class="font-mono text-sm primary-color font-bold">database-connections</p>
+                    <p class="text-xs text-white/50">conexões configuradas</p>
+                </div>
+                <div class="attribute-pill p-3 rounded-xl" data-aos="fade-up" data-aos-delay="270">
+                    <p class="font-mono text-sm primary-color font-bold">get-absolute-url</p>
+                    <p class="text-xs text-white/50">URL real do ambiente</p>
+                </div>
+                <div class="attribute-pill p-3 rounded-xl" data-aos="fade-up" data-aos-delay="300">
+                    <p class="font-mono text-sm primary-color font-bold">record-rule</p>
+                    <p class="text-xs text-white/50">grava regra nova nas guidelines</p>
+                </div>
+                <div class="attribute-pill p-3 rounded-xl flex items-center justify-center" data-aos="fade-up" data-aos-delay="330">
+                    <p class="text-xs text-white/40 italic text-center">config no .mcp.json:<br><span class="font-mono not-italic text-white/60">sail artisan boost:mcp</span></p>
+                </div>
+            </div>
+
+            <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="360">
+                <p class="text-soft text-sm text-center">O padrão a copiar para qualquer stack: <span class="text-white font-bold">o agente alucina quando não tem onde olhar</span>. Dê a ele schema real, log real e doc da versão certa — <span class="primary-color font-semibold">cada resposta nasce de evidência</span>.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 19: /AI-CONTEXT — FILOSOFIA ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up">
+            <div class="text-center mb-8">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    <span class="primary-color italic">/ai-context</span>: realidade, não intenção
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">O agente não pode confiar em documentação que mente. Código não mente.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6 mb-6">
+                <div class="glass-card p-8" data-aos="fade-right" data-aos-delay="100">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="file-x-2" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-2xl font-bold">O problema</h3>
+                    </div>
+                    <ul class="space-y-3 text-soft text-sm">
+                        <li>Documentação escrita à mão nasce boa e <span class="text-white font-bold">apodrece em silêncio</span>: o código evolui, o texto fica parado no tempo.</li>
+                        <li>Agente que lê doc velha <span class="text-white font-bold">planeja sobre um sistema que não existe mais</span> — e o erro só aparece no diff.</li>
+                        <li>Spec descreve intenção. Intenção e realidade <span class="text-white font-bold">divergem no primeiro sprint</span>.</li>
+                    </ul>
+                </div>
+                <div class="glass-card p-8" data-aos="fade-left" data-aos-delay="200">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="scan-eye" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-2xl font-bold">A regra AS IS</h3>
+                    </div>
+                    <ul class="space-y-3 text-soft text-sm">
+                        <li><span class="primary-color font-semibold">Únicas fontes:</span> código, manifests, CI e configs — o que está implementado, com evidência citável.</li>
+                        <li><span class="primary-color font-semibold">.spec/ é invisível:</span> o comando nunca lê planejamento. Plano não é prova de nada.</li>
+                        <li><span class="primary-color font-semibold">Nunca inventa:</span> afirmação sem evidência não entra; a seção declara N/A e pronto.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="300">
+                <p class="text-center text-lg md:text-xl italic text-soft">"Documenta a realidade, não a intenção" — por isso o /plan <span class="primary-color font-semibold not-italic">confia</span> no que o /ai-context escreveu: é retrato do código, auditável linha a linha.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 20: /AI-CONTEXT — ÁRVORE CANÔNICA ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up">
+            <div class="text-center mb-8">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    A árvore canônica: <span class="primary-color italic">10 artefatos</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">Um mapa completo do projeto, gerado do código, legível por qualquer agente.</p>
+            </div>
+
+            <div class="grid md:grid-cols-5 gap-6">
+                <div class="glass-card p-6 md:col-span-2" data-aos="fade-right" data-aos-delay="100">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="anchor" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-xl font-bold">A porta de entrada</h3>
+                    </div>
+                    <div class="rounded-xl bg-black/40 border border-white/10 p-5 font-mono text-xs md:text-sm leading-7 text-soft mb-4">
+                        <p class="text-white font-bold">AGENTS.md <span class="text-white/40 font-normal">— 6 seções</span></p>
+                        <p class="pl-3">1. comandos <span class="text-white/40">verbatim</span></p>
+                        <p class="pl-3">2. convenções · 3. regras</p>
+                        <p class="pl-3">4. setup · 5. referências</p>
+                        <p class="pl-3">6. índice dos docs ↓</p>
+                        <p class="mt-3 text-white font-bold">CLAUDE.md</p>
+                        <p class="pl-3 text-white/50">redirect ≤ 400 bytes → AGENTS.md</p>
+                    </div>
+                    <p class="text-soft text-sm">Padrão aberto: o mesmo <span class="font-mono text-xs">AGENTS.md</span> serve Claude Code, Codex, Copilot — <span class="text-white font-bold">um contexto, qualquer agente</span>.</p>
+                </div>
+
+                <div class="md:col-span-3" data-aos="fade-left" data-aos-delay="200">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="attribute-pill p-3 rounded-xl">
+                            <p class="font-mono text-sm primary-color font-bold">project_overview</p>
+                            <p class="text-xs text-white/50">propósito, consumidores, fluxo macro</p>
+                        </div>
+                        <div class="attribute-pill p-3 rounded-xl">
+                            <p class="font-mono text-sm primary-color font-bold">architecture</p>
+                            <p class="text-xs text-white/50">estilo, camadas, responsabilidades</p>
+                        </div>
+                        <div class="attribute-pill p-3 rounded-xl">
+                            <p class="font-mono text-sm primary-color font-bold">tech_stack</p>
+                            <p class="text-xs text-white/50">linguagem, framework, tooling de teste</p>
+                        </div>
+                        <div class="attribute-pill p-3 rounded-xl">
+                            <p class="font-mono text-sm primary-color font-bold">coding_guidelines</p>
+                            <p class="text-xs text-white/50">≥ 3 padrões observados + enforcement</p>
+                        </div>
+                        <div class="attribute-pill p-3 rounded-xl">
+                            <p class="font-mono text-sm primary-color font-bold">domain_rules</p>
+                            <p class="text-xs text-white/50">regras de negócio como implementadas</p>
+                        </div>
+                        <div class="attribute-pill p-3 rounded-xl">
+                            <p class="font-mono text-sm primary-color font-bold">api_contracts</p>
+                            <p class="text-xs text-white/50">endpoints, payloads, mensagens</p>
+                        </div>
+                        <div class="attribute-pill p-3 rounded-xl">
+                            <p class="font-mono text-sm primary-color font-bold">data_model</p>
+                            <p class="text-xs text-white/50">entidades, storage, migrations</p>
+                        </div>
+                        <div class="attribute-pill p-3 rounded-xl">
+                            <p class="font-mono text-sm primary-color font-bold">dependencies</p>
+                            <p class="text-xs text-white/50">serviços externos, libs, infra</p>
+                        </div>
+                    </div>
+                    <div class="glass-card p-4 mt-3">
+                        <p class="text-soft text-xs">Por baixo, 3 agentes: <span class="font-mono primary-color">inspector</span> varre o repo read-only e devolve um digest; <span class="font-mono primary-color">core</span> e <span class="font-mono primary-color">docs</span> escrevem em paralelo, arquivos disjuntos. O roteador só valida no disco.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 21: /AI-CONTEXT — O CICLO VIVO ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up">
+            <div class="text-center mb-2">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    O ciclo que mantém o contexto <span class="primary-color italic">vivo</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">Idempotente: re-rode quando quiser, só o que driftou é reescrito.</p>
+            </div>
+
+            <!-- @MIRA:SIZE 3/10 -->
+            <div class="anim-stage" id="ciclo-stage">
+                <svg id="ciclo-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet"></svg>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-4">
+                <div class="attribute-pill text-center p-2 rounded-xl">
+                    <p class="text-sm font-semibold tracking-wide">Ownership banner</p>
+                    <p class="text-xs text-white/50">arquivo manual nunca é sobrescrito; --adopt incorpora e assume</p>
+                </div>
+                <div class="attribute-pill text-center p-2 rounded-xl">
+                    <p class="text-sm font-semibold tracking-wide">Byte-diff</p>
+                    <p class="text-xs text-white/50">regenera, compara, só toca o que mudou de verdade</p>
+                </div>
+                <div class="attribute-pill text-center p-2 rounded-xl">
+                    <p class="text-sm font-semibold tracking-wide">Bloco de terceiros preservado</p>
+                    <p class="text-xs text-white/50">&lt;laravel-boost-guidelines&gt; volta verbatim a cada regeneração</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 22: /PLAN — O PIPELINE ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up">
+            <div class="text-center mb-8">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    <span class="primary-color italic">/plan</span>: da descrição ao plano executável
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">Três agentes especialistas, um checkpoint humano entre cada um.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-5 mb-4">
+                <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="0">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-4xl font-black primary-color font-mono">01</span>
+                        <span class="attribute-pill px-3 py-1 rounded-lg font-mono text-sm primary-color">specifier</span>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">Especifica</h3>
+                    <p class="text-soft text-sm">Descrição confirmada vira <span class="font-mono text-xs">SPEC.md</span> formal: requisitos com ID, ACs binários, diagramas AS IS / TO BE. Ambiguidade vira marcador <span class="font-mono text-xs primary-color">[NEEDS CLARIFICATION]</span>, <span class="text-white font-bold">nunca chute</span>.</p>
+                </div>
+                <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="80">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-4xl font-black primary-color font-mono">02</span>
+                        <span class="attribute-pill px-3 py-1 rounded-lg font-mono text-sm primary-color">clarifier</span>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">Interroga</h3>
+                    <p class="text-soft text-sm">QA adversarial em 2 fases: analisa a SPEC e devolve <span class="text-white font-bold">perguntas priorizadas por risco de retrabalho</span>; você responde; ele aplica as respostas na SPEC e incrementa a versão.</p>
+                </div>
+                <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="160">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-4xl font-black primary-color font-mono">03</span>
+                        <span class="attribute-pill px-3 py-1 rounded-lg font-mono text-sm primary-color">planner</span>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">Decompõe</h3>
+                    <p class="text-soft text-sm"><span class="font-mono text-xs">PLAN.md</span> com tasks e riscos + <span class="font-mono text-xs primary-color">PHASES.md</span> no formato que o ralph executa + contratos formais (OpenAPI, proto, AsyncAPI) quando a SPEC declara API.</p>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-5">
+                <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="240">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="user-check" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-lg font-bold">Humano em todo checkpoint</h3>
+                    </div>
+                    <p class="text-soft text-sm">Confirma o input normalizado, aprova a SPEC, responde as ambiguidades, assina a decomposição. <span class="text-white font-bold">O agente propõe; você decide.</span> Escopo cresceu? O pipeline para e propõe dividir.</p>
+                </div>
+                <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="320">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="map" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-lg font-bold">Gate de arquitetura</h3>
+                    </div>
+                    <p class="text-soft text-sm">Antes de planejar, o pipeline exige o <span class="font-mono text-xs primary-color">AGENTS.md</span> / <span class="font-mono text-xs primary-color">docs/agents/</span> do /ai-context. Sem eles, avisa e marca <span class="font-mono text-xs">missing</span> — <span class="text-white font-bold">nunca planeja em silêncio</span> sem conhecer o código.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 23: /PLAN — TIERS E HANDOFF ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up">
+            <div class="text-center mb-8">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    Esforço proporcional, fim <span class="primary-color italic">executável</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">O tier vem de sinais objetivos, não de opinião — e tudo desemboca no ralph.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-5 mb-6">
+                <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="0">
+                    <p class="font-mono text-sm primary-color font-bold mb-2">light</p>
+                    <p class="text-soft text-sm">≤ 3 requisitos, um repo, sem contrato formal. SPEC enxuta, decomposição inline, <span class="text-white font-bold">sem burocracia desnecessária</span>.</p>
+                </div>
+                <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="80">
+                    <p class="font-mono text-sm primary-color font-bold mb-2">standard</p>
+                    <p class="text-soft text-sm">4–10 requisitos. SPEC completa, plano faseado, contratos quando a SPEC declara superfície de API.</p>
+                </div>
+                <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="160">
+                    <p class="font-mono text-sm primary-color font-bold mb-2">complete</p>
+                    <p class="text-soft text-sm">11+ requisitos, multi-repo ou domínio pesado. Clarifier <span class="text-white font-bold">obrigatório</span>, contrato para cada interface exposta.</p>
+                </div>
+            </div>
+
+            <div class="glass-card p-8" data-aos="fade-up" data-aos-delay="240">
+                <div class="grid md:grid-cols-2 gap-6 items-center">
+                    <div class="rounded-xl bg-black/40 border border-white/10 p-5 font-mono text-xs md:text-sm leading-7 text-soft">
+                        <p class="text-white/40">.spec/features/checkout-pix/</p>
+                        <p class="pl-3">SPEC.md <span class="text-white/40">· RIGID + FLEXIBLE</span></p>
+                        <p class="pl-3">PLAN.md <span class="text-white/40">· tasks + riscos</span></p>
+                        <p class="pl-3 primary-color font-bold">PHASES.md</p>
+                        <p class="pl-3">openapi.yaml <span class="text-white/40">· quando há API</span></p>
+                        <p class="mt-3"><span class="text-white/40">$</span> ./ralph.sh .spec/features/checkout-pix/<span class="primary-color font-bold">PHASES.md</span></p>
+                    </div>
+                    <ul class="space-y-3 text-soft text-sm">
+                        <li><span class="text-white font-bold">O /plan nunca escreve código de aplicação.</span> Só artefatos sob <span class="font-mono text-xs">.spec/features/</span>.</li>
+                        <li>Cada task carrega <span class="font-mono text-xs primary-color">Acceptance criteria:</span> — é contra eles que o gate 3 do ralph verifica o código.</li>
+                        <li>Mesma máquina da aula: <span class="text-white font-bold">planejou, o ralph executa</span> — uma fase por sessão, gates mecânicos, um commit por fase.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 24: O ARCO COMPLETO ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up">
+            <div class="text-center mb-8">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    O arco completo do <span class="primary-color italic">harness</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">Os 4 pontos do arnês do primeiro slide, agora preenchidos.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-5 mb-6">
+                <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="0">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="brain" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-lg font-bold font-mono tracking-wider">CONTEXTO</h3>
+                    </div>
+                    <p class="text-soft text-sm"><span class="font-mono text-xs primary-color">/ai-context</span> retrata o código, o <span class="font-mono text-xs primary-color">Boost</span> traz o framework, o MCP responde com fato. O agente conhece o projeto de verdade.</p>
+                </div>
+                <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="80">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="terminal" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-lg font-bold font-mono tracking-wider">COMANDOS</h3>
+                    </div>
+                    <p class="text-soft text-sm"><span class="font-mono text-xs primary-color">/init</span> para nascer, <span class="font-mono text-xs primary-color">/plan</span> para evoluir: prompts com engenharia — papel, processo, template, self-checks.</p>
+                </div>
+                <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="160">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="shield-check" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-lg font-bold font-mono tracking-wider">VALIDAÇÃO</h3>
+                    </div>
+                    <p class="text-soft text-sm"><span class="font-mono text-xs primary-color">Hooks</span> interceptam o loop, self-checks provam o output, gates do ralph verificam fora da sessão. Confiança é mecânica, não promessa.</p>
+                </div>
+                <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="240">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="icon-hero" style="width:40px;height:40px;"><i data-lucide="repeat" class="primary-color w-5 h-5"></i></div>
+                        <h3 class="text-lg font-bold font-mono tracking-wider">LOOPS</h3>
+                    </div>
+                    <p class="text-soft text-sm"><span class="font-mono text-xs primary-color">ralph.sh</span> executa fase a fase em sessão fresca, corrige com causa real, commita só o validado. O humano fica nos checkpoints.</p>
+                </div>
+            </div>
+
+            <div class="glass-card p-8 text-center" data-aos="fade-up" data-aos-delay="320">
+                <p class="text-xl md:text-2xl font-bold mb-2">Você não precisa <span class="text-white/50 line-through">do bc-harness</span>. Precisa de <span class="primary-color italic">um</span> harness.</p>
+                <p class="text-soft">O seu, com o processo da sua empresa dentro: as convenções do seu código, os seus gates, os seus checkpoints. Tudo que viu aqui é blueprint — <span class="primary-color font-semibold">copie, adapte, adote</span>.</p>
+            </div>
+        </div>
+    </section>
+
+
+    <script>
+        AOS.init({ duration: 800, once: true });
+        lucide.createIcons();
+
+        const cssVar = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+        const PRIMARY = cssVar('--mira-primary');
+
+        // ===== CAPA: glifos de código em deriva + grade de terminal (loop) =====
+        (function () {
+            const W = window.innerWidth, H = window.innerHeight;
+            const svg = d3.select('#capa-stage').append('svg').attr('viewBox', `0 0 ${W} ${H}`);
+
+            const grid = svg.append('g').attr('opacity', 0);
+            for (let x = 0; x <= W; x += 90) {
+                grid.append('line').attr('x1', x).attr('x2', x).attr('y1', 0).attr('y2', H)
+                    .attr('stroke', 'rgba(255,255,255,0.03)');
+            }
+            for (let y = 0; y <= H; y += 90) {
+                grid.append('line').attr('x1', 0).attr('x2', W).attr('y1', y).attr('y2', y)
+                    .attr('stroke', 'rgba(255,255,255,0.03)');
+            }
+            grid.transition().duration(1400).attr('opacity', 1);
+
+            const GLYPHS = ['{ }', '</>', '=>', '$', '>_', '&&', '[ ]', '::', '//', 'askUser()', 'hook', 'CLAUDE.md'];
+            const data = d3.range(34).map((i) => ({
+                x: Math.random() * W,
+                y: Math.random() * H,
+                s: 12 + Math.random() * 15,
+                v: 0.12 + Math.random() * 0.32,
+                o: 0.07 + Math.random() * 0.18,
+                g: GLYPHS[i % GLYPHS.length]
+            }));
+            const glyphs = svg.selectAll('text.glyph').data(data).join('text')
+                .attr('class', 'glyph')
+                .text(d => d.g)
+                .attr('font-family', 'ui-monospace, Menlo, Consolas, monospace')
+                .attr('font-size', d => d.s)
+                .attr('fill', PRIMARY)
+                .attr('opacity', 0);
+            glyphs.transition().delay((d, i) => 200 + i * 50).duration(700).attr('opacity', d => d.o);
+
+            d3.timer(() => {
+                glyphs
+                    .attr('x', d => d.x)
+                    .attr('y', d => {
+                        d.y -= d.v;
+                        if (d.y < -30) {
+                            d.y = H + 30;
+                            d.x = Math.random() * W;
+                        }
+                        return d.y;
+                    });
+            });
+        })();
+
+        // ===== HARNESS: agente no centro, arnês de 4 pontos alimentando o núcleo (loop) =====
+        function animateHarness() {
+            window.__harnessGen = (window.__harnessGen || 0) + 1;
+            const myGen = window.__harnessGen;
+            clearInterval(window.__harnessPulse);
+
+            const svg = d3.select('#harness-svg');
+            svg.selectAll('*').remove();
+
+            const CX = 640, CY = 360, R = 220, CORE_R = 100;
+            const ANCHORS = ['CONTEXTO', 'COMANDOS', 'VALIDAÇÃO', 'LOOPS'].map((label, i) => {
+                const ang = -Math.PI / 2 + i * Math.PI / 2;
+                return { label, ang, x: CX + Math.cos(ang) * R, y: CY + Math.sin(ang) * R };
+            });
+
+            // anel-guia onde os pontos do arnês se apoiam
+            svg.append('circle').attr('cx', CX).attr('cy', CY).attr('r', R)
+                .attr('fill', 'none').attr('stroke', 'rgba(255,255,255,0.10)')
+                .attr('stroke-dasharray', '4 6')
+                .attr('opacity', 0).transition().duration(800).attr('opacity', 1);
+
+            // anel externo tracejado que gira perpetuamente
+            const spinG = svg.append('g');
+            spinG.append('circle').attr('cx', CX).attr('cy', CY).attr('r', R + 38)
+                .attr('fill', 'none').attr('stroke', PRIMARY).attr('stroke-opacity', 0.25)
+                .attr('stroke-width', 2).attr('stroke-dasharray', '18 26');
+
+            // conectores do arnês para o núcleo
+            svg.selectAll('line.link').data(ANCHORS).join('line').attr('class', 'link')
+                .attr('x1', d => CX + Math.cos(d.ang) * (R - 26))
+                .attr('y1', d => CY + Math.sin(d.ang) * (R - 26))
+                .attr('x2', d => CX + Math.cos(d.ang) * CORE_R)
+                .attr('y2', d => CY + Math.sin(d.ang) * CORE_R)
+                .attr('stroke', PRIMARY).attr('stroke-opacity', 0.35).attr('stroke-dasharray', '5 5')
+                .attr('opacity', 0)
+                .transition().delay((d, i) => 500 + i * 120).duration(400).attr('opacity', 1);
+
+            // chips do arnês
+            const chips = svg.selectAll('g.chip').data(ANCHORS).join('g').attr('class', 'chip')
+                .attr('transform', d => `translate(${d.x},${d.y}) scale(0)`);
+            chips.append('rect').attr('x', -96).attr('y', -25).attr('width', 192).attr('height', 50).attr('rx', 12)
+                .attr('fill', 'rgba(255,255,255,0.06)').attr('stroke', PRIMARY).attr('stroke-opacity', 0.45);
+            chips.append('text').text(d => d.label).attr('text-anchor', 'middle').attr('dy', 6)
+                .attr('fill', 'rgba(255,255,255,0.9)').attr('font-size', 17).attr('font-weight', 700)
+                .attr('font-family', 'ui-monospace, Menlo, Consolas, monospace').attr('letter-spacing', 2);
+            chips.transition().delay((d, i) => 700 + i * 150).duration(500)
+                .ease(d3.easeBackOut.overshoot(1.4))
+                .attr('transform', d => `translate(${d.x},${d.y}) scale(1)`);
+
+            // núcleo com glow
+            const glow = svg.append('circle').attr('cx', CX).attr('cy', CY).attr('r', CORE_R - 10)
+                .attr('fill', 'rgba(0,223,129,0.06)').attr('stroke', PRIMARY).attr('stroke-opacity', 0.5)
+                .attr('stroke-width', 2).attr('opacity', 0);
+            glow.transition().delay(200).duration(600).attr('opacity', 1);
+
+            // robô flat como ator (Material Symbols "smart_toy", Apache-2.0, ver CREDITS.md)
+            const bob = svg.append('g');
+            const robot = bob.append('g')
+                .attr('transform', `translate(${CX},${CY}) scale(0)`)
+                .style('filter', `drop-shadow(0 0 22px ${PRIMARY}66)`);
+            robot.append('path')
+                .attr('d', 'M20 9V7c0-1.1-.9-2-2-2h-3c0-1.66-1.34-3-3-3S9 3.34 9 5H6c-1.1 0-2 .9-2 2v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3zM7.5 11.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5S9.83 13 9 13s-1.5-.67-1.5-1.5zM16 17H8v-2h8v2zm-1-4c-.83 0-1.5-.67-1.5-1.5S14.17 10 15 10s1.5.67 1.5 1.5S15.83 13 15 13z')
+                .attr('fill', PRIMARY)
+                .attr('transform', 'translate(-12,-12)');
+            robot.transition().delay(300).duration(700).ease(d3.easeBackOut.overshoot(1.3))
+                .attr('transform', `translate(${CX},${CY}) scale(5.2)`);
+
+            // loop 1: anel externo girando
+            const spin = d3.timer(t => {
+                if (myGen !== window.__harnessGen) { spin.stop(); return; }
+                spinG.attr('transform', `rotate(${t * 0.008} ${CX} ${CY})`);
+            });
+
+            // loop 2: robô respirando
+            const breathe = d3.timer(t => {
+                if (myGen !== window.__harnessGen) { breathe.stop(); return; }
+                bob.attr('transform', `translate(0, ${Math.sin(t / 900) * 7})`);
+            });
+
+            // loop 3: pulsos do arnês para o núcleo, em cascata, com flash no glow
+            window.__harnessPulse = setInterval(() => {
+                if (myGen !== window.__harnessGen) { clearInterval(window.__harnessPulse); return; }
+                ANCHORS.forEach((d, i) => {
+                    svg.append('circle').attr('r', 7).attr('fill', PRIMARY)
+                        .style('filter', `drop-shadow(0 0 8px ${PRIMARY})`)
+                        .attr('cx', CX + Math.cos(d.ang) * (R - 26))
+                        .attr('cy', CY + Math.sin(d.ang) * (R - 26))
+                        .attr('opacity', 0)
+                        .transition().delay(i * 450).duration(200).attr('opacity', 1)
+                        .transition().duration(900).ease(d3.easeQuadIn)
+                        .attr('cx', CX + Math.cos(d.ang) * (CORE_R - 20))
+                        .attr('cy', CY + Math.sin(d.ang) * (CORE_R - 20))
+                        .attr('opacity', 0.2)
+                        .remove();
+                });
+                glow.transition().delay(4 * 450).duration(300)
+                    .attr('stroke-opacity', 0.9).attr('r', CORE_R - 4)
+                    .transition().duration(500)
+                    .attr('stroke-opacity', 0.5).attr('r', CORE_R - 10);
+            }, 2600);
+        }
+        animateHarness();
+
+        // ===== MALT: loop de refação vs caminho M→A→L→T (loop) =====
+        function animateMalt() {
+            window.__maltGen = (window.__maltGen || 0) + 1;
+            const myGen = window.__maltGen;
+
+            const svg = d3.select('#malt-svg');
+            svg.selectAll('*').remove();
+
+            const LY = 400;
+            const CHAOS = { x: 300, y: 400, r: 110 };
+            const NODES = [
+                { letter: 'M', label: 'Modelagem', x: 620 },
+                { letter: 'A', label: 'Ação', x: 800 },
+                { letter: 'L', label: 'Lógica', x: 980 },
+                { letter: 'T', label: 'Testes', x: 1160 }
+            ];
+            const MONO = 'ui-monospace, Menlo, Consolas, monospace';
+
+            // cabeçalhos das duas zonas
+            svg.append('text').text('SEM PROCESSO').attr('x', CHAOS.x).attr('y', 180)
+                .attr('text-anchor', 'middle').attr('font-family', MONO).attr('font-size', 16)
+                .attr('letter-spacing', 4).attr('fill', 'rgba(242,255,248,0.40)')
+                .attr('opacity', 0).transition().duration(600).attr('opacity', 1);
+            svg.append('text').text('COM MALT').attr('x', 890).attr('y', 180)
+                .attr('text-anchor', 'middle').attr('font-family', MONO).attr('font-size', 16)
+                .attr('letter-spacing', 4).attr('fill', PRIMARY)
+                .attr('opacity', 0).transition().delay(200).duration(600).attr('opacity', 1);
+
+            // divisor sutil
+            svg.append('line').attr('x1', 470).attr('x2', 470).attr('y1', 250).attr('y2', 560)
+                .attr('stroke', 'rgba(255,255,255,0.08)')
+                .attr('opacity', 0).transition().duration(800).attr('opacity', 1);
+
+            // zona do caos: círculo de refação
+            const chaosRing = svg.append('g');
+            chaosRing.append('circle').attr('cx', CHAOS.x).attr('cy', CHAOS.y).attr('r', CHAOS.r)
+                .attr('fill', 'none').attr('stroke', 'rgba(242,255,248,0.25)')
+                .attr('stroke-width', 2).attr('stroke-dasharray', '10 12');
+            chaosRing.attr('opacity', 0).transition().duration(700).attr('opacity', 1);
+            svg.append('text').text('refação').attr('x', CHAOS.x).attr('y', CHAOS.y + 6)
+                .attr('text-anchor', 'middle').attr('font-size', 17).attr('font-style', 'italic')
+                .attr('fill', 'rgba(242,255,248,0.45)')
+                .attr('opacity', 0).transition().delay(400).duration(600).attr('opacity', 1);
+
+            const chaosDot = svg.append('circle').attr('r', 9)
+                .attr('fill', 'rgba(242,255,248,0.65)')
+                .attr('opacity', 0);
+            chaosDot.transition().delay(500).duration(400).attr('opacity', 1);
+
+            // zona MALT: trilho + nós
+            svg.append('line').attr('x1', NODES[0].x).attr('y1', LY).attr('x2', NODES[0].x).attr('y2', LY)
+                .attr('stroke', 'rgba(255,255,255,0.12)').attr('stroke-width', 2)
+                .transition().delay(300).duration(700).attr('x2', NODES[3].x);
+
+            const nodeG = svg.selectAll('g.malt-node').data(NODES).join('g').attr('class', 'malt-node')
+                .attr('transform', d => `translate(${d.x},${LY})`);
+            const nodeCircles = nodeG.append('circle').attr('r', 0)
+                .attr('fill', 'rgba(255,255,255,0.06)')
+                .attr('stroke', PRIMARY).attr('stroke-width', 2);
+            nodeCircles.transition().delay((d, i) => 600 + i * 160).duration(500)
+                .ease(d3.easeBackOut.overshoot(1.3)).attr('r', 46);
+            nodeG.append('text').text(d => d.letter).attr('text-anchor', 'middle').attr('dy', 11)
+                .attr('fill', PRIMARY).attr('font-size', 32).attr('font-weight', 900)
+                .attr('font-family', MONO)
+                .attr('opacity', 0).transition().delay((d, i) => 800 + i * 160).duration(400).attr('opacity', 1);
+            nodeG.append('text').text(d => d.label).attr('text-anchor', 'middle').attr('dy', 80)
+                .attr('fill', 'rgba(242,255,248,0.75)').attr('font-size', 16)
+                .attr('opacity', 0).transition().delay((d, i) => 900 + i * 160).duration(400).attr('opacity', 1);
+
+            // loop 1: refação rodando em círculo, para sempre
+            const spin = d3.timer(t => {
+                if (myGen !== window.__maltGen) { spin.stop(); return; }
+                const a = t / 700;
+                chaosDot.attr('cx', CHAOS.x + Math.cos(a) * CHAOS.r)
+                    .attr('cy', CHAOS.y + Math.sin(a) * CHAOS.r);
+                chaosRing.attr('transform', `rotate(${-t * 0.004} ${CHAOS.x} ${CHAOS.y})`);
+            });
+
+            // loop 2: partícula avança M→A→L→T e recomeça
+            const particle = svg.append('circle').attr('r', 9).attr('fill', PRIMARY)
+                .attr('cy', LY).style('filter', `drop-shadow(0 0 10px ${PRIMARY})`).attr('opacity', 0);
+            function pop(idx) {
+                if (myGen !== window.__maltGen) return;
+                nodeCircles.filter((d, i) => i === idx)
+                    .transition().duration(220).attr('r', 55)
+                    .transition().duration(260).attr('r', 46);
+            }
+            function journey() {
+                if (myGen !== window.__maltGen) return;
+                particle.attr('cx', NODES[0].x).attr('opacity', 0);
+                let t = particle.transition().duration(300).attr('opacity', 1).on('end', () => pop(0));
+                NODES.slice(1).forEach((n, i) => {
+                    t = t.transition().delay(250).duration(750).ease(d3.easeQuadInOut)
+                        .attr('cx', n.x).on('end', () => pop(i + 1));
+                });
+                t = t.transition().delay(700).duration(400).attr('opacity', 0);
+                t.on('end', journey);
+            }
+            setTimeout(() => { if (myGen === window.__maltGen) journey(); }, 1600);
+        }
+        animateMalt();
+
+        // ===== LLM: travessia do rio pedra a pedra (loop) =====
+        // Metáfora: pergunta e resposta são as margens; as pedras candidatas acendem
+        // com brilhos diferentes (distribuição), a pedra pisada vira caminho (contexto);
+        // reasoning é a rota tracejada desenhada antes de pisar.
+        function animateLlm() {
+            window.__llmGen = (window.__llmGen || 0) + 1;
+            const myGen = window.__llmGen;
+
+            const svg = d3.select('#llm-svg');
+            svg.selectAll('*').remove();
+
+            const MONO = 'ui-monospace, Menlo, Consolas, monospace';
+            const COLS = [330, 475, 620, 765, 910];
+            const ROWS = [255, 395, 535];
+            const JIT = [[-10, 6, 12], [8, -12, 0], [-6, 10, -8], [12, 0, 6], [0, -8, 10]];
+            const BEST = [1, 0, 1, 2, 1];
+            const START = { x: 130, y: 395 }, END = { x: 1150, y: 395 };
+
+            // margens: pergunta e resposta
+            const bankL = svg.append('g').attr('opacity', 0);
+            bankL.append('rect').attr('x', 25).attr('y', 90).attr('width', 185).attr('height', 545).attr('rx', 20)
+                .attr('fill', 'rgba(255,255,255,0.05)').attr('stroke', 'rgba(255,255,255,0.08)');
+            bankL.append('text').text('PERGUNTA').attr('x', 117).attr('y', 160)
+                .attr('text-anchor', 'middle').attr('font-family', MONO).attr('font-size', 15)
+                .attr('letter-spacing', 3).attr('fill', 'rgba(242,255,248,0.55)');
+            const bankR = svg.append('g').attr('opacity', 0);
+            bankR.append('rect').attr('x', 1070).attr('y', 90).attr('width', 185).attr('height', 545).attr('rx', 20)
+                .attr('fill', 'rgba(255,255,255,0.05)').attr('stroke', 'rgba(255,255,255,0.08)');
+            bankR.append('text').text('RESPOSTA').attr('x', 1162).attr('y', 160)
+                .attr('text-anchor', 'middle').attr('font-family', MONO).attr('font-size', 15)
+                .attr('letter-spacing', 3).attr('fill', PRIMARY);
+            bankL.transition().duration(600).attr('opacity', 1);
+            bankR.transition().delay(150).duration(600).attr('opacity', 1);
+
+            // correnteza do rio
+            const water = [];
+            for (let i = 0; i < 4; i++) {
+                water.push(svg.append('line')
+                    .attr('x1', 230).attr('x2', 1050)
+                    .attr('y1', 150 + i * 145).attr('y2', 150 + i * 145)
+                    .attr('stroke', 'rgba(242,255,248,0.06)').attr('stroke-width', 2)
+                    .attr('stroke-dasharray', '14 22').attr('opacity', 0));
+            }
+            water.forEach((w, i) => w.transition().delay(300 + i * 100).duration(600).attr('opacity', 1));
+
+            // pedras
+            const stones = COLS.map((cx, c) => ROWS.map((ry, r) => {
+                const y = ry + JIT[c][r];
+                const el = svg.append('ellipse').attr('cx', cx).attr('cy', y)
+                    .attr('rx', 0).attr('ry', 0)
+                    .attr('fill', 'rgba(255,255,255,0.08)').attr('stroke', 'rgba(255,255,255,0.18)');
+                el.transition().delay(500 + (c * 3 + r) * 60).duration(450)
+                    .ease(d3.easeBackOut.overshoot(1.3)).attr('rx', 46).attr('ry', 24);
+                return { el, x: cx, y };
+            }));
+
+            // rótulo do modo
+            const modeLabel = svg.append('text').attr('x', 640).attr('y', 70)
+                .attr('text-anchor', 'middle').attr('font-family', MONO).attr('font-size', 16)
+                .attr('letter-spacing', 3).attr('opacity', 0);
+
+            // caminhante flat (Material Symbols "directions_walk", Apache-2.0, ver CREDITS.md)
+            const walker = svg.append('g').attr('opacity', 0);
+            walker.append('path')
+                .attr('d', 'M13.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM9.8 8.9 7 23h2.1l1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3C14.8 12 16.8 13 19 13v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1L6 8.3V13h2V9.6l1.8-.7')
+                .attr('fill', PRIMARY)
+                .attr('transform', 'translate(-12,-12)');
+            walker.style('filter', `drop-shadow(0 0 12px ${PRIMARY}88)`);
+            function placeWalker(x, y) {
+                walker.attr('transform', `translate(${x},${y - 34}) scale(3.1)`);
+            }
+            function hopWalker(x, y, dur, cb) {
+                walker.transition().duration(dur).ease(d3.easeQuadInOut)
+                    .attr('transform', `translate(${x},${y - 34}) scale(3.1)`)
+                    .on('end', () => cb && cb());
+            }
+            placeWalker(START.x, START.y);
+            walker.transition().delay(1200).duration(500).attr('opacity', 1);
+
+            const trail = svg.append('g');
+            const draft = svg.append('path')
+                .attr('fill', 'none').attr('stroke', PRIMARY).attr('stroke-width', 2.5)
+                .attr('stroke-dasharray', '9 9').attr('opacity', 0);
+
+            function glowCandidates(c, chosenRow, strong) {
+                stones[c].forEach((s, r) => {
+                    const p = r === chosenRow ? (strong ? 0.95 : 0.8) : (r === (chosenRow + 1) % 3 ? 0.35 : 0.18);
+                    s.el.transition().duration(320)
+                        .attr('stroke', PRIMARY).attr('stroke-opacity', p)
+                        .attr('fill', `rgba(0,223,129,${p * 0.16})`);
+                });
+            }
+            function settleColumn(c, chosenRow) {
+                stones[c].forEach((s, r) => {
+                    s.el.transition().duration(400)
+                        .attr('stroke', r === chosenRow ? PRIMARY : 'rgba(255,255,255,0.18)')
+                        .attr('stroke-opacity', r === chosenRow ? 0.6 : 1)
+                        .attr('fill', r === chosenRow ? 'rgba(0,223,129,0.14)' : 'rgba(255,255,255,0.08)');
+                });
+            }
+            function addTrail(x1, y1, x2, y2) {
+                trail.append('line').attr('x1', x1).attr('y1', y1).attr('x2', x2).attr('y2', y2)
+                    .attr('stroke', PRIMARY).attr('stroke-width', 2.5).attr('opacity', 0)
+                    .transition().duration(300).attr('opacity', 0.45);
+            }
+            function resetRiver() {
+                trail.selectAll('*').transition().duration(500).attr('opacity', 0).remove();
+                draft.transition().duration(500).attr('opacity', 0);
+                stones.forEach(col => col.forEach(s => {
+                    s.el.transition().duration(500)
+                        .attr('stroke', 'rgba(255,255,255,0.18)').attr('stroke-opacity', 1)
+                        .attr('fill', 'rgba(255,255,255,0.08)');
+                }));
+            }
+
+            // uma travessia; reasoning=true desenha o rascunho antes
+            function cross(reasoning, done) {
+                if (myGen !== window.__llmGen) return;
+                modeLabel.text(reasoning ? 'COM RASCUNHO (REASONING)' : 'SEM RASCUNHO')
+                    .attr('fill', reasoning ? PRIMARY : 'rgba(242,255,248,0.50)')
+                    .attr('opacity', 0).transition().duration(400).attr('opacity', 1);
+
+                let prev = { x: START.x + 60, y: START.y };
+                const stepDur = reasoning ? 420 : 560;
+                const pauseDur = reasoning ? 160 : 520;
+
+                function step(c) {
+                    if (myGen !== window.__llmGen) return;
+                    if (c >= COLS.length) {
+                        hopWalker(END.x - 40, END.y, stepDur, () => {
+                            addTrail(prev.x, prev.y, END.x - 60, END.y);
+                            bankR.select('text').transition().duration(250).attr('font-size', 18)
+                                .transition().duration(350).attr('font-size', 15);
+                            setTimeout(() => { if (myGen === window.__llmGen) done(); }, 1300);
+                        });
+                        return;
+                    }
+                    const chosen = stones[c][BEST[c]];
+                    glowCandidates(c, BEST[c], reasoning);
+
+                    const arrive = () => {
+                        addTrail(prev.x, prev.y, chosen.x, chosen.y);
+                        settleColumn(c, BEST[c]);
+                        prev = { x: chosen.x, y: chosen.y };
+                        step(c + 1);
+                    };
+
+                    setTimeout(() => {
+                        if (myGen !== window.__llmGen) return;
+                        if (!reasoning && c === 2) {
+                            // hesita: pisa na pedra errada, volta e corrige
+                            const wrong = stones[c][0];
+                            hopWalker(wrong.x, wrong.y, stepDur, () => {
+                                wrong.el.transition().duration(200).attr('stroke', 'rgba(242,255,248,0.5)')
+                                    .attr('fill', 'rgba(255,255,255,0.05)');
+                                setTimeout(() => {
+                                    if (myGen !== window.__llmGen) return;
+                                    hopWalker(chosen.x, chosen.y, stepDur, arrive);
+                                }, 420);
+                            });
+                        } else {
+                            hopWalker(chosen.x, chosen.y, stepDur, arrive);
+                        }
+                    }, pauseDur);
+                }
+
+                if (reasoning) {
+                    const pts = [[START.x + 60, START.y]]
+                        .concat(COLS.map((cx, c) => [cx, stones[c][BEST[c]].y]))
+                        .concat([[END.x - 60, END.y]]);
+                    draft.attr('d', 'M ' + pts.map(p => p.join(' ')).join(' L '))
+                        .attr('opacity', 0)
+                        .transition().duration(900).attr('opacity', 0.7)
+                        .on('end', () => step(0));
+                } else {
+                    step(0);
+                }
+            }
+
+            function cycle(reasoning) {
+                if (myGen !== window.__llmGen) return;
+                cross(reasoning, () => {
+                    resetRiver();
+                    walker.transition().duration(400).attr('opacity', 0)
+                        .on('end', () => {
+                            if (myGen !== window.__llmGen) return;
+                            placeWalker(START.x, START.y);
+                            walker.transition().duration(400).attr('opacity', 1);
+                            setTimeout(() => cycle(!reasoning), 700);
+                        });
+                });
+            }
+            setTimeout(() => { if (myGen === window.__llmGen) cycle(false); }, 1900);
+
+            // correnteza perpétua
+            const flow = d3.timer(t => {
+                if (myGen !== window.__llmGen) { flow.stop(); return; }
+                water.forEach((w, i) => w.attr('stroke-dashoffset', -t * (0.02 + i * 0.006)));
+                draft.attr('stroke-dashoffset', -t * 0.012);
+            });
+        }
+        animateLlm();
+
+        // ===== PERSONA: o campo que inclina e a massa de tokens escorre (loop) =====
+        // As mesmas 64 bolinhas em todos os quadros. Sem persona o piso é plano e a mão
+        // pega no centro de massa (o token médio). Com persona o piso inclina, a massa
+        // escorre para o lado pesado, um cluster acende e a mão migra para lá. Nada foi
+        // criado nem removido: só o peso mudou.
+        function animatePersona() {
+            window.__personaGen = (window.__personaGen || 0) + 1;
+            const myGen = window.__personaGen;
+
+            const svg = d3.select('#persona-svg');
+            svg.selectAll('*').remove();
+
+            const MONO = 'ui-monospace, Menlo, Consolas, monospace';
+            const GRAY = 'rgba(242,255,248,0.30)';
+            const GRAY_STROKE = 'rgba(242,255,248,0.16)';
+            const N = 64, R = 11, LVL = 24;
+            const PIVOT = { x: 640, y: 505 };
+            const X0 = 180, X1 = 1100;
+            const TILT = 0.145;
+            const MU_FLAT = 640, MU_PERSONA = 900;
+
+            let slope = 0, slopeTarget = 0;
+            const floorY = x => PIVOT.y + slope * (x - PIVOT.x);
+
+            // rng determinístico: o layout não muda entre ciclos
+            let seed = 20260709;
+            const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+            const gauss = (m, sd) => m + sd * Math.sqrt(-2 * Math.log(rnd() || 1e-9)) * Math.cos(2 * Math.PI * rnd());
+
+            // empilhamento: quem está mais perto do centro de massa fica embaixo
+            function levels(xs, mu) {
+                const bins = {}, out = new Array(xs.length);
+                xs.map((x, i) => i).sort((a, b) => Math.abs(xs[a] - mu) - Math.abs(xs[b] - mu))
+                    .forEach(i => { const k = Math.round(xs[i] / (2 * R + 2)); out[i] = bins[k] = (bins[k] || 0); bins[k]++; });
+                return out;
+            }
+
+            const flatX = d3.range(N).map(i => 292 + i * (988 - 292) / (N - 1) + (rnd() - 0.5) * 7);
+            const persX = d3.range(N).map(i => i < 44
+                ? Math.max(810, Math.min(1010, gauss(MU_PERSONA, 55)))   // núcleo: a moda que a persona cria
+                : 300 + rnd() * 560);                                    // cauda: os outros tokens continuam possíveis
+            const flatL = levels(flatX, MU_FLAT), persL = levels(persX, MU_PERSONA);
+
+            // densidade: a mesma área sob a curva nos dois estados, picos diferentes.
+            // normalizada por um fator comum, senão o campo plano viraria um platô
+            // da mesma altura do pico e a mensagem se perderia
+            const CX = d3.range(X0, X1 + 1, 16), BW = 42, CURVE_H = 170;
+            const dens = xs => CX.map(x => d3.sum(xs, v => Math.exp(-0.5 * Math.pow((x - v) / BW, 2))));
+            const dFlat = dens(flatX), dPers = dens(persX);
+            const dScale = CURVE_H / Math.max(d3.max(dFlat), d3.max(dPers));
+            const lineGen = d3.line().x(d => d[0]).y(d => d[1]).curve(d3.curveBasis);
+
+            // campo: linhas paralelas ao piso + cunha sob ele
+            const wedge = svg.append('path').attr('fill', 'rgba(255,255,255,0.03)');
+            const fieldLines = d3.range(3).map(i => svg.append('line')
+                .attr('stroke', 'rgba(242,255,248,0.05)').attr('stroke-dasharray', '3 16'));
+            const floor = svg.append('line')
+                .attr('stroke', 'rgba(242,255,248,0.22)').attr('stroke-width', 2.5)
+                .attr('stroke-dasharray', '16 10');
+
+            const glow = svg.append('ellipse').attr('rx', 165).attr('ry', 72)
+                .attr('fill', PRIMARY).attr('opacity', 0).style('filter', 'blur(30px)');
+
+            // a curva de densidade envelopa a pilha: é a distribuição em si
+            const densArea = svg.append('path').attr('fill', 'rgba(242,255,248,0.035)');
+            const densCurve = svg.append('path').attr('fill', 'none').attr('stroke-width', 2.2);
+            const densLabel = svg.append('text').text('p(token | contexto)').attr('x', 210).attr('y', 330)
+                .attr('font-family', MONO).attr('font-size', 15).attr('fill', 'rgba(242,255,248,0.32)');
+            const lerpColor = d3.interpolateRgb('rgba(242,255,248,0.35)', PRIMARY);
+
+            const lowLabel = svg.append('text').text('peso baixo').attr('font-family', MONO)
+                .attr('font-size', 14).attr('letter-spacing', 2).attr('fill', 'rgba(242,255,248,0.40)').attr('opacity', 0);
+            const highLabel = svg.append('text').text('peso alto').attr('text-anchor', 'end').attr('font-family', MONO)
+                .attr('font-size', 14).attr('letter-spacing', 2).attr('fill', PRIMARY).attr('opacity', 0);
+
+            // as bolinhas: os tokens. sempre as mesmas, sempre todas
+            const ballsG = svg.append('g');
+            const balls = d3.range(N).map(i => ({
+                el: ballsG.append('circle').attr('r', R).attr('cx', flatX[i]).attr('cy', -40)
+                    .attr('fill', GRAY).attr('stroke', GRAY_STROKE).attr('stroke-width', 1.2),
+                fx: flatX[i], fl: flatL[i], px: persX[i], pl: persL[i],
+                hot: Math.abs(persX[i] - MU_PERSONA) < 95,
+                tx: flatX[i], level: flatL[i], bx: flatX[i], by: -40,
+                k: 0.045 + (i % 7) * 0.004, ph: rnd() * 6.28, hotOn: false
+            }));
+
+            const modeLabel = svg.append('text').attr('x', 640).attr('y', 58).attr('text-anchor', 'middle')
+                .attr('font-family', MONO).attr('font-size', 16).attr('letter-spacing', 3).attr('opacity', 0);
+
+            const pickChip = svg.append('g').attr('opacity', 0);
+            pickChip.append('rect').attr('x', 470).attr('y', 102).attr('width', 340).attr('height', 48).attr('rx', 24)
+                .attr('fill', 'rgba(255,255,255,0.05)').attr('stroke', 'rgba(255,255,255,0.10)');
+            const pickText = pickChip.append('text').attr('x', 640).attr('y', 132).attr('text-anchor', 'middle')
+                .attr('font-family', MONO).attr('font-size', 17);
+
+            svg.append('text').text(`as mesmas ${N} bolinhas, em todo quadro`).attr('x', 60).attr('y', 688)
+                .attr('font-family', MONO).attr('font-size', 14).attr('fill', 'rgba(242,255,248,0.35)');
+            const personaChip = svg.append('text').attr('x', 1225).attr('y', 688).attr('text-anchor', 'end')
+                .attr('font-family', MONO).attr('font-size', 14).attr('fill', PRIMARY).attr('opacity', 0)
+                .text('persona: engenheiro de segurança sênior');
+
+            // mão flat (Material Symbols "back_hand", Apache-2.0, ver CREDITS.md)
+            const hand = svg.append('g').attr('opacity', 0);
+            hand.append('path')
+                .attr('d', 'M12.8 23q-2.05 0-3.85-.937T6 19.45L1.2 12.4l.475-.475q.5-.525 1.238-.6t1.337.35l2.75 1.9V4q0-.425.288-.712T8 3t.713.288T9 4v8h2V2q0-.425.288-.712T12 1t.713.288T13 2v10h2V3q0-.425.288-.712T16 2t.713.288T17 3v9h2V5q0-.425.288-.712T20 4t.713.288T21 5v9.8q0 3.425-2.387 5.813T12.8 23')
+                .attr('transform', 'translate(-11,-12)');
+            const handPath = hand.select('path');
+            const handAt = (x, y) => `translate(${x},${y}) scale(3) rotate(180)`;
+            const GRAB = 44;   // ponta dos dedos = centro + 11 unidades do ícone × escala 3
+
+            function setPersona(on) {
+                slopeTarget = on ? TILT : 0;
+                modeLabel.text(on ? 'COM PERSONA · O CAMPO INCLINA' : 'SEM PERSONA · CAMPO PLANO')
+                    .attr('fill', on ? PRIMARY : 'rgba(242,255,248,0.50)')
+                    .transition().duration(400).attr('opacity', 1);
+                personaChip.transition().duration(600).attr('opacity', on ? 0.9 : 0);
+                pickChip.transition().duration(300).attr('opacity', 0);
+                balls.forEach(b => {
+                    b.tx = on ? b.px : b.fx;
+                    b.level = on ? b.pl : b.fl;
+                    b.hotOn = on && b.hot;
+                    b.el.transition().duration(900)
+                        .attr('fill', b.hotOn ? PRIMARY + 'D9' : GRAY)
+                        .attr('stroke', b.hotOn ? PRIMARY : GRAY_STROKE)
+                        .attr('stroke-width', b.hotOn ? 1.8 : 1.2);
+                });
+            }
+
+            // a mão desce no centro de massa e leva o token de cima da pilha
+            function pick(on) {
+                if (myGen !== window.__personaGen) return;
+                const mu = on ? MU_PERSONA : MU_FLAT;
+                let best = null, score = Infinity;
+                balls.forEach(b => {
+                    const d = Math.abs(b.bx - mu);
+                    if (d < 75 && d * 2 - b.level * 30 < score) { score = d * 2 - b.level * 30; best = b; }
+                });
+                if (!best) return;
+                const gx = best.bx, gy = best.by;
+
+                handPath.attr('fill', on ? PRIMARY : 'rgba(242,255,248,0.75)');
+                hand.attr('transform', handAt(gx, gy - 200)).attr('opacity', 0)
+                    .transition('fade').duration(280).attr('opacity', 1);
+                hand.transition().delay(240).duration(680).ease(d3.easeQuadIn)
+                    .attr('transform', handAt(gx, gy - GRAB));
+
+                setTimeout(() => {
+                    if (myGen !== window.__personaGen) return;
+                    best.el.transition().duration(180).attr('r', R + 5)
+                        .transition().duration(320).attr('r', R);
+                    svg.append('circle').attr('cx', gx).attr('cy', gy).attr('r', R)
+                        .attr('fill', on ? PRIMARY : 'rgba(242,255,248,0.8)')
+                        .style('filter', `drop-shadow(0 0 14px ${on ? PRIMARY : '#ffffff'}88)`)
+                        .transition().duration(720).ease(d3.easeCubicOut)
+                        .attr('cx', 640).attr('cy', 130).attr('r', 4).attr('opacity', 0).remove();
+                    hand.transition().duration(700).ease(d3.easeCubicOut)
+                        .attr('transform', handAt(gx, gy - 210));
+                    hand.transition('fade').delay(560).duration(320).attr('opacity', 0);
+                    pickText.text(on ? '"sanitizar o input"' : '"depende do caso"')
+                        .attr('fill', on ? PRIMARY : 'rgba(242,255,248,0.60)');
+                    pickChip.transition().delay(430).duration(400).attr('opacity', 1);
+                }, 980);
+            }
+
+            function cycle() {
+                if (myGen !== window.__personaGen) return;
+                setPersona(false);
+                setTimeout(() => pick(false), 1900);   // deixa a massa assentar antes da mão descer
+                setTimeout(() => { if (myGen === window.__personaGen) setPersona(true); }, 4300);
+                setTimeout(() => pick(true), 7000);
+                setTimeout(cycle, 10200);
+            }
+            setTimeout(cycle, 700);
+
+            // loop perpétuo: o piso persegue a inclinação alvo, as bolinhas rolam,
+            // o cluster ferve de leve e o campo desliza
+            // convergência por tempo, não por frame: a rolagem tem a mesma
+            // velocidade a 30, 60 ou 144 Hz
+            let last = 0;
+            const conv = (rate, dt) => 1 - Math.pow(1 - rate, dt / 16.67);
+
+            const tick = d3.timer(t => {
+                if (myGen !== window.__personaGen) { tick.stop(); return; }
+                const dt = Math.min(64, t - last); last = t;
+
+                slope += (slopeTarget - slope) * conv(0.04, dt);
+                const yA = floorY(X0), yB = floorY(X1), r = slope / TILT;
+
+                floor.attr('x1', X0).attr('y1', yA).attr('x2', X1).attr('y2', yB)
+                    .attr('stroke-dashoffset', -t * 0.02);
+                // sangra até as bordas: uma cunha recortada em x vira uma caixa cinza
+                wedge.attr('d', `M0,${floorY(0)} L1280,${floorY(1280)} L1280,720 L0,720 Z`);
+                fieldLines.forEach((l, i) => l
+                    .attr('x1', X0).attr('y1', yA - 62 * (i + 1)).attr('x2', X1).attr('y2', yB - 62 * (i + 1))
+                    .attr('stroke-dashoffset', -t * (0.012 + i * 0.004)));
+                lowLabel.attr('x', X0 + 8).attr('y', yA + 32).attr('opacity', r * 0.9);
+                highLabel.attr('x', X1 - 8).attr('y', yB + 32).attr('opacity', r * 0.9);
+                glow.attr('cx', MU_PERSONA).attr('cy', floorY(MU_PERSONA) - 46).attr('opacity', r * 0.16);
+
+                const pts = CX.map((x, i) => [x, floorY(x) - (dFlat[i] + (dPers[i] - dFlat[i]) * r) * dScale - 16]);
+                densCurve.attr('d', lineGen(pts)).attr('stroke', lerpColor(r));
+                densArea.attr('d', `${lineGen(pts)} L${X1},${yB} L${X0},${yA} Z`);
+
+                balls.forEach(b => {
+                    const ty = floorY(b.tx) - R - b.level * LVL;
+                    const f = conv(b.k, dt);
+                    b.bx += (b.tx - b.bx) * f;
+                    b.by += (ty - b.by) * f;
+                    const amp = b.hotOn ? 2.1 : 1.1;
+                    b.el.attr('cx', b.bx + Math.sin(t * 0.002 + b.ph) * amp)
+                        .attr('cy', b.by + Math.cos(t * 0.0016 + b.ph) * 0.9);
+                });
+            });
+        }
+        animatePersona();
+
+        // ===== LOST IN THE MIDDLE: a curva U da atenção com scanner ponta a ponta (loop) =====
+        // Um marcador varre o contexto de ponta a ponta sobre a curva U: nas pontas a
+        // atenção sobe (marcador grande e aceso), no meio despenca (pequeno e apagado).
+        function animateLitm() {
+            window.__litmGen = (window.__litmGen || 0) + 1;
+            const myGen = window.__litmGen;
+
+            const svg = d3.select('#litm-svg');
+            svg.selectAll('*').remove();
+
+            const MONO = 'ui-monospace, Menlo, Consolas, monospace';
+            const X0 = 240, X1 = 1040, YHI = 200, YLO = 490, AXY = 560;
+
+            // eixo x + labels de posição
+            svg.append('line').attr('x1', 200).attr('x2', 1080).attr('y1', AXY).attr('y2', AXY)
+                .attr('stroke', 'rgba(255,255,255,0.20)').attr('stroke-width', 2)
+                .attr('opacity', 0).transition().duration(600).attr('opacity', 1);
+            [['início do contexto', X0], ['meio', 640], ['fim do contexto', X1]].forEach(([t, x], i) => {
+                svg.append('text').text(t).attr('x', x).attr('y', 605)
+                    .attr('text-anchor', 'middle').attr('font-family', MONO).attr('font-size', 15)
+                    .attr('letter-spacing', 2).attr('fill', 'rgba(242,255,248,0.50)')
+                    .attr('opacity', 0).transition().delay(700 + i * 150).duration(500).attr('opacity', 1);
+            });
+            svg.append('text').text('atenção').attr('x', 165).attr('y', 350)
+                .attr('text-anchor', 'middle').attr('font-family', MONO).attr('font-size', 14)
+                .attr('letter-spacing', 3).attr('fill', 'rgba(242,255,248,0.45)')
+                .attr('transform', 'rotate(-90 165 350)')
+                .attr('opacity', 0).transition().delay(500).duration(500).attr('opacity', 1);
+
+            // zona de risco no meio
+            svg.append('rect').attr('x', 490).attr('y', 165).attr('width', 300).attr('height', 375).attr('rx', 10)
+                .attr('fill', 'rgba(255,255,255,0.045)')
+                .attr('opacity', 0).transition().delay(400).duration(700).attr('opacity', 1);
+            svg.append('text').text('zona de risco').attr('x', 640).attr('y', 145)
+                .attr('text-anchor', 'middle').attr('font-family', MONO).attr('font-size', 14)
+                .attr('font-style', 'italic').attr('fill', 'rgba(242,255,248,0.45)')
+                .attr('opacity', 0).transition().delay(900).duration(500).attr('opacity', 1);
+
+            // a curva U se desenha
+            const curve = svg.append('path')
+                .attr('d', `M ${X0} ${YHI} C 440 ${YHI + 15}, 500 ${YLO}, 640 ${YLO} C 780 ${YLO}, 840 ${YHI + 15}, ${X1} ${YHI}`)
+                .attr('fill', 'none').attr('stroke', PRIMARY).attr('stroke-width', 4).attr('stroke-linecap', 'round');
+            const L = curve.node().getTotalLength();
+            curve.attr('stroke-dasharray', `${L} ${L}`).attr('stroke-dashoffset', L)
+                .transition().delay(400).duration(1300).ease(d3.easeCubicInOut)
+                .attr('stroke-dashoffset', 0);
+
+            // scanner: marcador + linha de prumo + leitura de atenção
+            const drop = svg.append('line').attr('stroke', PRIMARY).attr('stroke-opacity', 0)
+                .attr('stroke-width', 2).attr('stroke-dasharray', '4 6');
+            const dot = svg.append('circle').attr('fill', PRIMARY).attr('opacity', 0);
+            const pct = svg.append('text').attr('font-family', MONO).attr('text-anchor', 'middle')
+                .attr('font-weight', 700).attr('opacity', 0);
+
+            setTimeout(() => {
+                if (myGen !== window.__litmGen) return;
+                drop.attr('stroke-opacity', 0.30);
+                dot.attr('opacity', 1);
+                pct.attr('opacity', 1);
+                const node = curve.node();
+                const sweep = d3.timer(t => {
+                    if (myGen !== window.__litmGen) { sweep.stop(); return; }
+                    const u = 0.5 - 0.5 * Math.cos(t / 2400);       // ponta a ponta, ida e volta
+                    const p = node.getPointAtLength(u * L);
+                    const a = (YLO - p.y) / (YLO - YHI);            // 1 nas pontas, ~0 no meio
+                    dot.attr('cx', p.x).attr('cy', p.y)
+                        .attr('r', 8 + 12 * a)
+                        .style('opacity', 0.35 + 0.65 * a)
+                        .style('filter', `drop-shadow(0 0 ${4 + 16 * a}px ${PRIMARY})`);
+                    drop.attr('x1', p.x).attr('y1', p.y + 16).attr('x2', p.x).attr('y2', AXY);
+                    pct.attr('x', p.x).attr('y', p.y - 30)
+                        .text(`atenção ${Math.round(12 + 86 * a)}%`)
+                        .attr('font-size', 15 + 8 * a)
+                        .attr('fill', a > 0.45 ? PRIMARY : 'rgba(242,255,248,0.55)');
+                });
+            }, 1800);
+        }
+        animateLitm();
+
+        // ===== CONTEXT ROT: aquário que suja até a troca de água (loop) =====
+        // Metáfora: a sessão é o aquário; a sujeira acumulando é o contexto podre;
+        // o peixe (modelo) nada cada vez mais devagar e fundo, até a troca de água
+        // (sessão nova) devolver a velocidade. E recomeça.
+        function animateRot() {
+            window.__rotGen = (window.__rotGen || 0) + 1;
+            const myGen = window.__rotGen;
+            clearInterval(window.__rotSpawn);
+
+            const svg = d3.select('#rot-svg');
+            svg.selectAll('*').remove();
+
+            const MONO = 'ui-monospace, Menlo, Consolas, monospace';
+            const TANK = { x: 360, y: 150, w: 560, h: 450 };
+
+            // aquário
+            svg.append('rect').attr('x', TANK.x).attr('y', TANK.y).attr('width', TANK.w).attr('height', TANK.h)
+                .attr('rx', 24).attr('fill', 'rgba(0,223,129,0.03)').attr('stroke', 'rgba(255,255,255,0.15)')
+                .attr('stroke-width', 2).attr('opacity', 0)
+                .transition().duration(700).attr('opacity', 1);
+            svg.append('line').attr('x1', TANK.x + 14).attr('x2', TANK.x + TANK.w - 14)
+                .attr('y1', TANK.y + 36).attr('y2', TANK.y + 36)
+                .attr('stroke', 'rgba(242,255,248,0.20)').attr('stroke-dasharray', '10 8')
+                .attr('opacity', 0).transition().delay(300).duration(600).attr('opacity', 1);
+
+            // névoa da água suja
+            const murk = svg.append('rect').attr('x', TANK.x + 3).attr('y', TANK.y + 3)
+                .attr('width', TANK.w - 6).attr('height', TANK.h - 6).attr('rx', 22)
+                .attr('fill', 'rgba(242,255,248,0)');
+
+            // contador de tokens + velocímetro do peixe
+            const counter = svg.append('text').attr('x', TANK.x + TANK.w).attr('y', TANK.y - 44)
+                .attr('text-anchor', 'end').attr('font-family', MONO).attr('font-size', 16)
+                .attr('fill', 'rgba(242,255,248,0.55)').attr('opacity', 0);
+            counter.transition().delay(600).duration(500).attr('opacity', 1);
+            const speedo = svg.append('text').attr('x', TANK.x + TANK.w).attr('y', TANK.y - 18)
+                .attr('text-anchor', 'end').attr('font-family', MONO).attr('font-size', 16)
+                .attr('opacity', 0);
+            speedo.transition().delay(700).duration(500).attr('opacity', 1);
+
+            // aviso de troca de água
+            const flushLabel = svg.append('text').text('SESSÃO NOVA: ÁGUA LIMPA')
+                .attr('x', 640).attr('y', 380).attr('text-anchor', 'middle')
+                .attr('font-family', MONO).attr('font-size', 24).attr('letter-spacing', 4)
+                .attr('fill', PRIMARY).attr('font-weight', 700).attr('opacity', 0);
+
+            // peixe flat (composto: corpo, cauda, olho)
+            const fish = svg.append('g').attr('opacity', 0);
+            const fishInner = fish.append('g');
+            fishInner.append('ellipse').attr('rx', 30).attr('ry', 15).attr('fill', PRIMARY);
+            fishInner.append('path').attr('d', 'M 24 0 L 46 -14 L 46 14 Z').attr('fill', PRIMARY).attr('opacity', 0.85);
+            fishInner.append('circle').attr('cx', -16).attr('cy', -4).attr('r', 3).attr('fill', '#0B0F0D');
+            fish.style('filter', `drop-shadow(0 0 10px ${PRIMARY}66)`);
+            fish.transition().delay(800).duration(500).attr('opacity', 1);
+
+            const parts = [];
+            let m = 0, flushing = false, lastT = 0, phase = 0;
+
+            window.__rotSpawn = setInterval(() => {
+                if (myGen !== window.__rotGen) { clearInterval(window.__rotSpawn); return; }
+                if (flushing || m >= 1 || parts.length > 55) return;
+                const p = svg.append('circle')
+                    .attr('cx', TANK.x + 30 + Math.random() * (TANK.w - 60))
+                    .attr('cy', TANK.y + 50 + Math.random() * (TANK.h - 90))
+                    .attr('r', 1.5 + Math.random() * 3)
+                    .attr('fill', 'rgba(242,255,248,0.28)').attr('opacity', 0);
+                p.transition().duration(600).attr('opacity', 1);
+                parts.push(p);
+            }, 380);
+
+            function flush() {
+                flushing = true;
+                flushLabel.transition().duration(350).attr('opacity', 1)
+                    .transition().delay(1100).duration(450).attr('opacity', 0);
+                parts.forEach(p => p.transition().duration(700).attr('cy', TANK.y + TANK.h - 12).attr('opacity', 0).remove());
+                parts.length = 0;
+                murk.transition().duration(900).attr('fill', 'rgba(242,255,248,0)');
+                setTimeout(() => {
+                    if (myGen !== window.__rotGen) return;
+                    m = 0;
+                    flushing = false;
+                }, 1900);
+            }
+
+            const swim = d3.timer(t => {
+                if (myGen !== window.__rotGen) { swim.stop(); return; }
+                const dt = lastT ? t - lastT : 0;
+                lastT = t;
+
+                if (!flushing) {
+                    m = Math.min(1, m + dt / 22000);
+                    murk.attr('fill', `rgba(242,255,248,${(m * 0.16).toFixed(3)})`);
+                    if (m >= 1) flush();
+                }
+
+                // peixe: rápido na água limpa; na água suja fica lento, torto,
+                // afunda e vagueia sem direção
+                const speed = 0.0022 * (1 - 0.85 * m);
+                phase += dt * speed;
+                const fx = 640 + 200 * Math.sin(phase) + m * 45 * Math.sin(t * 0.0013);
+                const fy = 330 + 50 * Math.sin(t * 0.0006) + m * 150 + m * 35 * Math.sin(t * 0.0021);
+                const dir = Math.cos(phase) >= 0 ? -1 : 1;
+                const tilt = m * 22 * Math.sin(t * 0.004);
+                fish.attr('transform', `translate(${fx},${Math.min(fy, TANK.y + TANK.h - 40)})`);
+                fishInner.attr('transform', `scale(${dir},1) rotate(${tilt})`);
+                fish.attr('opacity', 1 - m * 0.4);
+
+                counter.text(`sessão: ${Math.floor(m * 120)}k tokens`);
+                const vel = Math.round(100 - 85 * m);
+                speedo.text(`velocidade do peixe: ${vel}%`)
+                    .attr('fill', vel > 55 ? PRIMARY : 'rgba(242,255,248,0.45)');
+            });
+        }
+        animateRot();
+
+        // ===== FLUXO /INIT: partícula viajando pelas 4 fases (loop) =====
+        (function () {
+            const ETAPAS = ['Descrição', 'User Stories', 'Banco de Dados', 'Fases de Dev'];
+            const W = 960, H = 540;
+            const svg = d3.select('#fluxo-stage').append('svg').attr('viewBox', `0 0 ${W} ${H}`);
+            const xs = d3.scalePoint().domain(d3.range(ETAPAS.length)).range([120, W - 120]);
+            const cy = H / 2;
+
+            svg.append('line').attr('x1', xs(0)).attr('x2', xs(ETAPAS.length - 1)).attr('y1', cy).attr('y2', cy)
+                .attr('stroke', 'rgba(255,255,255,0.12)').attr('stroke-width', 2);
+
+            // alerta perpétuo na fase 3: onde projetos morrem
+            const alerta = svg.append('circle').attr('cx', xs(2)).attr('cy', cy).attr('r', 34)
+                .attr('fill', 'none').attr('stroke', PRIMARY).attr('stroke-dasharray', '6 6').attr('opacity', 0);
+            d3.interval(() => {
+                alerta.attr('r', 34).attr('opacity', 0.75)
+                    .transition().duration(1500).ease(d3.easeCubicOut)
+                    .attr('r', 60).attr('opacity', 0);
+            }, 1800);
+            svg.append('text').text('projetos morrem aqui').attr('x', xs(2)).attr('y', cy + 92)
+                .attr('text-anchor', 'middle').attr('font-size', 13).attr('font-style', 'italic')
+                .attr('fill', PRIMARY).attr('opacity', 0)
+                .transition().delay(1400).duration(600).attr('opacity', 0.85);
+
+            const nodes = svg.selectAll('g.node').data(ETAPAS).join('g')
+                .attr('transform', (d, i) => `translate(${xs(i)},${cy})`);
+            nodes.append('circle').attr('r', 0).attr('fill', 'rgba(255,255,255,0.06)')
+                .attr('stroke', PRIMARY).attr('stroke-width', 2)
+                .transition().delay((d, i) => 300 + i * 250).duration(600).ease(d3.easeBackOut).attr('r', 34);
+            nodes.append('text').text((d, i) => i + 1).attr('text-anchor', 'middle').attr('dy', 6)
+                .attr('fill', PRIMARY).attr('font-size', 20).attr('font-weight', 800)
+                .attr('opacity', 0).transition().delay((d, i) => 600 + i * 250).attr('opacity', 1);
+            nodes.append('text').text(d => d).attr('text-anchor', 'middle').attr('dy', 70)
+                .attr('fill', 'rgba(255,255,255,0.7)').attr('font-size', 16)
+                .attr('opacity', 0).transition().delay((d, i) => 700 + i * 250).attr('opacity', 1);
+
+            const particle = svg.append('circle').attr('r', 7).attr('fill', PRIMARY)
+                .attr('cy', cy).attr('cx', xs(0)).style('filter', `drop-shadow(0 0 8px ${PRIMARY})`);
+            function travel() {
+                particle.attr('cx', xs(0)).attr('opacity', 1)
+                    .transition().duration(3200).ease(d3.easeCubicInOut).attr('cx', xs(ETAPAS.length - 1))
+                    .transition().duration(300).attr('opacity', 0).on('end', travel);
+            }
+            travel();
+            d3.interval(() => {
+                nodes.selectAll('circle')
+                    .transition().delay((d, i) => i * 200).duration(350).attr('r', 39)
+                    .transition().duration(350).attr('r', 34);
+            }, 3500);
+            window.__fluxoReplay = travel;
+        })();
+
+        // ===== CICLO /AI-CONTEXT: código → docs → plano → código, girando pra sempre (loop) =====
+        // Metáfora: o contexto vivo é uma órbita. O cometa percorre o ciclo em loop
+        // perpétuo; cada estação pulsa quando ele passa. De tempos em tempos o nó
+        // CÓDIGO "drifta" (flash) e a passagem seguinte do cometa o normaliza:
+        // re-rodar o /ai-context só reescreve o que mudou.
+        function animateCiclo() {
+            window.__cicloGen = (window.__cicloGen || 0) + 1;
+            const myGen = window.__cicloGen;
+
+            const svg = d3.select('#ciclo-svg');
+            svg.selectAll('*').remove();
+
+            const MONO = 'ui-monospace, Menlo, Consolas, monospace';
+            const CX = 640, CY = 375, R = 225;
+            const NODES = [
+                { label: 'CÓDIGO', sub: 'a única fonte', ang: -Math.PI / 2 },
+                { label: '/ai-context', sub: 'inspeciona', ang: 0 },
+                { label: 'AGENTS.md + docs/', sub: 'contexto fresco', ang: Math.PI / 2 },
+                { label: '/plan + ralph.sh', sub: 'código novo', ang: Math.PI }
+            ].map(n => ({ ...n, x: CX + Math.cos(n.ang) * R, y: CY + Math.sin(n.ang) * R }));
+            const EDGE_LABELS = ['lê', 'gera', 'alimenta', 'escreve'];
+
+            // órbita tracejada
+            const orbit = svg.append('circle').attr('cx', CX).attr('cy', CY).attr('r', R)
+                .attr('fill', 'none').attr('stroke', 'rgba(242,255,248,0.16)')
+                .attr('stroke-width', 2).attr('stroke-dasharray', '10 10')
+                .attr('opacity', 0);
+            orbit.transition().duration(900).attr('opacity', 1);
+
+            // setas de sentido (a meio caminho entre estações) + rótulo da aresta
+            NODES.forEach((n, i) => {
+                const mid = n.ang + Math.PI / 4;
+                const mx = CX + Math.cos(mid) * R, my = CY + Math.sin(mid) * R;
+                const g = svg.append('g')
+                    .attr('transform', `translate(${mx},${my}) rotate(${mid * 180 / Math.PI + 90})`)
+                    .attr('opacity', 0);
+                g.append('path').attr('d', 'M -9 -7 L 9 0 L -9 7')
+                    .attr('fill', 'none').attr('stroke', PRIMARY).attr('stroke-width', 3)
+                    .attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round');
+                g.transition().delay(600 + i * 130).duration(450).attr('opacity', 0.8);
+
+                const lr = R + 46;
+                svg.append('text').text(EDGE_LABELS[i])
+                    .attr('x', CX + Math.cos(mid) * lr).attr('y', CY + Math.sin(mid) * lr + 5)
+                    .attr('text-anchor', 'middle').attr('font-family', MONO)
+                    .attr('font-size', 15).attr('font-style', 'italic')
+                    .attr('fill', 'rgba(242,255,248,0.45)')
+                    .attr('opacity', 0).transition().delay(750 + i * 130).duration(450).attr('opacity', 1);
+            });
+
+            // estações
+            const chips = svg.selectAll('g.est').data(NODES).join('g').attr('class', 'est')
+                .attr('transform', d => `translate(${d.x},${d.y}) scale(0)`);
+            const chipRects = chips.append('rect')
+                .attr('x', -118).attr('y', -34).attr('width', 236).attr('height', 68).attr('rx', 14)
+                .attr('fill', 'rgba(11,15,13,0.92)').attr('stroke', PRIMARY).attr('stroke-opacity', 0.45)
+                .attr('stroke-width', 2);
+            chips.append('text').text(d => d.label).attr('text-anchor', 'middle').attr('dy', -3)
+                .attr('fill', 'rgba(242,255,248,0.95)').attr('font-size', 19).attr('font-weight', 800)
+                .attr('font-family', MONO);
+            chips.append('text').text(d => d.sub).attr('text-anchor', 'middle').attr('dy', 21)
+                .attr('fill', 'rgba(242,255,248,0.5)').attr('font-size', 13).attr('font-style', 'italic');
+            chips.transition().delay((d, i) => 300 + i * 170).duration(550)
+                .ease(d3.easeBackOut.overshoot(1.3))
+                .attr('transform', d => `translate(${d.x},${d.y}) scale(1)`);
+
+            // centro
+            const core = svg.append('g').attr('opacity', 0);
+            core.append('text').text('contexto vivo').attr('x', CX).attr('y', CY - 4)
+                .attr('text-anchor', 'middle').attr('font-family', MONO).attr('font-size', 22)
+                .attr('font-weight', 700).attr('fill', PRIMARY).attr('letter-spacing', 2);
+            core.append('text').text('idempotente · só o delta').attr('x', CX).attr('y', CY + 26)
+                .attr('text-anchor', 'middle').attr('font-family', MONO).attr('font-size', 14)
+                .attr('fill', 'rgba(242,255,248,0.45)');
+            core.transition().delay(1300).duration(700).attr('opacity', 1);
+
+            // aviso de drift (aparece de tempos em tempos sobre o nó CÓDIGO)
+            const driftTag = svg.append('text').text('⚠ drift detectado')
+                .attr('x', NODES[0].x).attr('y', NODES[0].y - 56)
+                .attr('text-anchor', 'middle').attr('font-family', MONO).attr('font-size', 14)
+                .attr('fill', 'rgba(242,255,248,0.75)').attr('opacity', 0);
+
+            // cometa orbitando pra sempre
+            const tail = svg.append('circle').attr('r', 12).attr('fill', PRIMARY).attr('opacity', 0.18);
+            const comet = svg.append('circle').attr('r', 8).attr('fill', PRIMARY)
+                .style('filter', `drop-shadow(0 0 12px ${PRIMARY})`).attr('opacity', 0);
+            comet.transition().delay(1600).duration(500).attr('opacity', 1);
+            tail.transition().delay(1600).duration(500).attr('opacity', 0.18);
+
+            let lastStation = -1, drifted = false;
+            const SPEED = 0.00035;
+            const orbitLoop = d3.timer(t => {
+                if (myGen !== window.__cicloGen) { orbitLoop.stop(); return; }
+                const a = -Math.PI / 2 + t * SPEED;
+                comet.attr('cx', CX + Math.cos(a) * R).attr('cy', CY + Math.sin(a) * R);
+                const at = a - 0.13;
+                tail.attr('cx', CX + Math.cos(at) * R).attr('cy', CY + Math.sin(at) * R);
+                orbit.attr('stroke-dashoffset', -t * 0.008);
+                core.attr('transform', `translate(0, ${Math.sin(t / 1100) * 5})`);
+
+                // pulso da estação por onde o cometa passa
+                const station = Math.round(((a + Math.PI / 2) % (2 * Math.PI)) / (Math.PI / 2)) % 4;
+                if (station !== lastStation) {
+                    lastStation = station;
+                    chipRects.filter((d, i) => i === station)
+                        .transition().duration(200).attr('stroke-opacity', 1)
+                        .attr('transform', 'scale(1.06)')
+                        .transition().duration(450).attr('stroke-opacity', 0.45)
+                        .attr('transform', 'scale(1)');
+                    // passou pelo CÓDIGO driftado → normaliza (o /ai-context resolveu)
+                    if (station === 1 && drifted) {
+                        drifted = false;
+                        driftTag.transition().duration(400).attr('opacity', 0);
+                    }
+                }
+            });
+
+            // drift periódico no nó CÓDIGO
+            window.__cicloDrift = (window.__cicloDrift || null);
+            clearInterval(window.__cicloDrift);
+            window.__cicloDrift = setInterval(() => {
+                if (myGen !== window.__cicloGen) { clearInterval(window.__cicloDrift); return; }
+                drifted = true;
+                driftTag.attr('opacity', 0).transition().duration(400).attr('opacity', 0.95);
+                chipRects.filter((d, i) => i === 0)
+                    .transition().duration(250).attr('stroke', 'rgba(242,255,248,0.85)')
+                    .transition().delay(900).duration(600).attr('stroke', PRIMARY);
+            }, 7500);
+        }
+        animateCiclo();
+
+        // === CONTROLES DE SLIDE: navegação card-a-card (progresso + botão + teclado) ===
+        (function () {
+            const cardSections = Array.from(document.querySelectorAll('body > section'));
+            if (cardSections.length === 0) return;
+
+            const progress = document.getElementById('mira-progress');
+            const nextBtn = document.getElementById('mira-next');
+            const nextIcon = document.getElementById('mira-next-icon');
+
+            const atBottom = () =>
+                (window.scrollY + window.innerHeight) >= (document.documentElement.scrollHeight - 100);
+
+            function currentIndex() {
+                const y = window.scrollY + window.innerHeight * 0.3;
+                let idx = -1;
+                for (let i = 0; i < cardSections.length; i++) {
+                    if (cardSections[i].offsetTop <= y) idx = i;
+                }
+                return idx;
+            }
+
+            function goTo(i) {
+                const idx = Math.max(0, Math.min(cardSections.length - 1, i));
+                cardSections[idx].scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            window.addEventListener('scroll', () => {
+                const docH = document.documentElement.scrollHeight - window.innerHeight;
+                progress.style.width = (docH > 0 ? (window.scrollY / docH) * 100 : 0) + '%';
+                nextBtn.classList.toggle('visible', window.scrollY > 300);
+                nextIcon.setAttribute('data-lucide', atBottom() ? 'chevron-up' : 'chevron-down');
+                lucide.createIcons();
+            });
+
+            nextBtn.addEventListener('click', () => {
+                if (atBottom()) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+                goTo(currentIndex() + 1);
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (['ArrowRight', 'ArrowDown', 'PageDown'].includes(e.key)) {
+                    e.preventDefault();
+                    goTo(currentIndex() + 1);
+                } else if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) {
+                    e.preventDefault();
+                    const idx = currentIndex();
+                    if (idx <= 0) window.scrollTo({ top: 0, behavior: 'smooth' });
+                    else goTo(idx - 1);
+                } else if (e.key === 'Home') {
+                    e.preventDefault();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else if (e.key === 'End') {
+                    e.preventDefault();
+                    goTo(cardSections.length - 1);
+                } else if (e.key.toLowerCase() === 'f') {
+                    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+                    else document.exitFullscreen();
+                }
+            });
+        })();
+    </script>
+
+    <!-- Modo edição (reordenar slides): tecla E ou ?edit=1 -->
+    <script src="mira/mira-edit.js" defer></script>
+    <!-- mira-draw (desenhar sobre o slide): tecla P ou ?draw=1 -->
+    <script src="mira/mira-draw.js" defer></script>
+</body>
+
+</html>
