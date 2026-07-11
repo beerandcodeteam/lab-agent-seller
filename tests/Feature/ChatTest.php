@@ -35,7 +35,8 @@ test('client_message_and_agent_reply_are_persisted', function () {
     Livewire::actingAs($client, 'client')
         ->test(Chat::class)
         ->set('body', 'Oi, tudo bem?')
-        ->call('sendMessage');
+        ->call('sendMessage')
+        ->call('generateResponse');
 
     $conversation = Conversation::firstWhere([
         'client_id' => $client->id,
@@ -61,7 +62,8 @@ test('agent_uses_global_system_prompt', function () {
     Livewire::actingAs($client, 'client')
         ->test(Chat::class)
         ->set('body', 'Qual o status?')
-        ->call('sendMessage');
+        ->call('sendMessage')
+        ->call('generateResponse');
 
     SellerAgent::assertPrompted('Qual o status?');
     SellerAgent::assertPrompted(
@@ -80,7 +82,8 @@ test('conversation_is_reused_per_client_company_pair', function () {
     Livewire::actingAs($client, 'client')
         ->test(Chat::class)
         ->set('body', 'de novo')
-        ->call('sendMessage');
+        ->call('sendMessage')
+        ->call('generateResponse');
 
     expect(Conversation::where('client_id', $client->id)->where('user_id', $company->id)->count())->toBe(1);
 });
@@ -152,6 +155,8 @@ test('streamed_response_is_persisted_on_completion', function () {
         ->test(Chat::class)
         ->set('body', 'me conta')
         ->call('sendMessage')
+        ->assertSet('streaming', true)
+        ->call('generateResponse')
         ->assertSet('streaming', false);
 
     $conversation = Conversation::firstWhere(['client_id' => $client->id, 'user_id' => $company->id]);
@@ -160,6 +165,40 @@ test('streamed_response_is_persisted_on_completion', function () {
 
     expect($assistant)->not->toBeNull();
     expect($assistant->content)->toBe('a resposta completa em streaming');
+});
+
+test('client_message_renders_before_agent_reply_streams', function () {
+    SellerAgent::fake(['resposta']);
+
+    $email = 'ana@cliente.com';
+    $company = companyMatchingEmail($email);
+    $client = clientInChatWith($company, $email);
+
+    // Após sendMessage (antes de generateResponse) a mensagem do cliente já
+    // aparece e o compositor fica travado aguardando o stream.
+    Livewire::actingAs($client, 'client')
+        ->test(Chat::class)
+        ->set('body', 'apareça já')
+        ->call('sendMessage')
+        ->assertSee('apareça já')
+        ->assertSet('streaming', true)
+        ->assertSet('body', '');
+});
+
+test('assistant_reply_is_rendered_as_markdown', function () {
+    $email = 'ana@cliente.com';
+    $company = companyMatchingEmail($email);
+    $client = clientInChatWith($company, $email);
+
+    $conversation = Conversation::create(['client_id' => $client->id, 'user_id' => $company->id]);
+    Message::factory()->fromAssistant()->for($conversation)->create([
+        'content' => "Veja **importante**:\n\n- item um",
+    ]);
+
+    Livewire::actingAs($client, 'client')
+        ->test(Chat::class)
+        ->assertSeeHtml('<strong>importante</strong>')
+        ->assertSeeHtml('<li>item um</li>');
 });
 
 // ── Phase 9.3: erro do provider e troca de empresa ───────────────────────────
@@ -175,6 +214,7 @@ test('provider_error_shows_friendly_message_and_preserves_client_message', funct
         ->test(Chat::class)
         ->set('body', 'minha pergunta importante')
         ->call('sendMessage')
+        ->call('generateResponse')
         ->assertHasErrors('agent');
 
     $conversation = Conversation::firstWhere(['client_id' => $client->id, 'user_id' => $company->id]);

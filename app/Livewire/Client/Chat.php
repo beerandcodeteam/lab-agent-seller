@@ -12,6 +12,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Ai\Streaming\Events\Error as ErrorEvent;
+use Laravel\Ai\Streaming\Events\StreamStart;
 use Laravel\Ai\Streaming\Events\TextDelta;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -55,6 +56,13 @@ class Chat extends Component
     public int $responseCount = 0;
 
     /**
+     * Id of the persisted user message awaiting an agent reply. Bridges the
+     * two-step send flow: sendMessage() persists and renders the user turn,
+     * then generateResponse() streams the reply for this message.
+     */
+    public ?int $pendingMessageId = null;
+
+    /**
      * Resolve the selected company, guard the client's access to it, and
      * materialise/resume the conversation for the pair.
      */
@@ -79,11 +87,12 @@ class Chat extends Component
     }
 
     /**
-     * Send the typed message to the agent and stream back the reply.
+     * Persist the typed message and render it immediately, then kick off the
+     * streamed agent reply in a follow-up request.
      *
-     * The client message is persisted before the AI call so a provider failure
-     * never loses it; the assistant reply is persisted only once the stream
-     * completes with its full text.
+     * The client message is persisted (and shown) before the AI call so a
+     * provider failure never loses it and the user sees their own turn right
+     * away instead of only after the stream finishes.
      */
     public function sendMessage(): void
     {
@@ -100,29 +109,61 @@ class Chat extends Component
             'message_role_id' => $this->roleId('user'),
             'content' => $content,
         ]);
+        $this->pendingMessageId = $userMessage->id;
 
         $this->responseCount++;
-        $group = [
+        $this->activity[] = [
             'n' => $this->responseCount,
             'status' => 'running',
             'label' => now()->format('H:i'),
             'events' => [
-                $this->event('request.started', 'gpt · '.$this->conversation->messages()->count().' mensagens enviadas', [
-                    'provider' => 'openai',
+                $this->event('request.started', $this->conversation->messages()->count().' mensagens enviadas', [
                     'messages' => $this->conversation->messages()->count(),
                 ]),
             ],
         ];
-        $this->activity[] = $group;
+
+        $this->js('$wire.generateResponse()');
+    }
+
+    /**
+     * Stream the agent reply for the pending user message and persist it once
+     * the stream completes with its full text.
+     */
+    public function generateResponse(): void
+    {
+        if (! $this->pendingMessageId) {
+            return;
+        }
+
+        $userMessage = $this->conversation->messages()->find($this->pendingMessageId);
         $groupIndex = array_key_last($this->activity);
+
+        if (! $userMessage) {
+            $this->streaming = false;
+            $this->pendingMessageId = null;
+
+            return;
+        }
 
         try {
             $agent = new SellerAgent($this->conversation, $userMessage->id);
 
             $text = '';
-            $stream = $agent->stream($content);
+            $stream = $agent->stream($userMessage->content);
 
             foreach ($stream as $streamEvent) {
+                if ($streamEvent instanceof StreamStart) {
+                    $this->activity[$groupIndex]['events'][] = $this->event(
+                        'stream.start',
+                        $streamEvent->model.' em execução',
+                        ['provider' => $streamEvent->provider, 'model' => $streamEvent->model],
+                    );
+                    $this->stream(to: 'agent-model', content: $streamEvent->model);
+
+                    continue;
+                }
+
                 if ($streamEvent instanceof TextDelta) {
                     $text .= $streamEvent->delta;
                     $this->stream(to: 'agent-response', content: $streamEvent->delta);
@@ -166,6 +207,7 @@ class Chat extends Component
             );
         } finally {
             $this->streaming = false;
+            $this->pendingMessageId = null;
         }
     }
 
