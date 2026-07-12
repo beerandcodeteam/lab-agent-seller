@@ -252,6 +252,27 @@ class PipedriveDriver implements CrmDriver
         return $pipelines;
     }
 
+    public function moveDealStage(string $token, string $dealExternalId, string $stageExternalId): void
+    {
+        $this->put("/deals/{$dealExternalId}", $token, ['stage_id' => $stageExternalId]);
+    }
+
+    public function markDealWon(string $token, string $dealExternalId): void
+    {
+        $this->put("/deals/{$dealExternalId}", $token, ['status' => 'won']);
+    }
+
+    public function markDealLost(string $token, string $dealExternalId, ?string $lostReason = null): void
+    {
+        $payload = ['status' => 'lost'];
+
+        if ($lostReason !== null) {
+            $payload['lost_reason'] = $lostReason;
+        }
+
+        $this->put("/deals/{$dealExternalId}", $token, $payload);
+    }
+
     /**
      * @param  'deal'|'person'  $source
      * @param  array<string, mixed>  $note
@@ -281,6 +302,40 @@ class PipedriveDriver implements CrmDriver
             $response = Http::timeout(15)
                 ->acceptJson()
                 ->get("{$baseUrl}{$endpoint}", ['api_token' => $token] + $query);
+        } catch (ConnectionException) {
+            throw new CrmApiException(
+                "Falha de rede ao acessar {$endpoint} na Pipedrive. Tente novamente em alguns minutos."
+            );
+        }
+
+        if (! $response->successful()) {
+            throw new CrmApiException(sprintf(
+                'Pipedrive API respondeu %d (%s) ao acessar %s. Tente novamente em alguns minutos.',
+                $response->status(),
+                $this->reasonPhrase($response->status()),
+                $endpoint,
+            ));
+        }
+
+        return $response;
+    }
+
+    /**
+     * Issue a single PUT against a Pipedrive endpoint. The token stays a query
+     * param (as the whole driver does); the mutation payload is the body.
+     *
+     * @param  array<string, mixed>  $payload
+     *
+     * @throws CrmApiException on a network failure or non-2xx response
+     */
+    private function put(string $endpoint, string $token, array $payload): Response
+    {
+        $baseUrl = rtrim((string) config('services.pipedrive.base_url'), '/');
+
+        try {
+            $response = Http::timeout(15)
+                ->acceptJson()
+                ->put("{$baseUrl}{$endpoint}?".http_build_query(['api_token' => $token]), $payload);
         } catch (ConnectionException) {
             throw new CrmApiException(
                 "Falha de rede ao acessar {$endpoint} na Pipedrive. Tente novamente em alguns minutos."

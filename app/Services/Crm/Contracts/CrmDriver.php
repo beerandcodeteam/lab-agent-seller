@@ -122,4 +122,28 @@ interface CrmDriver
      * @throws CrmApiException on a provider API failure
      */
     public function fetchPipelinesWithStages(string $token): iterable;
+
+    /**
+     * Move a deal to a target stage, identified by its external Pipedrive stage
+     * id (no local↔external translation). Same-pipeline validation and the
+     * refusal of a closed deal are decided app-side, not here.
+     *
+     * @throws CrmApiException on a provider API failure
+     */
+    public function moveDealStage(string $token, string $dealExternalId, string $stageExternalId): void;
+
+    /**
+     * Mark a deal as won (`status=won`).
+     *
+     * @throws CrmApiException on a provider API failure
+     */
+    public function markDealWon(string $token, string $dealExternalId): void;
+
+    /**
+     * Mark a deal as lost (`status=lost`). When a free-text `$lostReason` is
+     * given, it is forwarded verbatim (no validation against configured reasons).
+     *
+     * @throws CrmApiException on a provider API failure
+     */
+    public function markDealLost(string $token, string $dealExternalId, ?string $lostReason = null): void;
 }
