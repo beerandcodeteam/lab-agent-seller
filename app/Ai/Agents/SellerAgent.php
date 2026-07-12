@@ -8,7 +8,6 @@ use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Provider;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
-use Laravel\Ai\Contracts\HasProviderOptions;
 use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Messages\Message;
@@ -72,6 +71,7 @@ class SellerAgent implements Agent, Conversational, HasTools
     public function tools(): iterable
     {
         return [
+            new WebSearch(maxSearches: 3),
         ];
     }
 

@@ -14,14 +14,27 @@ use Illuminate\Support\Carbon;
  * @property int $conversation_id
  * @property int $message_role_id
  * @property string $content
+ * @property Carbon|null $blocked_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['conversation_id', 'message_role_id', 'content'])]
+#[Fillable(['conversation_id', 'message_role_id', 'content', 'blocked_at'])]
 class Message extends Model
 {
     /** @use HasFactory<MessageFactory> */
     use HasFactory;
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'blocked_at' => 'datetime',
+        ];
+    }
 
     /**
      * @return BelongsTo<Conversation, $this>

@@ -38,6 +38,13 @@ class MessageFactory extends Factory
         ]);
     }
 
+    public function blocked(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'blocked_at' => now(),
+        ]);
+    }
+
     /**
      * Resolve a message role id by slug, seeding the lookup if absent.
      */

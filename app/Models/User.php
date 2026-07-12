@@ -21,10 +21,12 @@ use Illuminate\Support\Str;
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property string|null $remember_token
+ * @property string|null $guardrail_topic_alignments
+ * @property string|null $guardrail_restrictions
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'guardrail_topic_alignments', 'guardrail_restrictions'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
