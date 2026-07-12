@@ -2,16 +2,20 @@
 
 namespace App\Livewire\Client;
 
+use App\Ai\Agents\GuardrailAgent;
 use App\Ai\Agents\SellerAgent;
 use App\Models\Client;
 use App\Models\Conversation;
+use App\Models\Message;
 use App\Models\MessageRole;
 use App\Models\User;
 use App\Services\ClientAccess\MagicLinkService;
+use ArrayAccess;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Log;
 use Laravel\Ai\Streaming\Events\Error as ErrorEvent;
 use Laravel\Ai\Streaming\Events\ProviderToolEvent;
 use Laravel\Ai\Streaming\Events\ReasoningEnd;
@@ -37,6 +41,13 @@ use Throwable;
 #[Layout('components.layouts.chat')]
 class Chat extends Component
 {
+    /**
+     * The safe redirect reply shown to the client when the guardrail blocks a
+     * message (or fails closed). Fixed in code, PT-BR, and deliberately silent
+     * about the detected category and the guardrail's internal instructions.
+     */
+    public const string GuardrailRedirectMessage = 'Não consigo ajudar com esse assunto por aqui. Posso te ajudar com dúvidas sobre sua relação comercial com a empresa — é só perguntar.';
+
     public Conversation $conversation;
 
     /**
@@ -148,6 +159,18 @@ class Chat extends Component
         if (! $userMessage) {
             $this->streaming = false;
             $this->pendingMessageId = null;
+
+            return;
+        }
+
+        // The guardrail verdict comes first: no SellerAgent invocation may
+        // happen before it, and block/error never reach the SellerAgent.
+        [$verdict, $category] = $this->guardrailVerdict($userMessage);
+
+        $this->recordGuardrailVerdict($groupIndex, $userMessage, $verdict, $category);
+
+        if ($verdict !== 'allow') {
+            $this->blockPendingMessage($groupIndex, $userMessage);
 
             return;
         }
@@ -272,6 +295,90 @@ class Chat extends Component
             $this->streaming = false;
             $this->pendingMessageId = null;
         }
+    }
+
+    /**
+     * Classify the pending user message with the guardrail, exactly once and
+     * without streaming, BEFORE any SellerAgent invocation. Returns the
+     * [verdict, category] pair where verdict ∈ allow|block|error: a provider
+     * failure or a structured output outside the CT-01 contract collapses
+     * into the fail-closed `error` verdict (RF-08) — never into an allow.
+     *
+     * @return array{0: string, 1: string|null}
+     */
+    private function guardrailVerdict(Message $userMessage): array
+    {
+        try {
+            $response = (new GuardrailAgent($this->conversation, $userMessage->id))
+                ->prompt($userMessage->content);
+
+            if (! $response instanceof ArrayAccess) {
+                return ['error', null];
+            }
+
+            $verdict = $response['verdict'] ?? null;
+            $category = $response['category'] ?? null;
+
+            if ($verdict === 'allow') {
+                return ['allow', null];
+            }
+
+            if ($verdict === 'block' && in_array($category, GuardrailAgent::Categories, true)) {
+                return ['block', $category];
+            }
+
+            return ['error', null];
+        } catch (Throwable) {
+            return ['error', null];
+        }
+    }
+
+    /**
+     * Terminal path for block and error verdicts: the SellerAgent is never
+     * invoked, the client's turn is marked as blocked, and the fixed safe
+     * redirect is persisted as the assistant turn — itself marked as blocked
+     * so neither ever re-enters the SellerAgent history (RF-03, RF-08).
+     */
+    private function blockPendingMessage(int $groupIndex, Message $userMessage): void
+    {
+        $userMessage->update(['blocked_at' => now()]);
+
+        $this->conversation->messages()->create([
+            'message_role_id' => $this->roleId('assistant'),
+            'content' => self::GuardrailRedirectMessage,
+            'blocked_at' => now(),
+        ]);
+
+        $this->activity[$groupIndex]['status'] = 'completed';
+        $this->streaming = false;
+        $this->pendingMessageId = null;
+    }
+
+    /**
+     * Single observability point for every guardrail outcome (allow, block,
+     * error): one structured log entry (CT-03) and one `guardrail.verdict`
+     * activity event (CT-02) per processed message. The raw message content
+     * is never included in the logged context (RNF-03).
+     */
+    private function recordGuardrailVerdict(int $groupIndex, Message $userMessage, string $verdict, ?string $category): void
+    {
+        Log::info('guardrail.verdict', [
+            'conversation_id' => $this->conversation->id,
+            'message_id' => $userMessage->id,
+            'verdict' => $verdict,
+            'category' => $category,
+        ]);
+
+        $summary = match ($verdict) {
+            'allow' => 'guardrail liberou a mensagem',
+            'block' => 'guardrail bloqueou a mensagem',
+            default => 'guardrail falhou — mensagem bloqueada por segurança',
+        };
+
+        $this->pushActivityEvent($groupIndex, 'guardrail.verdict', $summary, [
+            'verdict' => $verdict,
+            'category' => $category,
+        ]);
     }
 
     public function render(): View

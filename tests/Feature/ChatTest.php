@@ -1,5 +1,6 @@
 <?php
 
+use App\Ai\Agents\GuardrailAgent;
 use App\Ai\Agents\SellerAgent;
 use App\Livewire\Client\Chat;
 use App\Livewire\Client\CompanySelection;
@@ -27,6 +28,7 @@ function clientInChatWith(User $company, string $email): Client
 // ── Phase 9.1: conversa persistida e resposta do agente ──────────────────────
 
 test('client_message_and_agent_reply_are_persisted', function () {
+    GuardrailAgent::fake([['verdict' => 'allow', 'category' => null]]);
     SellerAgent::fake(['Olá! Como posso ajudar?']);
 
     $email = 'ana@cliente.com';
@@ -62,6 +64,7 @@ test('agent_exposes_web_search_tool', function () {
 });
 
 test('agent_uses_global_system_prompt', function () {
+    GuardrailAgent::fake([['verdict' => 'allow', 'category' => null]]);
     SellerAgent::fake(['resposta']);
 
     $email = 'ana@cliente.com';
@@ -76,11 +79,37 @@ test('agent_uses_global_system_prompt', function () {
 
     SellerAgent::assertPrompted('Qual o status?');
     SellerAgent::assertPrompted(
-        fn (AgentPrompt $prompt) => $prompt->agent->instructions() === SellerAgent::SystemPrompt,
+        fn (AgentPrompt $prompt) => $prompt->agent->instructions() === strtr(SellerAgent::SystemPrompt, [
+            '{company_name}' => $company->name,
+            '{company_playbook}' => SellerAgent::DefaultPlaybook,
+        ]),
     );
 });
 
+test('agent_renders_company_skills_into_prompt', function () {
+    $conversation = Conversation::factory()->create();
+
+    $agent = new SellerAgent($conversation, skills: 'Processo: qualificar, propor, fechar.');
+
+    expect($agent->instructions())
+        ->toContain('Processo: qualificar, propor, fechar.')
+        ->toContain($conversation->user->name)
+        ->not->toContain('{company_name}')
+        ->not->toContain('{company_playbook}');
+});
+
+test('agent_without_skills_falls_back_to_default_playbook', function () {
+    $conversation = Conversation::factory()->create();
+
+    $agent = new SellerAgent($conversation);
+
+    expect($agent->instructions())
+        ->toContain(SellerAgent::DefaultPlaybook)
+        ->toContain($conversation->user->name);
+});
+
 test('conversation_is_reused_per_client_company_pair', function () {
+    GuardrailAgent::fake([['verdict' => 'allow', 'category' => null]]);
     SellerAgent::fake(['ok']);
 
     $email = 'ana@cliente.com';
@@ -154,6 +183,7 @@ test('history_persists_across_sessions', function () {
 // ── Phase 9.2: streaming ─────────────────────────────────────────────────────
 
 test('streamed_response_is_persisted_on_completion', function () {
+    GuardrailAgent::fake([['verdict' => 'allow', 'category' => null]]);
     SellerAgent::fake(['a resposta completa em streaming']);
 
     $email = 'ana@cliente.com';
@@ -213,6 +243,7 @@ test('assistant_reply_is_rendered_as_markdown', function () {
 // ── Phase 9.3: erro do provider e troca de empresa ───────────────────────────
 
 test('provider_error_shows_friendly_message_and_preserves_client_message', function () {
+    GuardrailAgent::fake([['verdict' => 'allow', 'category' => null]]);
     SellerAgent::fake(fn () => throw new RuntimeException('provider indisponível'));
 
     $email = 'ana@cliente.com';
