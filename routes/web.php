@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Client\MagicLinkController;
+use App\Livewire\Agent\VectorStores;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
 use App\Livewire\Client\Access;
@@ -30,6 +31,8 @@ Route::middleware('auth')->group(function () {
     Route::view('/dashboard', 'dashboard')->name('dashboard');
 
     Route::get('/crm/connect', Connect::class)->name('crm.connect');
+
+    Route::get('/agente/bases-de-conhecimento', VectorStores::class)->name('agent.vector-stores');
 
     Route::post('/logout', function () {
         Auth::logout();
