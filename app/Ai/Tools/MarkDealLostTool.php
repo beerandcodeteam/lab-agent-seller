@@ -21,7 +21,13 @@ class MarkDealLostTool extends PipedriveConversationTool
 
     public function description(): string
     {
-        return 'Marca o negócio (deal) deste cliente como perdido (lost) no CRM. Aceita opcionalmente "lost_reason", um texto livre com o motivo da perda, registrado como informado. O negócio é identificado automaticamente pela conversa. Nunca altera um negócio já fechado.';
+        return <<<'DESCRIPTION'
+            Marca o negócio (deal) deste cliente como perdido (lost) no CRM, encerrando a negociação sem venda.
+
+            Use quando o cliente desistir de forma clara (recusou, fechou com concorrente, cancelou o interesse) e o playbook não indicar mais nenhuma tentativa de recuperação — é uma ação definitiva. Na dúvida, tente entender e contornar a objeção antes de encerrar; não marque como perdido por uma hesitação passageira.
+
+            Preencha "lost_reason" com o motivo em texto livre sempre que o cliente informar (ex.: "preço acima do orçamento"); é opcional, mas valioso para o time. O negócio é identificado automaticamente pela conversa. A ferramenta recusa, sem alterar nada, um negócio já fechado.
+            DESCRIPTION;
     }
 
     public function handle(Request $request): string

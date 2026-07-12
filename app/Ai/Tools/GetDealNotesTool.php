@@ -15,7 +15,13 @@ class GetDealNotesTool extends PipedriveConversationTool
 {
     public function description(): string
     {
-        return 'Retorna as anotações (notas) deste cliente no CRM, mesclando as notas do negócio (deal) e as notas da pessoa, cada uma marcada com sua origem (negócio ou pessoa). Não recebe nenhum parâmetro — cliente e negócio são identificados automaticamente pela conversa.';
+        return <<<'DESCRIPTION'
+            Retorna as anotações (notas) deste cliente no CRM, mesclando as notas do negócio (deal) e as notas da pessoa, cada uma marcada com sua origem (negócio ou pessoa) e seu momento. As notas guardam contexto qualitativo do relacionamento — preferências, restrições, histórico e observações do time.
+
+            Use antes de responder quando o contexto pessoal do cliente puder mudar sua resposta, ou quando o cliente se referir a algo combinado anteriormente. As notas da pessoa continuam disponíveis mesmo quando não há um negócio em aberto.
+
+            Não recebe parâmetros: cliente e negócio são identificados automaticamente pela conversa. Para registrar uma nova anotação, use a ferramenta de adicionar anotação; esta ferramenta apenas lê.
+            DESCRIPTION;
     }
 
     public function handle(Request $request): string

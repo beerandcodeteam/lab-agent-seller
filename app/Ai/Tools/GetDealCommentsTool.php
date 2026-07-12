@@ -13,7 +13,13 @@ class GetDealCommentsTool extends PipedriveConversationTool
 {
     public function description(): string
     {
-        return 'Retorna os comentários do negócio (deal) deste cliente no CRM, cada um com seu conteúdo e momento. Não recebe nenhum parâmetro — o negócio é identificado automaticamente pela conversa.';
+        return <<<'DESCRIPTION'
+            Retorna os comentários registrados no negócio (deal) deste cliente no CRM, cada um com seu conteúdo e o momento em que foi escrito. Comentários são o registro cronológico do time sobre a negociação.
+
+            Use quando precisar de contexto do histórico de atendimento para responder bem — o que já foi combinado, tratado ou observado sobre este negócio — antes de responder uma dúvida cujo esclarecimento pode estar registrado ali.
+
+            Não recebe parâmetros: o negócio é identificado automaticamente pela conversa. Para anotações vinculadas ao cliente/pessoa, use a ferramenta de notas; este retorno traz apenas os comentários do negócio.
+            DESCRIPTION;
     }
 
     public function handle(Request $request): string

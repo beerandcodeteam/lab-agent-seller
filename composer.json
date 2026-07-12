@@ -10,6 +10,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "axyr/laravel-langfuse": "^0.2.0",
         "laravel/ai": "^0.9.0",
         "laravel/framework": "^13.17",
         "laravel/tinker": "^3.0",

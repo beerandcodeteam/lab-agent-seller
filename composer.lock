@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a0e6b7ee022f1509aa89eb83f46d5bf1",
+    "content-hash": "9c26a87be376e615a96bc85c2b335ed7",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -156,6 +156,66 @@
                 "source": "https://github.com/aws/aws-sdk-php/tree/3.388.4"
             },
             "time": "2026-07-10T18:10:31+00:00"
+        },
+        {
+            "name": "axyr/laravel-langfuse",
+            "version": "v0.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/axyr/laravel-langfuse.git",
+                "reference": "93f95efe12452454c6514606358389ad3612dc0b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/axyr/laravel-langfuse/zipball/93f95efe12452454c6514606358389ad3612dc0b",
+                "reference": "93f95efe12452454c6514606358389ad3612dc0b",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/contracts": "^12.0|^13.0",
+                "illuminate/http": "^12.0|^13.0",
+                "illuminate/support": "^12.0|^13.0",
+                "php": "^8.2"
+            },
+            "require-dev": {
+                "larastan/larastan": "^3.0",
+                "laravel/pint": "^1.0",
+                "orchestra/testbench": "^10.0|^11.0",
+                "pestphp/pest": "^4.0",
+                "phpmd/phpmd": "^2.0",
+                "prism-php/prism": "^0.100"
+            },
+            "suggest": {
+                "laravel/ai": "Required for automatic Laravel AI SDK tracing (^0.4)",
+                "neuron-core/neuron-ai": "Required for automatic Neuron AI agent tracing (^3.0)",
+                "prism-php/prism": "Required for automatic Prism LLM call tracing (^0.100)"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "Langfuse": "Axyr\\Langfuse\\LangfuseFacade"
+                    },
+                    "providers": [
+                        "Axyr\\Langfuse\\LangfuseServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Axyr\\Langfuse\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Langfuse PHP SDK for Laravel",
+            "support": {
+                "issues": "https://github.com/axyr/laravel-langfuse/issues",
+                "source": "https://github.com/axyr/laravel-langfuse/tree/v0.2.0"
+            },
+            "time": "2026-06-28T07:53:43+00:00"
         },
         {
             "name": "brick/math",

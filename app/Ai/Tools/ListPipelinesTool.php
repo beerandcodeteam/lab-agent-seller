@@ -15,7 +15,13 @@ class ListPipelinesTool extends PipedriveConversationTool
 {
     public function description(): string
     {
-        return 'Retorna todos os funis (pipelines) da empresa e seus estágios, cada estágio com seu id e nome. Não recebe nenhum parâmetro. Use para descobrir os estágios disponíveis antes de mover um negócio de estágio.';
+        return <<<'DESCRIPTION'
+            Retorna todos os funis (pipelines) da empresa e seus estágios, cada estágio com seu id e nome. É a fonte dos ids de estágio aceitos pela ferramenta de mover o negócio de estágio.
+
+            Use esta ferramenta imediatamente antes de mover um negócio, para descobrir o id do estágio-alvo correto. Não tente adivinhar ou reutilizar um id de memória: consulte aqui primeiro e escolha o estágio que pertence ao mesmo funil do negócio.
+
+            Não recebe parâmetros e independe de haver um negócio em aberto. Não exponha ids ao cliente; use os nomes dos estágios ao conversar.
+            DESCRIPTION;
     }
 
     public function handle(Request $request): string

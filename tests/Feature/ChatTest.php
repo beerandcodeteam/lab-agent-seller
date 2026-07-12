@@ -58,7 +58,7 @@ test('client_message_and_agent_reply_are_persisted', function () {
 test('agent_exposes_pipedrive_and_web_search_tools', function () {
     $tools = collect((new SellerAgent(new Conversation))->tools());
 
-    expect($tools)->toHaveCount(9);
+    expect($tools)->toHaveCount(10);
 
     $webSearch = $tools->first(fn ($tool) => $tool instanceof WebSearch);
     expect($webSearch)->not->toBeNull();

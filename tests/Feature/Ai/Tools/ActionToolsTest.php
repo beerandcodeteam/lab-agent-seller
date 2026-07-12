@@ -1,5 +1,6 @@
 <?php
 
+use App\Ai\Tools\AddDealNoteTool;
 use App\Ai\Tools\MarkDealLostTool;
 use App\Ai\Tools\MarkDealWonTool;
 use App\Ai\Tools\MoveDealStageTool;
@@ -138,6 +139,46 @@ test('MarkDealLost without a reason marks lost without a lost_reason', function 
     Http::assertSent(fn (ClientRequest $request) => $request->method() === 'PUT'
         && $request['status'] === 'lost'
         && ! isset($request['lost_reason']));
+});
+
+test('AddDealNote exposes only a required content input and POSTs the note', function () {
+    Http::fake(['*/notes*' => Http::response(['success' => true, 'data' => ['id' => 5]])]);
+    ['conversation' => $conversation] = actionContext();
+
+    expect(array_keys((new AddDealNoteTool($conversation))->schema(new JsonSchemaTypeFactory)))->toBe(['content']);
+
+    $result = (new AddDealNoteTool($conversation))->handle(new Request(['content' => 'Cliente relatou lentidão na integração atual.']));
+
+    expect($result)->toContain('registrada');
+
+    Http::assertSent(fn (ClientRequest $request) => $request->method() === 'POST'
+        && str_contains($request->url(), '/notes')
+        && $request['content'] === 'Cliente relatou lentidão na integração atual.'
+        && $request['deal_id'] === '42');
+});
+
+test('AddDealNote refuses blank content without any POST', function () {
+    Http::fake();
+    ['conversation' => $conversation] = actionContext();
+
+    $result = (new AddDealNoteTool($conversation))->handle(new Request(['content' => '   ']));
+
+    expect($result)->toContain('Não foi possível confirmar');
+
+    Http::assertNotSent(fn (ClientRequest $request) => $request->method() === 'POST');
+});
+
+test('AddDealNote attaches the note to the person when there is no deal', function () {
+    Http::fake(['*/notes*' => Http::response(['success' => true, 'data' => ['id' => 5]])]);
+    ['conversation' => $conversation] = actionContext(withDeal: false);
+
+    $result = (new AddDealNoteTool($conversation))->handle(new Request(['content' => 'Cliente prefere contato por e-mail.']));
+
+    expect($result)->toContain('registrada');
+
+    Http::assertSent(fn (ClientRequest $request) => $request->method() === 'POST'
+        && $request['person_id'] === 'p-1'
+        && ! isset($request['deal_id']));
 });
 
 test('every action refuses a closed deal with a marker and never mutates it', function () {

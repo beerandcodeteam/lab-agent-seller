@@ -146,4 +146,13 @@ interface CrmDriver
      * @throws CrmApiException on a provider API failure
      */
     public function markDealLost(string $token, string $dealExternalId, ?string $lostReason = null): void;
+
+    /**
+     * Create a free-text note attached to a deal and/or a person. Either id may
+     * be null; when both are given the note is linked to both. `$content` is
+     * forwarded verbatim.
+     *
+     * @throws CrmApiException on a provider API failure
+     */
+    public function addNote(string $token, ?string $dealExternalId, ?string $personExternalId, string $content): void;
 }

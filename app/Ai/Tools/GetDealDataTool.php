@@ -14,7 +14,13 @@ class GetDealDataTool extends PipedriveConversationTool
 {
     public function description(): string
     {
-        return 'Retorna os dados ao vivo do negócio (deal) deste cliente no CRM: título, valor, estágio atual e status. Não recebe nenhum parâmetro — o cliente e o negócio são identificados automaticamente a partir da conversa. Use antes de afirmar qualquer dado sobre a proposta/negócio do cliente.';
+        return <<<'DESCRIPTION'
+            Consulta ao vivo, no CRM, os dados do negócio (deal) em aberto deste cliente e retorna título, valor, estágio atual no funil e status (aberto/ganho/perdido).
+
+            Use esta ferramenta sempre que precisar afirmar ou confirmar qualquer dado da proposta em andamento — quando o cliente pergunta "em que pé está minha proposta?", "qual o valor?", "em que etapa estamos?", ou antes de você mencionar valor, estágio ou status na resposta. Os dados retornados são a verdade sobre o negócio e prevalecem sobre sua memória ou suposições.
+
+            Não recebe parâmetros: o cliente e o negócio são identificados automaticamente pela conversa. Se o retorno indicar que não há negócio, informe isso com transparência em vez de inventar dados.
+            DESCRIPTION;
     }
 
     public function handle(Request $request): string

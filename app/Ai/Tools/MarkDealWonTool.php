@@ -19,7 +19,13 @@ class MarkDealWonTool extends PipedriveConversationTool
 
     public function description(): string
     {
-        return 'Marca o negócio (deal) deste cliente como ganho (won) no CRM. Não recebe nenhum parâmetro — o negócio é identificado automaticamente pela conversa. Nunca altera um negócio já fechado.';
+        return <<<'DESCRIPTION'
+            Marca o negócio (deal) deste cliente como ganho (won) no CRM, encerrando a negociação como venda fechada.
+
+            Use somente quando o cliente confirmar de forma inequívoca a aceitação da proposta e o playbook autorizar o fechamento — é uma ação definitiva. Na dúvida sobre a intenção do cliente, confirme com ele antes de chamar; não marque como ganho por otimismo ou antecipação.
+
+            Não recebe parâmetros: o negócio é identificado automaticamente pela conversa. A ferramenta recusa, sem alterar nada, um negócio já fechado. Para registrar perda use a ferramenta de negócio perdido; para apenas mudar de etapa, a ferramenta de mover estágio.
+            DESCRIPTION;
     }
 
     public function handle(Request $request): string

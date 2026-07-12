@@ -2,6 +2,7 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Tools\AddDealNoteTool;
 use App\Ai\Tools\GetDealCommentsTool;
 use App\Ai\Tools\GetDealDataTool;
 use App\Ai\Tools\GetDealNotesTool;
@@ -132,10 +133,11 @@ class SellerAgent implements Agent, Conversational, HasTools
     }
 
     /**
-     * Tools available to the agent: the 8 Pipedrive conversation tools (5 live
-     * reads + 3 deal mutations), each resolving CRM identity app-side from this
-     * conversation (RF-09/CT-01), plus provider-side web search capped so a
-     * single reply never fans out into many searches.
+     * Tools available to the agent: the 9 Pipedrive conversation tools (5 live
+     * reads + 4 deal writes: move stage, mark won, mark lost, add note), each
+     * resolving CRM identity app-side from this conversation (RF-09/CT-01), plus
+     * provider-side web search capped so a single reply never fans out into many
+     * searches.
      *
      * @return iterable<int, object>
      */
@@ -146,6 +148,7 @@ class SellerAgent implements Agent, Conversational, HasTools
             new GetDealStageHistoryTool($this->conversation),
             new GetDealCommentsTool($this->conversation),
             new GetDealNotesTool($this->conversation),
+            new AddDealNoteTool($this->conversation),
             new ListPipelinesTool($this->conversation),
             new MoveDealStageTool($this->conversation),
             new MarkDealWonTool($this->conversation),

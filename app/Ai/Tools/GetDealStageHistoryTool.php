@@ -14,7 +14,13 @@ class GetDealStageHistoryTool extends PipedriveConversationTool
 {
     public function description(): string
     {
-        return 'Retorna o histórico de mudanças de estágio (funil) do negócio deste cliente no CRM: estágio de origem, estágio de destino e momento de cada mudança. Não recebe nenhum parâmetro — o negócio é identificado automaticamente pela conversa.';
+        return <<<'DESCRIPTION'
+            Retorna a linha do tempo das mudanças de estágio (funil) do negócio deste cliente no CRM: para cada mudança, o estágio de origem, o estágio de destino e o momento em que ocorreu. Apenas mudanças de estágio são incluídas.
+
+            Use quando o cliente perguntar sobre o andamento ou o histórico da negociação ("por quais etapas já passei?", "quando avançou?", "há quanto tempo está parado?"), ou quando você precisar entender a evolução do negócio ao longo do tempo para responder com precisão.
+
+            Não recebe parâmetros: o negócio é identificado automaticamente pela conversa. Para saber o estágio atual (e não o histórico), use a ferramenta de dados do negócio.
+            DESCRIPTION;
     }
 
     public function handle(Request $request): string

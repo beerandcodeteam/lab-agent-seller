@@ -66,6 +66,45 @@ test('markDealLost without a reason PUTs status lost only', function () {
     });
 });
 
+test('addNote POSTs the content linked to the deal', function () {
+    Http::fake([
+        '*/notes*' => Http::response(['success' => true, 'data' => ['id' => 5]]),
+    ]);
+
+    pipedriveActionDriver()->addNote('tkn', '42', null, 'Cliente prefere contato por e-mail.');
+
+    Http::assertSent(function (Request $request) {
+        return $request->method() === 'POST'
+            && str_contains($request->url(), '/notes')
+            && $request['content'] === 'Cliente prefere contato por e-mail.'
+            && $request['deal_id'] === '42'
+            && ! isset($request['person_id']);
+    });
+});
+
+test('addNote falls back to the person when there is no deal', function () {
+    Http::fake([
+        '*/notes*' => Http::response(['success' => true, 'data' => ['id' => 5]]),
+    ]);
+
+    pipedriveActionDriver()->addNote('tkn', null, 'p-1', 'Anotação sobre a pessoa.');
+
+    Http::assertSent(function (Request $request) {
+        return $request->method() === 'POST'
+            && $request['person_id'] === 'p-1'
+            && ! isset($request['deal_id']);
+    });
+});
+
+test('a non-2xx response throws CrmApiException on note', function () {
+    Http::fake([
+        '*/notes*' => Http::response(['success' => false], 500),
+    ]);
+
+    expect(fn () => pipedriveActionDriver()->addNote('tkn', '42', null, 'nota'))
+        ->toThrow(CrmApiException::class);
+});
+
 test('a non-2xx response throws CrmApiException on move', function () {
     Http::fake([
         '*/deals/42*' => Http::response(['success' => false], 500),

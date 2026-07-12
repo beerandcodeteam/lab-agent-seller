@@ -31,7 +31,13 @@ class MoveDealStageTool extends PipedriveConversationTool
 
     public function description(): string
     {
-        return 'Move o negócio (deal) deste cliente para um estágio-alvo do mesmo funil no CRM. Informe apenas o "stage_id" (id do estágio obtido em ListPipelines). O negócio é identificado automaticamente pela conversa. Só move dentro do mesmo funil e nunca altera um negócio já fechado.';
+        return <<<'DESCRIPTION'
+            Move o negócio (deal) deste cliente para outro estágio do mesmo funil no CRM, avançando ou recuando a negociação no fluxo comercial.
+
+            Use quando o processo comercial do playbook indicar que o negócio deve mudar de etapa em razão do que ocorreu na conversa (ex.: cliente aceitou avançar para a proposta, agendou reunião, pediu para retomar depois). Antes de chamar, obtenha o id do estágio-alvo com a ferramenta de listar funis e escolha um estágio do mesmo funil do negócio.
+
+            Informe apenas "stage_id". O negócio é identificado automaticamente pela conversa. A ferramenta recusa, sem alterar nada, um estágio de outro funil e um negócio já fechado (ganho ou perdido). Para encerrar o negócio como ganho ou perdido, use as ferramentas específicas, não esta.
+            DESCRIPTION;
     }
 
     public function handle(Request $request): string
