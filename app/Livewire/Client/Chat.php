@@ -3,6 +3,7 @@
 namespace App\Livewire\Client;
 
 use App\Ai\Agents\GuardrailAgent;
+use App\Ai\Agents\OutputGuardrailAgent;
 use App\Ai\Agents\SellerAgent;
 use App\Models\Client;
 use App\Models\Conversation;
@@ -47,6 +48,13 @@ class Chat extends Component
      * about the detected category and the guardrail's internal instructions.
      */
     public const string GuardrailRedirectMessage = 'Não consigo ajudar com esse assunto por aqui. Posso te ajudar com dúvidas sobre sua relação comercial com a empresa — é só perguntar.';
+
+    /**
+     * The safe reply shown to the client when the OUTPUT guardrail retracts an
+     * ungrounded (hallucinated) SellerAgent reply. Fixed in code, PT-BR, and
+     * deliberately silent about which business fact was fabricated.
+     */
+    public const string OutputGuardrailFallbackMessage = 'Não consegui confirmar essa informação com segurança agora. Para não te passar um dado incorreto, prefiro te encaminhar a um atendente humano — quer que eu faça isso?';
 
     public Conversation $conversation;
 
@@ -179,6 +187,12 @@ class Chat extends Component
             $agent = new SellerAgent($this->conversation, $userMessage->id);
 
             $text = '';
+
+            // Tool/provider-tool results gathered on this turn — the primary
+            // grounding source handed to the output guardrail after the stream.
+            /** @var list<array{name: string, result: string}> $toolEvidence */
+            $toolEvidence = [];
+
             $stream = $agent->stream($userMessage->content);
 
             foreach ($stream as $streamEvent) {
@@ -237,6 +251,13 @@ class Chat extends Component
                         ['result' => $streamEvent->toolResult->result, 'error' => $streamEvent->error],
                     );
 
+                    if ($streamEvent->successful) {
+                        $toolEvidence[] = [
+                            'name' => $streamEvent->toolResult->name,
+                            'result' => $this->stringifyEvidence($streamEvent->toolResult->result),
+                        ];
+                    }
+
                     continue;
                 }
 
@@ -251,6 +272,13 @@ class Chat extends Component
                         $streamEvent->data ?: null,
                     );
 
+                    if ($streamEvent->status === 'completed' && filled($streamEvent->data)) {
+                        $toolEvidence[] = [
+                            'name' => $streamEvent->type,
+                            'result' => $this->stringifyEvidence($streamEvent->data),
+                        ];
+                    }
+
                     continue;
                 }
 
@@ -261,7 +289,7 @@ class Chat extends Component
 
             $fullText = $stream->text ?? $text;
 
-            $this->conversation->messages()->create([
+            $assistantMessage = $this->conversation->messages()->create([
                 'message_role_id' => $this->roleId('assistant'),
                 'content' => $fullText,
             ]);
@@ -271,12 +299,32 @@ class Chat extends Component
                 'stream.delta',
                 mb_strlen($fullText).' caracteres agregados',
             );
-            $this->pushActivityEvent(
-                $groupIndex,
-                'response.completed',
-                'resposta concluída',
-                ['characters' => mb_strlen($fullText)],
+
+            // Output guardrail: with the reply persisted, verify it is grounded
+            // in the tool results, playbook and history the SellerAgent had. An
+            // `ungrounded` verdict retracts the reply in place (the client saw
+            // the stream, but the final rendered turn becomes the safe
+            // fallback); a checker `error` fails OPEN — the reply is kept so a
+            // transient failure never retracts a legitimate answer.
+            [$outputVerdict, $unsupportedClaims] = $this->outputGuardrailVerdict(
+                $fullText,
+                $toolEvidence,
+                $assistantMessage->id,
             );
+
+            $this->recordOutputVerdict($groupIndex, $assistantMessage, $outputVerdict, $unsupportedClaims);
+
+            if ($outputVerdict === 'ungrounded') {
+                $this->retractUngroundedReply($assistantMessage);
+            } else {
+                $this->pushActivityEvent(
+                    $groupIndex,
+                    'response.completed',
+                    'resposta concluída',
+                    ['characters' => mb_strlen($fullText)],
+                );
+            }
+
             $this->activity[$groupIndex]['status'] = 'completed';
         } catch (Throwable $exception) {
             $this->pushActivityEvent(
@@ -379,6 +427,106 @@ class Chat extends Component
             'verdict' => $verdict,
             'category' => $category,
         ]);
+    }
+
+    /**
+     * Classify a completed SellerAgent reply with the output guardrail, exactly
+     * once and without streaming. Returns [verdict, unsupportedClaims] where
+     * verdict ∈ grounded|ungrounded|error. Unlike the input guardrail this fails
+     * OPEN: a provider failure or an out-of-contract structured output collapses
+     * to `error`, which keeps the reply — retracting every legitimate answer on
+     * a transient checker failure would be worse than the residual risk. An
+     * empty reply is trivially grounded (nothing to verify).
+     *
+     * @param  list<array{name: string, result: string}>  $toolEvidence
+     * @return array{0: string, 1: list<string>}
+     */
+    private function outputGuardrailVerdict(string $reply, array $toolEvidence, int $replyMessageId): array
+    {
+        if (trim($reply) === '') {
+            return ['grounded', []];
+        }
+
+        try {
+            $response = (new OutputGuardrailAgent($this->conversation, $reply, $toolEvidence, $replyMessageId))
+                ->prompt('Verifique a resposta do agente conforme as instruções e emita o veredito.');
+
+            if (! $response instanceof ArrayAccess) {
+                return ['error', []];
+            }
+
+            $verdict = $response['verdict'] ?? null;
+            $claims = $response['unsupported_claims'] ?? [];
+
+            if ($verdict === 'grounded') {
+                return ['grounded', []];
+            }
+
+            if ($verdict === 'ungrounded') {
+                return ['ungrounded', is_array($claims) ? array_values(array_map('strval', $claims)) : []];
+            }
+
+            return ['error', []];
+        } catch (Throwable) {
+            return ['error', []];
+        }
+    }
+
+    /**
+     * Retract an ungrounded reply: overwrite its persisted content with the
+     * fixed safe fallback and mark it blocked. Marking it blocked keeps the
+     * hallucinated turn (and its retraction) out of the SellerAgent history so
+     * it can never re-enter context on a later turn. The re-render replaces the
+     * streamed bubble with the fallback (the streamed text is never persisted).
+     */
+    private function retractUngroundedReply(Message $assistantMessage): void
+    {
+        $assistantMessage->update([
+            'content' => self::OutputGuardrailFallbackMessage,
+            'blocked_at' => now(),
+        ]);
+    }
+
+    /**
+     * Single observability point for every output-guardrail outcome (grounded,
+     * ungrounded, error): one structured log entry and one `guardrail.output`
+     * activity event per verified reply. The raw reply content is never logged
+     * (RNF-03) — only the verdict and the count of unsupported claims.
+     *
+     * @param  list<string>  $unsupportedClaims
+     */
+    private function recordOutputVerdict(int $groupIndex, Message $assistantMessage, string $verdict, array $unsupportedClaims): void
+    {
+        Log::info('guardrail.output_verdict', [
+            'conversation_id' => $this->conversation->id,
+            'message_id' => $assistantMessage->id,
+            'verdict' => $verdict,
+            'unsupported_claims_count' => count($unsupportedClaims),
+        ]);
+
+        $summary = match ($verdict) {
+            'grounded' => 'guardrail de saída liberou a resposta',
+            'ungrounded' => 'guardrail de saída retraiu a resposta — sem fundamento',
+            default => 'guardrail de saída falhou — resposta mantida (fail-open)',
+        };
+
+        $this->pushActivityEvent($groupIndex, 'guardrail.output', $summary, [
+            'verdict' => $verdict,
+            'unsupported_claims' => $unsupportedClaims,
+        ]);
+    }
+
+    /**
+     * Normalise a tool/provider-tool result into a string for the grounding
+     * prompt: strings pass through, structured payloads are JSON-encoded.
+     */
+    private function stringifyEvidence(mixed $result): string
+    {
+        if (is_string($result)) {
+            return $result;
+        }
+
+        return json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '';
     }
 
     public function render(): View

@@ -1,5 +1,6 @@
 <?php
 
+use App\Ai\Agents\OutputGuardrailAgent;
 use App\Models\CrmConnection;
 use App\Models\CrmPerson;
 use App\Models\User;
@@ -19,6 +20,16 @@ use Tests\TestCase;
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
+    ->beforeEach(function () {
+        // The output guardrail runs after every SellerAgent reply. Default it to
+        // a grounded verdict so tests that don't exercise it never reach the real
+        // provider; tests asserting its behaviour override this fake.
+        OutputGuardrailAgent::fake(fn () => [
+            'reasoning' => 'grounded por padrão nos testes',
+            'verdict' => 'grounded',
+            'unsupported_claims' => null,
+        ]);
+    })
     ->in('Feature');
 
 /*

@@ -19,6 +19,8 @@
         'error' => ['icon' => 'bg-danger-soft text-danger', 'glyph' => '×', 'row' => 'bg-danger-soft/30', 'name' => 'text-danger'],
         'tool.called' => ['icon' => 'bg-tool-soft text-tool', 'glyph' => '⚙', 'row' => '', 'name' => 'text-ink'],
         'tool.result' => ['icon' => 'bg-tool-soft text-tool', 'glyph' => '⤷', 'row' => '', 'name' => 'text-ink'],
+        'guardrail.verdict' => ['icon' => 'bg-accent-soft text-accent', 'glyph' => '⛊', 'row' => '', 'name' => 'text-ink'],
+        'guardrail.output' => ['icon' => 'bg-accent-soft text-accent', 'glyph' => '⛊', 'row' => '', 'name' => 'text-ink'],
     ];
 
     $scheme = $schemes[$type] ?? ['icon' => 'bg-[#eef0f6] text-ink-2', 'glyph' => '•', 'row' => '', 'name' => 'text-ink'];

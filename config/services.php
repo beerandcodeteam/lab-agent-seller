@@ -39,4 +39,10 @@ return [
         'base_url' => env('PIPEDRIVE_BASE_URL', 'https://api.pipedrive.com/v1'),
     ],
 
+    'mem0' => [
+        'api_key' => env('MEM0_API_KEY'),
+        'base_url' => env('MEM0_BASE_URL', 'https://api.mem0.ai'),
+        'timeout' => (int) env('MEM0_TIMEOUT', 10),
+    ],
+
 ];

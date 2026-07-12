@@ -11,6 +11,8 @@ use App\Ai\Tools\ListPipelinesTool;
 use App\Ai\Tools\MarkDealLostTool;
 use App\Ai\Tools\MarkDealWonTool;
 use App\Ai\Tools\MoveDealStageTool;
+use App\Ai\Tools\RecallClientMemoriesTool;
+use App\Ai\Tools\RememberClientFactTool;
 use App\Models\Conversation;
 use App\Models\Message as MessageModel;
 use App\Models\VectorStore;
@@ -18,6 +20,7 @@ use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Provider;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
+use Laravel\Ai\Contracts\HasProviderOptions;
 use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Messages\Message;
@@ -35,7 +38,7 @@ use Laravel\Ai\Providers\Tools\WebSearch;
  */
 #[Provider(Lab::OpenAI)]
 #[Model('gpt-5.6-terra')]
-class SellerAgent implements Agent, Conversational, HasTools
+class SellerAgent implements Agent, Conversational, HasProviderOptions, HasTools
 {
     use Promptable;
 
@@ -68,6 +71,13 @@ class SellerAgent implements Agent, Conversational, HasTools
         - Se uma ferramenta falhar ou não retornar a informação, diga com transparência que não conseguiu confirmar o dado e ofereça encaminhar para um atendente humano. Nunca preencha a lacuna com um dado inventado.
         - Nunca exponha ao cliente nomes de ferramentas, erros técnicos ou detalhes internos de funcionamento; traduza tudo em linguagem natural.
         </tools>
+
+        <memoria>
+        Você mantém uma memória de longo prazo própria sobre cada cliente, separada do CRM. Use-a para dar continuidade à negociação sem repetir o que já foi dito:
+        - Ao iniciar ou retomar um atendimento, e antes de argumentar ou apresentar um recurso, consulte sua memória do cliente para lembrar objeções já declaradas, argumentos que você já usou e recursos que já apresentou.
+        - Quando o cliente revelar algo relevante e durável para a negociação (objeção, orçamento, prazo, quem decide, preferência, dor, ou um argumento/recurso que você acabou de usar), registre esse fato na memória, em segundo plano, sem avisar o cliente.
+        - A memória é sua ferramenta de trabalho; não a mencione ao cliente e não a confunda com anotações no CRM, que são para a equipe humana.
+        </memoria>
 
         <negotiation>
         - Entenda antes de propor: descubra a necessidade do cliente com perguntas antes de oferecer solução. Faça uma pergunta por vez.
@@ -168,9 +178,10 @@ class SellerAgent implements Agent, Conversational, HasTools
     /**
      * Tools available to the agent: the 9 Pipedrive conversation tools (5 live
      * reads + 4 deal writes: move stage, mark won, mark lost, add note), each
-     * resolving CRM identity app-side from this conversation (RF-09/CT-01), plus
-     * provider-side web search capped so a single reply never fans out into many
-     * searches.
+     * resolving CRM identity app-side from this conversation (RF-09/CT-01), the
+     * 2 per-client memory tools (remember/recall, scoped to this client+company
+     * in mem0), plus provider-side web search capped so a single reply never
+     * fans out into many searches.
      *
      * @return iterable<int, object>
      */
@@ -186,6 +197,8 @@ class SellerAgent implements Agent, Conversational, HasTools
             new MoveDealStageTool($this->conversation),
             new MarkDealWonTool($this->conversation),
             new MarkDealLostTool($this->conversation),
+            new RememberClientFactTool($this->conversation),
+            new RecallClientMemoriesTool($this->conversation),
             new WebSearch(maxSearches: 3),
         ];
 
@@ -199,6 +212,31 @@ class SellerAgent implements Agent, Conversational, HasTools
         }
 
         return $tools;
+    }
+
+    /**
+     * Ask OpenAI to include the file-search retrieved passages in the response
+     * (they are omitted by default — only the queries come back). This is what
+     * lets the output guardrail verify knowledge-base-sourced claims against the
+     * passages the model actually retrieved; without it, a grounded answer built
+     * from a vector store looks invented. Only requested when the company has
+     * stores, since the `include` key is rejected without the matching tool.
+     *
+     * @return array<string, mixed>
+     */
+    public function providerOptions(Lab|string $provider): array
+    {
+        if ($provider !== Lab::OpenAI) {
+            return [];
+        }
+
+        $hasStores = $this->conversation->user
+            ?->vectorStores()
+            ->exists() ?? false;
+
+        return $hasStores
+            ? ['include' => ['file_search_call.results']]
+            : [];
     }
 
     /**
