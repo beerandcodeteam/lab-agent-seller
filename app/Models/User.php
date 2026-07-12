@@ -68,6 +68,16 @@ class User extends Authenticatable
     }
 
     /**
+     * Vector stores (knowledge bases) this company owns for RAG.
+     *
+     * @return HasMany<VectorStore, $this>
+     */
+    public function vectorStores(): HasMany
+    {
+        return $this->hasMany(VectorStore::class);
+    }
+
+    /**
      * Get the user's initials
      */
     public function initials(): string

@@ -36,6 +36,12 @@ class LookupSeeder extends Seeder
             ['name' => 'Cliente', 'slug' => 'user'],
             ['name' => 'Agente', 'slug' => 'assistant'],
         ],
+        'file_indexing_statuses' => [
+            ['name' => 'Pendente', 'slug' => 'pending'],
+            ['name' => 'Em processamento', 'slug' => 'in_progress'],
+            ['name' => 'Concluído', 'slug' => 'completed'],
+            ['name' => 'Falha', 'slug' => 'failed'],
+        ],
     ];
 
     /**

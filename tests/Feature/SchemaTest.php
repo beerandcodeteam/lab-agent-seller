@@ -108,6 +108,7 @@ test('lookup_seeder_is_idempotent', function () {
     expect(DB::table('custom_field_entities')->count())->toBe(3);
     expect(DB::table('deal_statuses')->count())->toBe(3);
     expect(DB::table('message_roles')->count())->toBe(2);
+    expect(DB::table('file_indexing_statuses')->count())->toBe(4);
 
     expect(DB::table('scan_statuses')->pluck('slug')->sort()->values()->all())
         ->toBe(['failed', 'pending', 'running', 'success']);
@@ -117,5 +118,7 @@ test('lookup_seeder_is_idempotent', function () {
         ->toBe(['assistant', 'user']);
     expect(DB::table('custom_field_entities')->pluck('slug')->sort()->values()->all())
         ->toBe(['deal', 'organization', 'person']);
+    expect(DB::table('file_indexing_statuses')->pluck('slug')->sort()->values()->all())
+        ->toBe(['completed', 'failed', 'in_progress', 'pending']);
     expect(DB::table('crm_providers')->pluck('slug')->all())->toBe(['pipedrive']);
 });
