@@ -4,6 +4,7 @@ namespace App\Ai\Agents;
 
 use App\Models\Conversation;
 use App\Models\Message as MessageModel;
+use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Provider;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
@@ -22,7 +23,8 @@ use Laravel\Ai\Providers\Tools\WebSearch;
  * of what was said before in this client+company chat.
  */
 #[Provider(Lab::OpenAI)]
-class SellerAgent implements Agent, Conversational, HasProviderOptions, HasTools
+#[Model('gpt-5.6-terra')]
+class SellerAgent implements Agent, Conversational, HasTools
 {
     use Promptable;
 
@@ -59,20 +61,6 @@ class SellerAgent implements Agent, Conversational, HasProviderOptions, HasTools
     public function instructions(): string
     {
         return self::SystemPrompt;
-    }
-
-    /**
-     * Extra provider request options. Reasoning effort is kept low because a
-     * sales chat needs fast time-to-first-token, not deep deliberation —
-     * higher efforts make the reply feel non-streamed.
-     *
-     * @return array<string, mixed>
-     */
-    public function providerOptions(Lab|string $provider): array
-    {
-        return [
-            'reasoning' => ['effort' => 'low'],
-        ];
     }
 
     /**
