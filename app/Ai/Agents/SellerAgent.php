@@ -2,6 +2,14 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Tools\GetDealCommentsTool;
+use App\Ai\Tools\GetDealDataTool;
+use App\Ai\Tools\GetDealNotesTool;
+use App\Ai\Tools\GetDealStageHistoryTool;
+use App\Ai\Tools\ListPipelinesTool;
+use App\Ai\Tools\MarkDealLostTool;
+use App\Ai\Tools\MarkDealWonTool;
+use App\Ai\Tools\MoveDealStageTool;
 use App\Models\Conversation;
 use App\Models\Message as MessageModel;
 use Laravel\Ai\Attributes\Model;
@@ -124,14 +132,24 @@ class SellerAgent implements Agent, Conversational, HasTools
     }
 
     /**
-     * Provider-side tools available to the agent (web search only, capped so a
-     * single reply never fans out into many searches).
+     * Tools available to the agent: the 8 Pipedrive conversation tools (5 live
+     * reads + 3 deal mutations), each resolving CRM identity app-side from this
+     * conversation (RF-09/CT-01), plus provider-side web search capped so a
+     * single reply never fans out into many searches.
      *
      * @return iterable<int, object>
      */
     public function tools(): iterable
     {
         return [
+            new GetDealDataTool($this->conversation),
+            new GetDealStageHistoryTool($this->conversation),
+            new GetDealCommentsTool($this->conversation),
+            new GetDealNotesTool($this->conversation),
+            new ListPipelinesTool($this->conversation),
+            new MoveDealStageTool($this->conversation),
+            new MarkDealWonTool($this->conversation),
+            new MarkDealLostTool($this->conversation),
             new WebSearch(maxSearches: 3),
         ];
     }

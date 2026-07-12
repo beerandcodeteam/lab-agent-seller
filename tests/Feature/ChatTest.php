@@ -55,12 +55,14 @@ test('client_message_and_agent_reply_are_persisted', function () {
     expect($messages[1]->content)->toBe('Olá! Como posso ajudar?');
 });
 
-test('agent_exposes_web_search_tool', function () {
+test('agent_exposes_pipedrive_and_web_search_tools', function () {
     $tools = collect((new SellerAgent(new Conversation))->tools());
 
-    expect($tools)->toHaveCount(1);
-    expect($tools->first())->toBeInstanceOf(WebSearch::class);
-    expect($tools->first()->maxSearches)->toBe(3);
+    expect($tools)->toHaveCount(9);
+
+    $webSearch = $tools->first(fn ($tool) => $tool instanceof WebSearch);
+    expect($webSearch)->not->toBeNull();
+    expect($webSearch->maxSearches)->toBe(3);
 });
 
 test('agent_uses_global_system_prompt', function () {
