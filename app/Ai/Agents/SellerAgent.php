@@ -13,6 +13,7 @@ use App\Ai\Tools\MarkDealWonTool;
 use App\Ai\Tools\MoveDealStageTool;
 use App\Models\Conversation;
 use App\Models\Message as MessageModel;
+use App\Models\VectorStore;
 use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Provider;
 use Laravel\Ai\Contracts\Agent;
@@ -21,6 +22,7 @@ use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Messages\Message;
 use Laravel\Ai\Promptable;
+use Laravel\Ai\Providers\Tools\FileSearch;
 use Laravel\Ai\Providers\Tools\WebSearch;
 
 /**
@@ -126,10 +128,41 @@ class SellerAgent implements Agent, Conversational, HasTools
         $playbook = collect([$this->skills, $company->playbook, self::DefaultPlaybook])
             ->first(fn (?string $candidate): bool => trim($candidate ?? '') !== '');
 
-        return strtr(self::SystemPrompt, [
+        $prompt = strtr(self::SystemPrompt, [
             '{company_name}' => $company->name,
             '{company_playbook}' => $playbook,
         ]);
+
+        return $prompt.$this->knowledgeBasesCatalog();
+    }
+
+    /**
+     * PT-BR catalog of the company's vector stores (name + description) so the
+     * agent knows what each knowledge base contains (RF-11). Empty string when
+     * the company has no stores, leaving the base prompt untouched.
+     */
+    private function knowledgeBasesCatalog(): string
+    {
+        $stores = $this->conversation->user
+            ->vectorStores()
+            ->get(['name', 'description']);
+
+        if ($stores->isEmpty()) {
+            return '';
+        }
+
+        $entries = $stores
+            ->map(fn (VectorStore $store): string => "- {$store->name}: {$store->description}")
+            ->implode("\n");
+
+        return <<<CATALOG
+
+
+            <knowledge_bases>
+            A empresa mantém as seguintes bases de conhecimento próprias, consultáveis pela busca em arquivos. Use a busca em arquivos para recuperar conteúdo delas antes de afirmar informações específicas da empresa (produtos, políticas, documentos internos):
+            {$entries}
+            </knowledge_bases>
+            CATALOG;
     }
 
     /**
@@ -143,7 +176,7 @@ class SellerAgent implements Agent, Conversational, HasTools
      */
     public function tools(): iterable
     {
-        return [
+        $tools = [
             new GetDealDataTool($this->conversation),
             new GetDealStageHistoryTool($this->conversation),
             new GetDealCommentsTool($this->conversation),
@@ -155,6 +188,17 @@ class SellerAgent implements Agent, Conversational, HasTools
             new MarkDealLostTool($this->conversation),
             new WebSearch(maxSearches: 3),
         ];
+
+        $storeIds = $this->conversation->user
+            ?->vectorStores()
+            ->pluck('openai_vector_store_id')
+            ->all() ?? [];
+
+        if ($storeIds !== []) {
+            $tools[] = new FileSearch($storeIds);
+        }
+
+        return $tools;
     }
 
     /**
