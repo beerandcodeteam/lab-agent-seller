@@ -3,6 +3,8 @@
 namespace App\Livewire\Crm;
 
 use App\Models\CrmConnection;
+use App\Models\User;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 /**
@@ -22,10 +24,21 @@ class ConnectionStatus extends Component
      */
     public function connection(): ?CrmConnection
     {
-        return auth()->user()?->crmConnection()->with('crmProvider')->first();
+        return $this->company()?->crmConnection()->with('crmProvider')->first();
     }
 
-    public function render()
+    /**
+     * The authenticated company (tenant), if any.
+     */
+    private function company(): ?User
+    {
+        /** @var User|null $company */
+        $company = auth()->user();
+
+        return $company;
+    }
+
+    public function render(): View
     {
         return view('livewire.crm.connection-status', [
             'connection' => $this->connection(),

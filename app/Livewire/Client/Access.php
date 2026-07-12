@@ -3,6 +3,7 @@
 namespace App\Livewire\Client;
 
 use App\Services\ClientAccess\MagicLinkService;
+use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -33,7 +34,7 @@ class Access extends Component
         $this->sent = true;
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.client.access');
     }

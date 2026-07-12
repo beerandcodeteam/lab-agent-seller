@@ -94,10 +94,12 @@ class PipedriveDriver implements CrmDriver
         }
     }
 
+    /**
+     * @param  'person'|'deal'  $entity
+     */
     public function fetchCustomFields(string $token, string $entity): iterable
     {
-        $endpoint = self::FIELD_ENDPOINTS[$entity]
-            ?? throw new CrmApiException("Entidade de campo customizado desconhecida: {$entity}.");
+        $endpoint = self::FIELD_ENDPOINTS[$entity];
 
         foreach ($this->paginate($endpoint, $token) as $field) {
             // Only edit_flag=true fields are custom; the rest are Pipedrive defaults.

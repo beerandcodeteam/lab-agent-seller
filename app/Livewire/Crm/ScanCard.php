@@ -7,6 +7,8 @@ use App\Models\CrmConnection;
 use App\Models\CrmScan;
 use App\Models\CustomField;
 use App\Models\Message;
+use App\Models\User;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Component;
 
@@ -37,7 +39,18 @@ class ScanCard extends Component
      */
     public function connection(): ?CrmConnection
     {
-        return auth()->user()?->crmConnection()->with('crmProvider')->first();
+        return $this->company()?->crmConnection()->with('crmProvider')->first();
+    }
+
+    /**
+     * The authenticated company (tenant), if any.
+     */
+    private function company(): ?User
+    {
+        /** @var User|null $company */
+        $company = auth()->user();
+
+        return $company;
     }
 
     /**
@@ -69,13 +82,13 @@ class ScanCard extends Component
         };
     }
 
-    public function render()
+    public function render(): View
     {
         $connection = $this->connection();
         $scan = $connection ? $this->latestScan($connection) : null;
         $state = $this->uiState($scan);
 
-        $company = auth()->user();
+        $company = $this->company();
 
         return view('livewire.crm.scan-card', [
             'connection' => $connection,

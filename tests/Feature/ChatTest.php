@@ -98,6 +98,17 @@ test('agent_renders_company_skills_into_prompt', function () {
         ->not->toContain('{company_playbook}');
 });
 
+test('agent_uses_company_stored_playbook_when_no_skills_override', function () {
+    $company = User::factory()->create(['playbook' => 'Playbook cadastrado no painel.']);
+    $conversation = Conversation::factory()->for($company, 'user')->create();
+
+    $agent = new SellerAgent($conversation);
+
+    expect($agent->instructions())
+        ->toContain('Playbook cadastrado no painel.')
+        ->not->toContain(SellerAgent::DefaultPlaybook);
+});
+
 test('agent_without_skills_falls_back_to_default_playbook', function () {
     $conversation = Conversation::factory()->create();
 

@@ -23,10 +23,11 @@ use Illuminate\Support\Str;
  * @property string|null $remember_token
  * @property string|null $guardrail_topic_alignments
  * @property string|null $guardrail_restrictions
+ * @property string|null $playbook processo comercial e habilidades de negociação da empresa
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password', 'guardrail_topic_alignments', 'guardrail_restrictions'])]
+#[Fillable(['name', 'email', 'password', 'guardrail_topic_alignments', 'guardrail_restrictions', 'playbook'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {

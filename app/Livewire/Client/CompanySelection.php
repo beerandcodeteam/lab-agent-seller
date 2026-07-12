@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\ClientAccess\MagicLinkService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
@@ -21,12 +22,14 @@ class CompanySelection extends Component
      * match is auto-selected and routed straight to the chat, so the selection
      * only ever renders for 2+ matched companies.
      */
-    public function mount(MagicLinkService $magicLinks): ?Redirector
+    public function mount(MagicLinkService $magicLinks): Redirector|RedirectResponse|null
     {
         $companies = $this->matchedCompanies($magicLinks);
 
         if ($companies->count() === 1) {
-            return $this->enter($companies->first()->id);
+            session(['selected_company_id' => $companies->first()->id]);
+
+            return redirect()->route('client.chat');
         }
 
         if ($companies->isEmpty()) {
@@ -41,14 +44,16 @@ class CompanySelection extends Component
      * email actually matches; any other id is rejected (a client may not enter a
      * company whose CRM does not contain them).
      */
-    public function select(int $company, MagicLinkService $magicLinks): Redirector
+    public function select(int $company, MagicLinkService $magicLinks): Redirector|RedirectResponse
     {
         abort_unless(
             $this->matchedCompanies($magicLinks)->contains('id', $company),
             403,
         );
 
-        return $this->enter($company);
+        session(['selected_company_id' => $company]);
+
+        return redirect()->route('client.chat');
     }
 
     public function render(MagicLinkService $magicLinks): View
@@ -93,15 +98,5 @@ class CompanySelection extends Component
         $client = Auth::guard('client')->user();
 
         return $client;
-    }
-
-    /**
-     * Set the chat context to the given company and redirect to the chat.
-     */
-    private function enter(int $companyId): Redirector
-    {
-        session(['selected_company_id' => $companyId]);
-
-        return redirect()->route('client.chat');
     }
 }

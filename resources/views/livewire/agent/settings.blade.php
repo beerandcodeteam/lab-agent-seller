@@ -3,11 +3,26 @@
     $textareaClasses = 'w-full box-border min-h-[96px] px-3 py-2.5 rounded-field bg-surface font-sans text-sm text-ink transition-colors focus:outline-none focus:ring-[3px] focus:ring-accent-soft focus:border-accent border border-border resize-y';
 @endphp
 
-<x-card title="Configuração do agente" meta="guardrail">
+<x-card title="Configuração do agente" meta="playbook + guardrail">
     <form wire:submit="save" class="flex flex-col gap-5">
         @if ($saved)
             <x-alert type="success">Configuração salva.</x-alert>
         @endif
+
+        <div>
+            <label for="playbook" class="mb-1.5 block font-sans text-xs font-medium text-ink-2">
+                Playbook comercial
+            </label>
+            <textarea
+                id="playbook"
+                wire:model="playbook"
+                placeholder="Ex.: 1) Qualificar a necessidade do cliente; 2) Apresentar o plano adequado; 3) Desconto máximo de 10% à vista; 4) Fechar com agendamento de reunião"
+                class="{{ $textareaClasses }} min-h-[140px]"
+            ></textarea>
+            <p class="mt-1.5 font-sans text-[11.5px] text-ink-3">
+                Processo comercial, etapas e políticas de negociação que o agente segue na conversa. Vazio: o agente usa o playbook padrão da plataforma e encaminha negociações de preço para um atendente humano.
+            </p>
+        </div>
 
         <div>
             <label for="guardrail_topic_alignments" class="mb-1.5 block font-sans text-xs font-medium text-ink-2">

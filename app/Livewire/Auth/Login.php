@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Auth;
 
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
@@ -38,7 +39,7 @@ class Login extends Component
         $this->redirectRoute('dashboard', navigate: true);
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.auth.login');
     }

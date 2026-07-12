@@ -3,6 +3,7 @@
 namespace App\Livewire\Auth;
 
 use App\Models\User;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Attributes\Layout;
@@ -44,7 +45,7 @@ class Register extends Component
         $this->redirectRoute('dashboard', navigate: true);
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.auth.register');
     }

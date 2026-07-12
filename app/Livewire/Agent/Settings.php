@@ -8,13 +8,19 @@ use Livewire\Attributes\Validate;
 use Livewire\Component;
 
 /**
- * Guardrail configuration section embedded in the company dashboard. The two
- * free-text fields drive the off_topic and company_restriction guardrail
- * criteria; both are optional — an empty field disables the matching filter.
- * Values are always read from and written to the authenticated company only.
+ * Agent configuration section embedded in the company dashboard. The playbook
+ * field feeds the SellerAgent system prompt with the company's commercial
+ * process; the two guardrail free-text fields drive the off_topic and
+ * company_restriction guardrail criteria. All fields are optional — an empty
+ * guardrail field disables the matching filter, and an empty playbook makes
+ * the agent fall back to the platform's default playbook. Values are always
+ * read from and written to the authenticated company only.
  */
 class Settings extends Component
 {
+    #[Validate(['nullable', 'string'])]
+    public ?string $playbook = null;
+
     #[Validate(['nullable', 'string'])]
     public ?string $guardrail_topic_alignments = null;
 
@@ -27,6 +33,7 @@ class Settings extends Component
     {
         $company = $this->company();
 
+        $this->playbook = $company->playbook;
         $this->guardrail_topic_alignments = $company->guardrail_topic_alignments;
         $this->guardrail_restrictions = $company->guardrail_restrictions;
     }
@@ -38,6 +45,7 @@ class Settings extends Component
         $this->validate();
 
         $this->company()->update([
+            'playbook' => $this->playbook,
             'guardrail_topic_alignments' => $this->guardrail_topic_alignments,
             'guardrail_restrictions' => $this->guardrail_restrictions,
         ]);

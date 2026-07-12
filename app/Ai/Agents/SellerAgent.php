@@ -95,8 +95,9 @@ class SellerAgent implements Agent, Conversational, HasTools
      *                                            id are loaded as context, so the current
      *                                            (already persisted) user turn is not
      *                                            duplicated alongside the live prompt.
-     * @param  string|null  $skills  The company's negotiation skills (commercial playbook)
-     *                               rendered into the system prompt; falls back to
+     * @param  string|null  $skills  Overrides the negotiation skills (commercial playbook)
+     *                               rendered into the system prompt; when null, the
+     *                               company's stored playbook is used, falling back to
      *                               DefaultPlaybook when the company has none.
      */
     public function __construct(
@@ -111,9 +112,14 @@ class SellerAgent implements Agent, Conversational, HasTools
      */
     public function instructions(): string
     {
+        $company = $this->conversation->user;
+
+        $playbook = collect([$this->skills, $company->playbook, self::DefaultPlaybook])
+            ->first(fn (?string $candidate): bool => trim($candidate ?? '') !== '');
+
         return strtr(self::SystemPrompt, [
-            '{company_name}' => $this->conversation->user->name,
-            '{company_playbook}' => trim($this->skills ?? '') !== '' ? $this->skills : self::DefaultPlaybook,
+            '{company_name}' => $company->name,
+            '{company_playbook}' => $playbook,
         ]);
     }
 

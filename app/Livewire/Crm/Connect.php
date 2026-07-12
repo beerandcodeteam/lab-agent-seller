@@ -7,6 +7,7 @@ use App\Models\CrmConnection;
 use App\Models\CrmProvider;
 use App\Services\Crm\CrmDriverManager;
 use App\Services\Crm\CrmTokenStatus;
+use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -93,7 +94,7 @@ class Connect extends Component
         $this->errorMessage = 'Não foi possível validar. Falha de rede ao falar com a Pipedrive — o token não foi verificado nem descartado.';
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.crm.connect');
     }

@@ -156,7 +156,7 @@ class Chat extends Component
         $userMessage = $this->conversation->messages()->find($this->pendingMessageId);
         $groupIndex = array_key_last($this->activity);
 
-        if (! $userMessage) {
+        if (! $userMessage || $groupIndex === null) {
             $this->streaming = false;
             $this->pendingMessageId = null;
 
