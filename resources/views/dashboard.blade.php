@@ -9,4 +9,8 @@
     <div class="mt-6">
         <livewire:crm.scan-card />
     </div>
+
+    <div class="mt-6">
+        <livewire:agent.settings />
+    </div>
 </x-layouts.app>

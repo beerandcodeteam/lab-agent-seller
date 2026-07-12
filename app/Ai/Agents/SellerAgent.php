@@ -77,6 +77,7 @@ class SellerAgent implements Agent, Conversational, HasTools
 
     /**
      * Prior conversation turns, in chronological order, as agent context.
+     * Blocked turns (and their redirect replies) never reach this agent.
      *
      * @return array<int, Message>
      */
@@ -84,6 +85,7 @@ class SellerAgent implements Agent, Conversational, HasTools
     {
         return $this->conversation->messages()
             ->with('role')
+            ->whereNull('blocked_at')
             ->when(
                 $this->historyBeforeMessageId,
                 fn ($query) => $query->where('id', '<', $this->historyBeforeMessageId),
