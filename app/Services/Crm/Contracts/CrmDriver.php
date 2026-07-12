@@ -72,4 +72,54 @@ interface CrmDriver
      * @throws CrmApiException on a provider API failure
      */
     public function fetchDeals(string $token): iterable;
+
+    /**
+     * Fetch a single deal's live data by its external id. Missing provider
+     * fields are returned as `null` (never fabricated).
+     *
+     * @return array{title: string|null, value: float|int|string|null, stage_external_id: string|null, status: string|null, pipeline_external_id: string|null}
+     *
+     * @throws CrmApiException on a provider API failure (a live 404 is a failure, not an empty result)
+     */
+    public function fetchDeal(string $token, string $dealExternalId): array;
+
+    /**
+     * Stream a deal's stage-change events only, filtering out every other kind
+     * of flow event.
+     *
+     * @return iterable<array{from_stage_external_id: string|null, to_stage_external_id: string|null, changed_at: string|null}>
+     *
+     * @throws CrmApiException on a provider API failure
+     */
+    public function fetchDealStageChanges(string $token, string $dealExternalId): iterable;
+
+    /**
+     * Stream a deal's comments (content + moment).
+     *
+     * @return iterable<array{content: string|null, created_at: string|null}>
+     *
+     * @throws CrmApiException on a provider API failure
+     */
+    public function fetchDealComments(string $token, string $dealExternalId): iterable;
+
+    /**
+     * Fetch the merged notes of a deal and/or a person, each item labelled by
+     * its origin (`deal` or `person`). Either id may be null; a person's notes
+     * remain available even without a deal.
+     *
+     * @return iterable<array{source: 'deal'|'person', content: string|null, created_at: string|null}>
+     *
+     * @throws CrmApiException on a provider API failure
+     */
+    public function fetchNotes(string $token, ?string $dealExternalId, ?string $personExternalId): iterable;
+
+    /**
+     * Fetch every pipeline with its stages, each stage carrying its external
+     * Pipedrive `id` and `name`.
+     *
+     * @return iterable<array{id: string, name: string, stages: list<array{id: string, name: string}>}>
+     *
+     * @throws CrmApiException on a provider API failure
+     */
+    public function fetchPipelinesWithStages(string $token): iterable;
 }

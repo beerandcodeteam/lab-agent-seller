@@ -143,6 +143,176 @@ class PipedriveDriver implements CrmDriver
         }
     }
 
+    public function fetchDeal(string $token, string $dealExternalId): array
+    {
+        $data = $this->get("/deals/{$dealExternalId}", $token)->json('data') ?? [];
+
+        return [
+            'title' => isset($data['title']) ? (string) $data['title'] : null,
+            'value' => $data['value'] ?? null,
+            'stage_external_id' => $this->idValue($data['stage_id'] ?? null),
+            'status' => isset($data['status']) ? (string) $data['status'] : null,
+            'pipeline_external_id' => $this->idValue($data['pipeline_id'] ?? null),
+        ];
+    }
+
+    public function fetchDealStageChanges(string $token, string $dealExternalId): iterable
+    {
+        $events = $this->get("/deals/{$dealExternalId}/flow", $token)->json('data') ?? [];
+
+        foreach ($events as $event) {
+            if (! is_array($event) || ($event['object'] ?? null) !== 'dealChange') {
+                continue;
+            }
+
+            $data = $event['data'] ?? [];
+
+            if (! is_array($data) || ($data['field_key'] ?? null) !== 'stage_id') {
+                continue;
+            }
+
+            yield [
+                'from_stage_external_id' => $this->idValue($data['old_value'] ?? null),
+                'to_stage_external_id' => $this->idValue($data['new_value'] ?? null),
+                'changed_at' => $this->stringOrNull($data['log_time'] ?? $event['timestamp'] ?? null),
+            ];
+        }
+    }
+
+    public function fetchDealComments(string $token, string $dealExternalId): iterable
+    {
+        $events = $this->get("/deals/{$dealExternalId}/flow", $token)->json('data') ?? [];
+
+        foreach ($events as $event) {
+            if (! is_array($event) || ($event['object'] ?? null) !== 'note') {
+                continue;
+            }
+
+            $data = $event['data'] ?? [];
+
+            if (! is_array($data)) {
+                continue;
+            }
+
+            yield [
+                'content' => $this->stringOrNull($data['content'] ?? null),
+                'created_at' => $this->stringOrNull($data['add_time'] ?? $event['timestamp'] ?? null),
+            ];
+        }
+    }
+
+    public function fetchNotes(string $token, ?string $dealExternalId, ?string $personExternalId): iterable
+    {
+        $notes = [];
+
+        if ($dealExternalId !== null) {
+            foreach ($this->get('/notes', $token, ['deal_id' => $dealExternalId])->json('data') ?? [] as $note) {
+                if (is_array($note)) {
+                    $notes[] = $this->normalizeNote($note, 'deal');
+                }
+            }
+        }
+
+        if ($personExternalId !== null) {
+            foreach ($this->get('/notes', $token, ['person_id' => $personExternalId])->json('data') ?? [] as $note) {
+                if (is_array($note)) {
+                    $notes[] = $this->normalizeNote($note, 'person');
+                }
+            }
+        }
+
+        return $notes;
+    }
+
+    public function fetchPipelinesWithStages(string $token): iterable
+    {
+        $stagesByPipeline = [];
+
+        foreach ($this->paginate('/stages', $token) as $stage) {
+            $pipelineExternalId = $this->idValue($stage['pipeline_id'] ?? null);
+
+            $stagesByPipeline[$pipelineExternalId][] = [
+                'id' => (string) ($stage['id'] ?? ''),
+                'name' => (string) ($stage['name'] ?? ''),
+            ];
+        }
+
+        $pipelines = [];
+
+        foreach ($this->paginate('/pipelines', $token) as $pipeline) {
+            $externalId = (string) ($pipeline['id'] ?? '');
+
+            $pipelines[] = [
+                'id' => $externalId,
+                'name' => (string) ($pipeline['name'] ?? ''),
+                'stages' => $stagesByPipeline[$externalId] ?? [],
+            ];
+        }
+
+        return $pipelines;
+    }
+
+    /**
+     * @param  'deal'|'person'  $source
+     * @param  array<string, mixed>  $note
+     * @return array{source: 'deal'|'person', content: string|null, created_at: string|null}
+     */
+    private function normalizeNote(array $note, string $source): array
+    {
+        return [
+            'source' => $source,
+            'content' => $this->stringOrNull($note['content'] ?? null),
+            'created_at' => $this->stringOrNull($note['add_time'] ?? null),
+        ];
+    }
+
+    /**
+     * Issue a single (non-paginated) GET against a Pipedrive endpoint.
+     *
+     * @param  array<string, mixed>  $query
+     *
+     * @throws CrmApiException on a network failure or non-2xx response (a live 404 included)
+     */
+    private function get(string $endpoint, string $token, array $query = []): Response
+    {
+        $baseUrl = rtrim((string) config('services.pipedrive.base_url'), '/');
+
+        try {
+            $response = Http::timeout(15)
+                ->acceptJson()
+                ->get("{$baseUrl}{$endpoint}", ['api_token' => $token] + $query);
+        } catch (ConnectionException) {
+            throw new CrmApiException(
+                "Falha de rede ao acessar {$endpoint} na Pipedrive. Tente novamente em alguns minutos."
+            );
+        }
+
+        if (! $response->successful()) {
+            throw new CrmApiException(sprintf(
+                'Pipedrive API respondeu %d (%s) ao acessar %s. Tente novamente em alguns minutos.',
+                $response->status(),
+                $this->reasonPhrase($response->status()),
+                $endpoint,
+            ));
+        }
+
+        return $response;
+    }
+
+    /**
+     * Cast a provider value to a non-empty string, or null when absent/blank.
+     */
+    private function stringOrNull(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = (string) $value;
+
+        return $value !== '' ? $value : null;
+    }
+
     /**
      * Stream every record from a paginated Pipedrive collection endpoint.
      *
